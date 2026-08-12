@@ -1,0 +1,71 @@
+name: PNCP Worker
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 * * * *"
+  pull_request:
+    paths:
+      - "scripts/pncp_sync_worker.py"
+      - "tests/test_pncp_worker.py"
+      - ".github/workflows/pncp-worker.yml"
+      - "src/pncp.py"
+      - "src/database.py"
+      - "src/db_runtime.py"
+
+concurrency:
+  group: pncp-worker-production
+  cancel-in-progress: false
+
+jobs:
+  tests:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Dependencias
+        run: pip install -r requirements.txt
+
+      - name: Testes simulados PNCP
+        run: python -m unittest -v tests/test_pncp_worker.py
+
+  sync:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      LICITANEXO_DB_BACKEND: postgres
+      LICITANEXO_DB_SCHEMA: licitanexo
+      LICITANEXO_PGHOST: ${{ secrets.LICITANEXO_PGHOST }}
+      LICITANEXO_PGPORT: "5432"
+      LICITANEXO_PGDATABASE: postgres
+      LICITANEXO_PGUSER: ${{ secrets.LICITANEXO_PGUSER }}
+      LICITANEXO_PGPASSWORD: ${{ secrets.LICITANEXO_PGPASSWORD }}
+      PNCP_WORKER_TIMEOUT: "30"
+      PNCP_WORKER_MAX_ATTEMPTS: "4"
+      PNCP_WORKER_PAGE_DELAY: "0.25"
+      PNCP_WORKER_MAX_PAGES_PER_MODALITY: "120"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Dependencias
+        run: pip install -r requirements.txt
+
+      - name: Atualizar catalogo PNCP
+        run: python scripts/pncp_sync_worker.py
