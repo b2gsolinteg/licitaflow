@@ -1,0 +1,1 @@
+"""Núcleo da plataforma LicitaNexo."""
