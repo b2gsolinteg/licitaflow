@@ -1964,11 +1964,12 @@ def admin_page(user, admin_section="Visão geral"):
                     modality_errors = stats.get("errors", [])
                     errors.extend(modality_errors)
                     progress.progress(idx / max(len(ordered_modalities), 1))
-                    if any("429" in str(error) for error in modality_errors):
-                        stopped_by_rate_limit = True
-                        status_box.warning(
-                            "O PNCP pediu redução de ritmo (429). O progresso ficou salvo e a próxima execução retoma do ponto interrompido."
-                        )
+                    if modality_errors:
+                        if any("429" in str(error) for error in modality_errors):
+                            stopped_by_rate_limit = True
+                            status_box.warning(
+                                "O PNCP pediu redução de ritmo (429). O progresso ficou salvo e a próxima execução retoma do ponto interrompido."
+                            )
                         break
                     if idx < len(ordered_modalities):
                         time.sleep(1.2)
