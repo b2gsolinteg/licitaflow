@@ -26,10 +26,7 @@ class SecurityService:
             self.ensure_schema()
 
     def connect(self):
-        c=sqlite3.connect(self.path,timeout=30)
-        c.row_factory=sqlite3.Row
-        c.execute("PRAGMA busy_timeout=30000")
-        return c
+        return connect_runtime(self.path)
 
     def ensure_schema(self):
         with self.connect() as c:
