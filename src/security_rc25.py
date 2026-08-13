@@ -107,7 +107,7 @@ class SecurityService:
                 return
             c.execute("""INSERT INTO security_rate_limits(bucket,attempts,window_started_at,updated_at)
                          VALUES (?,1,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
-                         ON CONFLICT(bucket) DO UPDATE SET attempts=attempts+1,
+                         ON CONFLICT(bucket) DO UPDATE SET attempts=security_rate_limits.attempts+1,
                          updated_at=CURRENT_TIMESTAMP""",(bucket,))
             attempts=int(c.execute("SELECT attempts FROM security_rate_limits WHERE bucket=?",(bucket,)).fetchone()[0])
             if attempts>=max_attempts:

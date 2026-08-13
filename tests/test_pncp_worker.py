@@ -1,3 +1,4 @@
+import sqlite3
 import unittest
 from contextlib import contextmanager
 from datetime import date
@@ -6,6 +7,7 @@ from unittest.mock import patch
 import requests
 
 from scripts.pncp_sync_worker import SyncWindow, resolve_sync_window, run_sync_cycle
+from src.db_runtime import PostgresCompatConnection, _PostgresConnectionPool
 from src.pncp import PncpClient, PncpTemporaryError
 
 
@@ -68,6 +70,25 @@ class PartialClient:
             "partial": True,
             "errors": ["página 4: erro 503 após 4 tentativas"],
         }
+
+
+class FakeRawConnection:
+    def __init__(self):
+        self.closed = False
+        self.broken = False
+        self.commit_count = 0
+        self.rollback_count = 0
+        self.close_count = 0
+
+    def commit(self):
+        self.commit_count += 1
+
+    def rollback(self):
+        self.rollback_count += 1
+
+    def close(self):
+        self.close_count += 1
+        self.closed = True
 
 
 class PncpWorkerTests(unittest.TestCase):
@@ -162,6 +183,83 @@ class PncpWorkerTests(unittest.TestCase):
         self.assertEqual(result["pages"], 3)
         self.assertEqual(len(PartialClient.instances[0].sync_calls), 1)
         self.assertEqual(db.finished[1], "partial")
+
+
+class PostgresPoolTests(unittest.TestCase):
+    def test_reuses_connection_after_release(self):
+        created = []
+
+        def factory():
+            raw = FakeRawConnection()
+            created.append(raw)
+            return raw
+
+        pool = _PostgresConnectionPool(max_size=2, acquire_timeout=0.05, factory=factory)
+        first = pool.acquire()
+        pool.release(first)
+        second = pool.acquire()
+
+        self.assertIs(first, second)
+        self.assertEqual(len(created), 1)
+
+        pool.release(second)
+        pool.close_all()
+
+    def test_broken_connection_is_discarded(self):
+        created = []
+
+        def factory():
+            raw = FakeRawConnection()
+            created.append(raw)
+            return raw
+
+        pool = _PostgresConnectionPool(max_size=1, acquire_timeout=0.05, factory=factory)
+        first = pool.acquire()
+        first.broken = True
+        pool.release(first)
+        second = pool.acquire()
+
+        self.assertIsNot(first, second)
+        self.assertEqual(len(created), 2)
+        self.assertEqual(first.close_count, 1)
+
+        pool.release(second)
+        pool.close_all()
+
+    def test_context_manager_commits_and_returns_connection(self):
+        created = []
+
+        def factory():
+            raw = FakeRawConnection()
+            created.append(raw)
+            return raw
+
+        pool = _PostgresConnectionPool(max_size=1, acquire_timeout=0.05, factory=factory)
+        raw = pool.acquire()
+
+        with PostgresCompatConnection(raw, release=pool.release):
+            pass
+
+        self.assertEqual(raw.commit_count, 1)
+        reused = pool.acquire()
+        self.assertIs(raw, reused)
+
+        pool.release(reused)
+        pool.close_all()
+
+    def test_times_out_when_pool_is_exhausted(self):
+        pool = _PostgresConnectionPool(
+            max_size=1,
+            acquire_timeout=0.01,
+            factory=FakeRawConnection,
+        )
+        first = pool.acquire()
+
+        with self.assertRaises(sqlite3.OperationalError):
+            pool.acquire()
+
+        pool.release(first)
+        pool.close_all()
 
 
 if __name__ == "__main__":

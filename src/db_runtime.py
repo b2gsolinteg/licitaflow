@@ -1,6 +1,8 @@
-﻿import os
+import os
+import queue
 import re
 import sqlite3
+import threading
 import time
 from pathlib import Path
 
@@ -35,7 +37,7 @@ def _replace_qmarks(sql):
                     out.append(sql[i+1]); i+=1
                 else: quote=None
         else:
-            if ch in ("'",'"'):
+            if ch in ("'",'\"'):
                 quote=ch; out.append(ch)
             elif ch=='?': out.append('%s')
             else: out.append(ch)
@@ -141,13 +143,16 @@ def _raise_compat(exc):
 
 
 class PostgresCompatConnection:
-    def __init__(self,raw): self.raw=raw
+    def __init__(self,raw,release=None):
+        self.raw=raw
+        self._release=release
+        self._closed=False
     def cursor(self): return CompatCursor(self.raw.cursor())
     def execute(self,statement,params=None):
         stmt=str(statement).strip()
         m=re.fullmatch(r"PRAGMA\s+table_info\(([^)]+)\)",stmt,flags=re.I)
         if m:
-            table=m.group(1).strip().strip('"`[]')
+            table=m.group(1).strip().strip('\"`[]')
             cur=self.raw.cursor()
             cur.execute("""SELECT ordinal_position-1 AS cid,column_name AS name,
                            data_type AS type,CASE WHEN is_nullable='NO' THEN 1 ELSE 0 END AS notnull,
@@ -166,16 +171,24 @@ class PostgresCompatConnection:
         return self
     def commit(self): return self.raw.commit()
     def rollback(self): return self.raw.rollback()
-    def close(self): return self.raw.close()
+    def close(self):
+        if self._closed:return None
+        self._closed=True
+        if self._release is not None:return self._release(self.raw)
+        return self.raw.close()
     def __enter__(self): return self
     def __exit__(self,typ,val,tb):
-        if typ is None:self.raw.commit()
-        else:self.raw.rollback()
-        self.raw.close(); return False
+        try:
+            if typ is None:self.raw.commit()
+            else:self.raw.rollback()
+        finally:
+            self.close()
+        return False
 
 
 _PG_AUTH_BLOCKED_UNTIL = 0.0
 _PG_AUTH_BLOCKED_REASON = ""
+
 
 def _looks_like_auth_failure(exc):
     text=str(exc).lower()
@@ -186,7 +199,8 @@ def _looks_like_auth_failure(exc):
         "authentication failed",
     ))
 
-def _pg_connect():
+
+def _new_pg_raw_connection():
     global _PG_AUTH_BLOCKED_UNTIL, _PG_AUTH_BLOCKED_REASON
     if time.monotonic() < _PG_AUTH_BLOCKED_UNTIL:
         remaining=max(1, int(_PG_AUTH_BLOCKED_UNTIL-time.monotonic()))
@@ -215,9 +229,121 @@ def _pg_connect():
         raise
     schema=postgres_schema()
     with raw.cursor() as cur:
-        cur.execute('SET search_path TO "'+schema.replace('"','""')+'", public')
+        cur.execute('SET search_path TO "'+schema.replace('\"','\"\"')+'", public')
     raw.commit()
-    return PostgresCompatConnection(raw)
+    return raw
+
+
+class _PostgresConnectionPool:
+    """Pool pequeno e síncrono para reutilizar conexões PostgreSQL no runtime."""
+    def __init__(self,max_size=4,acquire_timeout=12.0,factory=None):
+        self.max_size=max(1,int(max_size))
+        self.acquire_timeout=max(0.01,float(acquire_timeout))
+        self._factory=factory or _new_pg_raw_connection
+        self._available=queue.LifoQueue(maxsize=self.max_size)
+        self._lock=threading.Lock()
+        self._created=0
+        self._closed=False
+
+    def _reserve_slot(self):
+        with self._lock:
+            if self._closed:
+                raise sqlite3.OperationalError("Pool PostgreSQL encerrado.")
+            if self._created>=self.max_size:return False
+            self._created+=1
+            return True
+
+    def _release_slot(self):
+        with self._lock:
+            if self._created>0:self._created-=1
+
+    @staticmethod
+    def _usable(raw):
+        return not bool(getattr(raw,"closed",False)) and not bool(getattr(raw,"broken",False))
+
+    def _discard(self,raw):
+        try: raw.close()
+        except Exception: pass
+        self._release_slot()
+
+    def acquire(self):
+        deadline=time.monotonic()+self.acquire_timeout
+        while True:
+            try: raw=self._available.get_nowait()
+            except queue.Empty: raw=None
+            if raw is not None:
+                if self._usable(raw):return raw
+                self._discard(raw)
+                continue
+
+            if self._reserve_slot():
+                try:return self._factory()
+                except Exception:
+                    self._release_slot()
+                    raise
+
+            remaining=deadline-time.monotonic()
+            if remaining<=0:
+                raise sqlite3.OperationalError(
+                    f"Pool PostgreSQL ocupado: nenhuma conexão disponível em {self.acquire_timeout:.1f}s."
+                )
+            try: raw=self._available.get(timeout=remaining)
+            except queue.Empty as exc:
+                raise sqlite3.OperationalError(
+                    f"Pool PostgreSQL ocupado: nenhuma conexão disponível em {self.acquire_timeout:.1f}s."
+                ) from exc
+            if self._usable(raw):return raw
+            self._discard(raw)
+
+    def release(self,raw):
+        if raw is None:return None
+        if not self._usable(raw):
+            self._discard(raw)
+            return None
+        try:
+            # Garante que nenhuma transação fique presa entre dois usuários do pool.
+            raw.rollback()
+        except Exception:
+            self._discard(raw)
+            return None
+
+        should_discard=False
+        with self._lock:
+            if self._closed:
+                should_discard=True
+            else:
+                try:self._available.put_nowait(raw)
+                except queue.Full:should_discard=True
+        if should_discard:self._discard(raw)
+        return None
+
+    def close_all(self):
+        with self._lock:self._closed=True
+        while True:
+            try: raw=self._available.get_nowait()
+            except queue.Empty:break
+            self._discard(raw)
+
+
+_PG_POOL = None
+_PG_POOL_LOCK = threading.Lock()
+
+
+def _get_pg_pool():
+    global _PG_POOL
+    if _PG_POOL is not None:return _PG_POOL
+    with _PG_POOL_LOCK:
+        if _PG_POOL is None:
+            max_size=max(1,min(12,int(os.getenv("LICITANEXO_PGPOOL_MAX_SIZE","4"))))
+            timeout=max(0.5,min(60.0,float(os.getenv("LICITANEXO_PGPOOL_TIMEOUT","12"))))
+            _PG_POOL=_PostgresConnectionPool(max_size=max_size,acquire_timeout=timeout)
+    return _PG_POOL
+
+
+def _pg_connect():
+    pool=_get_pg_pool()
+    raw=pool.acquire()
+    return PostgresCompatConnection(raw,release=pool.release)
 
 
 class ClosingSQLiteConnection(sqlite3.Connection):
@@ -236,4 +362,3 @@ def connect_runtime(sqlite_path, search_fold=None):
         c.create_function("search_fold", 1, search_fold)
     c.execute("PRAGMA foreign_keys=ON"); c.execute("PRAGMA busy_timeout=30000")
     return c
-
