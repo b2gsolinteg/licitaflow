@@ -187,7 +187,14 @@ def run_sync_cycle(
             totals["pages"] += int(stats.get("pages") or 0)
             totals["received"] += int(stats.get("received") or 0)
             totals["saved"] += int(stats.get("saved") or 0)
-            totals["errors"].extend(stats.get("errors") or [])
+            errors = [str(error) for error in (stats.get("errors") or [])]
+totals["errors"].extend(errors)
+
+for error in errors:
+    print(
+        f"PNCP_WORKER_ERROR_DETAIL modalidade={name} code={code} detalhe={error}",
+        flush=True,
+    )
 
             if stats.get("partial") or stats.get("errors"):
                 partial = True
