@@ -151,6 +151,8 @@ def _format_datetime(value):
         return "Não informada"
     try:
         parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if parsed.tzinfo is not None:
+            parsed = parsed.astimezone(ZoneInfo("America/Sao_Paulo"))
         return parsed.strftime("%d/%m/%Y %H:%M")
     except (TypeError, ValueError):
         return str(value).replace("T", " ")[:16]
