@@ -2127,12 +2127,13 @@ def admin_page(user, admin_section="Visão geral"):
 
         if recent_runs:
             st.markdown("#### Histórico recente")
+            st.caption("Datas e horários exibidos no fuso de Brasília (America/Sao_Paulo).")
             rows = []
             for run in recent_runs:
                 error_text = str(run.get("errors") or "")
                 rows.append({
-                    "Início": run.get("started_at"),
-                    "Fim": run.get("finished_at"),
+                    "Início": _format_datetime(run.get("started_at")),
+                    "Fim": _format_datetime(run.get("finished_at")),
                     "Status": run.get("status"),
                     "Páginas": run.get("pages"),
                     "Aplicados": run.get("records"),
