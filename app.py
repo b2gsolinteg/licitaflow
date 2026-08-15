@@ -1,4 +1,4 @@
-﻿from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta
 import random
 import re
 import time
@@ -51,6 +51,32 @@ usage = UsageService(db.path)
 conversion = ConversionService(db.path)
 security = SecurityService(db.path, PROJECT_ROOT)
 logger.info("Aplicação iniciada · versão %s · ambiente %s", APP_VERSION, ENVIRONMENT)
+
+
+@st.cache_data(ttl=15, show_spinner=False)
+def _cached_control_room_stats():
+    """Evita repetir o mesmo painel administrativo em cada rerun do Streamlit."""
+    return db.control_room_stats()
+
+
+@st.cache_data(ttl=10, show_spinner=False)
+def _cached_pending_access_requests():
+    return db.count_access_requests()
+
+
+@st.cache_data(ttl=30, show_spinner=False)
+def _cached_admin_pncp_snapshot():
+    """Agrupa as leituras pesadas do catálogo em um snapshot curto e consistente."""
+    try:
+        modality_counts = db.global_catalog_modality_breakdown()
+    except AttributeError:
+        modality_counts = db.global_catalog_modality_counts()
+    return {
+        "stats": db.global_catalog_stats(),
+        "last_update": db.last_catalog_update(),
+        "recent_runs": db.list_sync_runs(10),
+        "modality_counts": modality_counts,
+    }
 
 
 def _client_ip():
@@ -1170,7 +1196,7 @@ def admin_page(user, admin_section="Visão geral"):
     st.caption("Administração · B2G SaaS · Sala de Controle do LicitaNexo")
 
     if admin_section == "Visão geral":
-        stats = db.control_room_stats()
+        stats = _cached_control_room_stats()
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Empresas", stats["companies"])
         c2.metric("Usuários", stats["users"])
@@ -1838,9 +1864,10 @@ def admin_page(user, admin_section="Visão geral"):
 
     if admin_section == "PNCP e fontes":
         st.subheader("Saúde do catálogo PNCP")
-        catalog_stats = db.global_catalog_stats()
-        last_update = db.last_catalog_update()
-        recent_runs = db.list_sync_runs(10)
+        pncp_snapshot = _cached_admin_pncp_snapshot()
+        catalog_stats = pncp_snapshot["stats"]
+        last_update = pncp_snapshot["last_update"]
+        recent_runs = pncp_snapshot["recent_runs"]
         last_run = recent_runs[0] if recent_runs else None
 
         if not last_run:
@@ -1863,10 +1890,7 @@ def admin_page(user, admin_section="Visão geral"):
             f"Catálogo atualizado em: {str(last_update or 'Nunca')[:19].replace('T', ' ')} · "
             f"Versão: {APP_VERSION}"
         )
-        try:
-            modality_counts = db.global_catalog_modality_breakdown()
-        except AttributeError:
-            modality_counts = db.global_catalog_modality_counts()
+        modality_counts = pncp_snapshot["modality_counts"]
         st.markdown("#### Distribuição por modalidade")
         modality_rows = [
             {"Modalidade": name, "Quantidade": total}
@@ -2726,7 +2750,7 @@ def main():
         admin_label = None
         admin_section = None
         if _is_admin_user(user):
-            pending = db.count_access_requests()
+            pending = _cached_pending_access_requests()
             admin_label = f"Administração · {pending} pendente(s)" if pending else "Administração"
             pages = [admin_label]
             st.markdown("##### Sala de Controle")
@@ -2773,5 +2797,4 @@ def main():
 
 
 main()
-
 
