@@ -1,6 +1,7 @@
-﻿import os
+import os
 import re
 import sqlite3
+import threading
 import time
 from pathlib import Path
 
@@ -141,7 +142,7 @@ def _raise_compat(exc):
 
 
 class PostgresCompatConnection:
-    def __init__(self,raw): self.raw=raw
+    def __init__(self,raw,lease=None): self.raw=raw; self._lease=lease; self._closed=False
     def cursor(self): return CompatCursor(self.raw.cursor())
     def execute(self,statement,params=None):
         stmt=str(statement).strip()
@@ -166,9 +167,16 @@ class PostgresCompatConnection:
         return self
     def commit(self): return self.raw.commit()
     def rollback(self): return self.raw.rollback()
-    def close(self): return self.raw.close()
+    def close(self):
+        if self._closed:return None
+        self._closed=True
+        if self._lease is not None:return self._lease.__exit__(None,None,None)
+        return self.raw.close()
     def __enter__(self): return self
     def __exit__(self,typ,val,tb):
+        if self._closed:return False
+        self._closed=True
+        if self._lease is not None:return self._lease.__exit__(typ,val,tb)
         if typ is None:self.raw.commit()
         else:self.raw.rollback()
         self.raw.close(); return False
@@ -176,6 +184,9 @@ class PostgresCompatConnection:
 
 _PG_AUTH_BLOCKED_UNTIL = 0.0
 _PG_AUTH_BLOCKED_REASON = ""
+_PG_POOL = None
+_PG_POOL_KEY = None
+_PG_POOL_LOCK = threading.Lock()
 
 def _looks_like_auth_failure(exc):
     text=str(exc).lower()
@@ -186,6 +197,76 @@ def _looks_like_auth_failure(exc):
         "authentication failed",
     ))
 
+def _pg_config():
+    dsn=os.getenv("DATABASE_URL","").strip()
+    if dsn:
+        return dsn, {"connect_timeout":12}
+    return "", {
+        "host":os.environ["LICITANEXO_PGHOST"],
+        "port":int(os.getenv("LICITANEXO_PGPORT","5432")),
+        "dbname":os.getenv("LICITANEXO_PGDATABASE","postgres"),
+        "user":os.environ["LICITANEXO_PGUSER"],
+        "password":os.environ["LICITANEXO_PGPASSWORD"],
+        "sslmode":"require",
+        "connect_timeout":12,
+    }
+
+
+def _configure_pg_connection(raw):
+    schema=postgres_schema()
+    with raw.cursor() as cur:
+        cur.execute('SET search_path TO "'+schema.replace('"','""')+'", public')
+    raw.commit()
+
+
+def _pg_pool():
+    global _PG_POOL, _PG_POOL_KEY, _PG_AUTH_BLOCKED_UNTIL, _PG_AUTH_BLOCKED_REASON
+    if time.monotonic() < _PG_AUTH_BLOCKED_UNTIL:
+        remaining=max(1,int(_PG_AUTH_BLOCKED_UNTIL-time.monotonic()))
+        raise sqlite3.OperationalError(
+            f"PostgreSQL bloqueado após falha de autenticação. Aguarde {remaining}s. "
+            f"{_PG_AUTH_BLOCKED_REASON}"
+        )
+    try:
+        from psycopg_pool import ConnectionPool
+    except ImportError as exc:
+        raise RuntimeError("Pool PostgreSQL ausente: pip install psycopg-pool") from exc
+    dsn,kwargs=_pg_config()
+    pool_key=(dsn,tuple(sorted(kwargs.items())),postgres_schema())
+    if _PG_POOL is not None and _PG_POOL_KEY==pool_key:
+        return _PG_POOL
+    with _PG_POOL_LOCK:
+        if _PG_POOL is not None and _PG_POOL_KEY==pool_key:
+            return _PG_POOL
+        previous=_PG_POOL
+        try:
+            min_size=max(1,int(os.getenv("LICITANEXO_PG_POOL_MIN","1")))
+            max_size=max(min_size,int(os.getenv("LICITANEXO_PG_POOL_MAX","6")))
+            pool=ConnectionPool(
+                conninfo=dsn,
+                kwargs=kwargs,
+                min_size=min_size,
+                max_size=max_size,
+                timeout=float(os.getenv("LICITANEXO_PG_POOL_TIMEOUT","12")),
+                max_idle=float(os.getenv("LICITANEXO_PG_POOL_MAX_IDLE","300")),
+                max_lifetime=float(os.getenv("LICITANEXO_PG_POOL_MAX_LIFETIME","1800")),
+                configure=_configure_pg_connection,
+                open=False,
+            )
+            pool.open(wait=True,timeout=12)
+        except Exception as exc:
+            if _looks_like_auth_failure(exc):
+                _PG_AUTH_BLOCKED_UNTIL=time.monotonic()+300
+                _PG_AUTH_BLOCKED_REASON=str(exc).splitlines()[0][:240]
+            raise
+        _PG_POOL=pool
+        _PG_POOL_KEY=pool_key
+        if previous is not None:
+            try:previous.close()
+            except Exception:pass
+        return pool
+
+
 def _pg_connect():
     global _PG_AUTH_BLOCKED_UNTIL, _PG_AUTH_BLOCKED_REASON
     if time.monotonic() < _PG_AUTH_BLOCKED_UNTIL:
@@ -194,30 +275,16 @@ def _pg_connect():
             f"PostgreSQL bloqueado após falha de autenticação. Aguarde {remaining}s. "
             f"{_PG_AUTH_BLOCKED_REASON}"
         )
-    try: import psycopg
-    except ImportError as exc: raise RuntimeError("Driver PostgreSQL ausente: pip install psycopg[binary]") from exc
-    dsn=os.getenv("DATABASE_URL","").strip()
     try:
-        if dsn:
-            raw=psycopg.connect(dsn,connect_timeout=12)
-        else:
-            raw=psycopg.connect(
-                host=os.environ["LICITANEXO_PGHOST"],
-                port=int(os.getenv("LICITANEXO_PGPORT","5432")),
-                dbname=os.getenv("LICITANEXO_PGDATABASE","postgres"),
-                user=os.environ["LICITANEXO_PGUSER"],
-                password=os.environ["LICITANEXO_PGPASSWORD"],
-                sslmode="require",connect_timeout=12)
+        pool=_pg_pool()
+        lease=pool.connection(timeout=float(os.getenv("LICITANEXO_PG_POOL_TIMEOUT","12")))
+        raw=lease.__enter__()
     except Exception as exc:
         if _looks_like_auth_failure(exc):
             _PG_AUTH_BLOCKED_UNTIL=time.monotonic()+300
             _PG_AUTH_BLOCKED_REASON=str(exc).splitlines()[0][:240]
         raise
-    schema=postgres_schema()
-    with raw.cursor() as cur:
-        cur.execute('SET search_path TO "'+schema.replace('"','""')+'", public')
-    raw.commit()
-    return PostgresCompatConnection(raw)
+    return PostgresCompatConnection(raw,lease=lease)
 
 
 class ClosingSQLiteConnection(sqlite3.Connection):
@@ -236,4 +303,3 @@ def connect_runtime(sqlite_path, search_fold=None):
         c.create_function("search_fold", 1, search_fold)
     c.execute("PRAGMA foreign_keys=ON"); c.execute("PRAGMA busy_timeout=30000")
     return c
-
