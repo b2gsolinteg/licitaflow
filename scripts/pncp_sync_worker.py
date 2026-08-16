@@ -24,7 +24,8 @@ from src.db_runtime import using_postgres
 from src.pncp import MODALITIES, PncpClient
 
 
-CHECKPOINT_SOURCE = "PNCP_INCREMENTAL"
+INCREMENTAL_CHECKPOINT_SOURCE = "PNCP_INCREMENTAL"
+FULL_CHECKPOINT_SOURCE = "PNCP_FULL_OPEN"
 RUN_SOURCES = ["PNCP_INCREMENTAL", "PNCP_INCREMENTAL_RESUME", "PNCP_FULL", "PNCP"]
 ADVISORY_LOCK_ID = 74291029
 
@@ -36,6 +37,8 @@ class SyncWindow:
     end_date: date
     period_start: str
     period_end: str
+    checkpoint_source: str
+    run_source: str
     resumed: bool
 
 
@@ -50,7 +53,29 @@ def _parse_datetime(value) -> datetime:
 def resolve_sync_window(db: Database, today: date | None = None) -> SyncWindow:
     """Retoma um checkpoint pendente; caso contrário abre uma janela incremental."""
     today = today or date.today()
-    pending = db.latest_incomplete_global_sync_period(CHECKPOINT_SOURCE)
+
+    # A reconciliação completa solicitada no painel tem prioridade. O worker
+    # continua pelos checkpoints até todas as modalidades terminarem.
+    full_pending = db.latest_incomplete_global_sync_period(FULL_CHECKPOINT_SOURCE)
+    if full_pending:
+        key = str(full_pending.get("publication_day") or "")
+        mode = PncpClient.checkpoint_mode_from_key(key)
+        parsed = PncpClient.parse_range_checkpoint_key(key)
+        if mode != "open_proposals" or not parsed:
+            raise RuntimeError("Checkpoint de reconciliação completa PNCP inválido.")
+        start_date, end_date = parsed
+        return SyncWindow(
+            mode=mode,
+            start_date=start_date,
+            end_date=end_date,
+            period_start=str(full_pending.get("period_start") or start_date.isoformat()),
+            period_end=str(full_pending.get("period_end") or end_date.isoformat()),
+            checkpoint_source=FULL_CHECKPOINT_SOURCE,
+            run_source="PNCP_FULL",
+            resumed=True,
+        )
+
+    pending = db.latest_incomplete_global_sync_period(INCREMENTAL_CHECKPOINT_SOURCE)
 
     if pending:
         key = str(pending.get("publication_day") or "")
@@ -74,6 +99,8 @@ def resolve_sync_window(db: Database, today: date | None = None) -> SyncWindow:
             period_end=str(
                 pending.get("period_end") or end_date.isoformat()
             ),
+            checkpoint_source=INCREMENTAL_CHECKPOINT_SOURCE,
+            run_source="PNCP_INCREMENTAL",
             resumed=True,
         )
 
@@ -102,6 +129,8 @@ def resolve_sync_window(db: Database, today: date | None = None) -> SyncWindow:
         end_date=end_date,
         period_start=start_date.isoformat(),
         period_end=end_date.isoformat(),
+        checkpoint_source=INCREMENTAL_CHECKPOINT_SOURCE,
+        run_source="PNCP_INCREMENTAL",
         resumed=False,
     )
 
@@ -212,7 +241,7 @@ def run_sync_cycle(
 
     partial = False
 
-    with db.sync_run_scope(CHECKPOINT_SOURCE) as run_id:
+    with db.sync_run_scope(window.run_source) as run_id:
         for name, code in modalities:
             print(
                 f"PNCP modalidade={name} code={code}",
@@ -228,7 +257,7 @@ def run_sync_cycle(
                     c,
                     "",
                     key,
-                    source=CHECKPOINT_SOURCE,
+                    source=window.checkpoint_source,
                     period_start=window.period_start,
                     period_end=window.period_end,
                 ),
@@ -241,7 +270,7 @@ def run_sync_cycle(
                     completed,
                     saved,
                     error,
-                    source=CHECKPOINT_SOURCE,
+                    source=window.checkpoint_source,
                     period_start=window.period_start,
                     period_end=window.period_end,
                 ),
@@ -280,7 +309,11 @@ def run_sync_cycle(
 
             if stats.get("partial") or errors:
                 partial = True
-                break
+                # Um 429 pede parada imediata. Timeout/5xx fica salvo no
+                # checkpoint, mas não bloqueia as modalidades seguintes.
+                if any("429" in error for error in errors):
+                    break
+                continue
 
         status = (
             "partial"
@@ -363,6 +396,11 @@ def main() -> int:
                 f"max_pages_per_modality={max_pages}",
                 flush=True,
             )
+
+            if window.mode == "open_proposals":
+                timeout = max(timeout, int(os.getenv("PNCP_FULL_TIMEOUT", "60")))
+                max_attempts = max(max_attempts, int(os.getenv("PNCP_FULL_MAX_ATTEMPTS", "6")))
+                page_delay = max(page_delay, float(os.getenv("PNCP_FULL_PAGE_DELAY", "1.8")))
 
             result = run_sync_cycle(
                 db,
