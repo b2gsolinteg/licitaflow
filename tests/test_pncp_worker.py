@@ -210,8 +210,10 @@ class PncpWorkerTests(unittest.TestCase):
             result = run_sync_cycle(db, window, max_pages_per_modality=10)
 
         self.assertEqual(result["status"], "partial")
-        self.assertEqual(result["pages"], 3)
-        self.assertEqual(len(PartialClient.instances[0].sync_calls), 2)
+        # ordered_modalities sempre inclui as cinco modalidades prioritárias.
+        # O cliente simulado devolve três páginas por modalidade.
+        self.assertEqual(result["pages"], 15)
+        self.assertEqual(len(PartialClient.instances[0].sync_calls), 5)
         self.assertEqual(db.finished[1], "partial")
 
 
