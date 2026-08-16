@@ -14,6 +14,7 @@ from src.security_rc25 import SecurityService, SecurityError, RateLimitError, Se
 from src.conversion import ConversionService
 from src.usage import UsageService
 from src.account_admin import AccountAdminService, AccountAdminError
+from src.support import SupportService, SupportError
 from src.billing import BillingService, BillingError
 from src.commercial import CommercialFoundation
 from src.config import (
@@ -50,6 +51,7 @@ account_admin = AccountAdminService(db.path)
 usage = UsageService(db.path)
 conversion = ConversionService(db.path)
 security = SecurityService(db.path, PROJECT_ROOT)
+support = SupportService(db)
 logger.info("Aplicação iniciada · versão %s · ambiente %s", APP_VERSION, ENVIRONMENT)
 
 
@@ -1096,45 +1098,132 @@ def account_page(user):
             } for r in history]), hide_index=True, width="stretch")
 
 
-def assisted_service_page(user):
-    st.header("Atendimento B2G SaaS")
-    st.caption("Peça ajuda nos pontos que mais consomem tempo. A equipe acompanha o pedido dentro do piloto.")
-    with st.container(border=True):
-        st.markdown("#### Solicitar apoio")
-        with st.form("assisted_request", clear_on_submit=True):
+def support_page(user):
+    st.header("💬 Suporte LicitaNexo")
+    st.caption("Converse com nossa equipe dentro do aplicativo. As respostas ficam salvas no seu histórico.")
+
+    with st.expander("Abrir novo atendimento", expanded=False):
+        with st.form("support_new_conversation", clear_on_submit=True):
             c1, c2 = st.columns([3, 1])
             request_type = c1.selectbox(
-                "Tipo de apoio",
-                ["Encontrar oportunidades", "Triagem de edital", "Organizar participação", "Dúvida operacional"],
+                "Assunto",
+                ["Dúvida sobre o aplicativo", "Editais e oportunidades", "Conta e acesso", "Cobrança", "Outro"],
             )
             urgency = c2.selectbox("Prioridade", ["Normal", "Alta", "Urgente"])
-            title = st.text_input("O que você precisa?", placeholder="Ex.: verificar pregões de material hospitalar no Paraná")
-            details = st.text_area(
-                "Detalhes", placeholder="Informe produto/serviço, estados, prazo e link, se houver.", height=110,
+            title = st.text_input("Título", placeholder="Ex.: preciso de ajuda para localizar um edital")
+            body = st.text_area(
+                "Mensagem", placeholder="Descreva sua dúvida com os detalhes necessários.", height=120,
             )
-            if st.form_submit_button("Enviar pedido", type="primary", width="stretch"):
+            if st.form_submit_button("Iniciar conversa", type="primary", width="stretch"):
                 try:
-                    db.create_assisted_request(
-                        user["company_id"], user["id"], request_type, title, details, urgency,
-                    )
-                    st.success("Pedido recebido. A equipe B2G SaaS já consegue visualizá-lo na Administração.")
-                except ValueError as error:
+                    support.create_conversation(user, request_type, title, body, urgency)
+                    st.success("Conversa iniciada. Nossa equipe já pode visualizar sua mensagem.")
+                    st.rerun()
+                except (SupportError, ValueError) as error:
                     st.error(str(error))
-    requests = db.list_assisted_requests(user["company_id"])
-    st.markdown("### Meus pedidos")
-    if not requests:
-        st.info("Você ainda não solicitou atendimento.")
-    for request in requests:
-        with st.container(border=True):
-            c1, c2 = st.columns([4, 1])
-            c1.write(f'**{request["title"]}**')
-            c1.caption(f'{request["request_type"]} · prioridade {request["urgency"]} · {str(request["created_at"])[:16]}')
-            if request["details"]:
-                c1.write(request["details"])
-            if request["admin_notes"]:
-                c1.info(f'Retorno B2G SaaS: {request["admin_notes"]}')
-            c2.metric("Situação", request["status"])
 
+    conversations = support.list_conversations(user["company_id"])
+    st.markdown("### Minhas conversas")
+    if not conversations:
+        st.info("Você ainda não abriu nenhuma conversa.")
+        return
+
+    for request in conversations:
+        label = f'{request["title"]} · {request["status"]}'
+        with st.expander(label, expanded=False):
+            st.caption(
+                f'{request["request_type"]} · prioridade {request["urgency"]} · '
+                f'aberto em {_format_datetime(request["created_at"])}'
+            )
+            if request["details"]:
+                with st.chat_message("user"):
+                    st.write(request["details"])
+            if request["admin_notes"]:
+                with st.chat_message("assistant"):
+                    st.write(request["admin_notes"])
+            for message in support.list_messages(request["id"], user["company_id"]):
+                role = "assistant" if message["sender_role"] == "admin" else "user"
+                with st.chat_message(role):
+                    st.write(message["body"])
+                    st.caption(f'{message["sender_name"]} · {_format_datetime(message["created_at"])}')
+
+            if request["status"] not in {"Cancelada"}:
+                with st.form(f'support_reply_{request["id"]}', clear_on_submit=True):
+                    reply = st.text_area(
+                        "Responder", key=f'support_reply_body_{request["id"]}',
+                        placeholder="Digite sua mensagem...", height=90,
+                    )
+                    if st.form_submit_button("Enviar mensagem", type="primary"):
+                        try:
+                            support.add_message(
+                                request["id"], user["id"], "user", reply,
+                                company_id=user["company_id"],
+                            )
+                            st.rerun()
+                        except SupportError as error:
+                            st.error(str(error))
+
+
+def admin_support_page(user):
+    st.header("🤝 Atendimentos")
+    st.caption("Conversas abertas pelos clientes do LicitaNexo.")
+
+    status_filter = st.selectbox(
+        "Filtrar por situação",
+        ["Todos", "Recebida", "Em atendimento", "Concluída", "Cancelada"],
+        key="support_admin_status_filter",
+    )
+    conversations = support.list_conversations()
+    if status_filter != "Todos":
+        conversations = [item for item in conversations if item["status"] == status_filter]
+    if not conversations:
+        st.info("Nenhum atendimento encontrado para este filtro.")
+        return
+
+    for request in conversations:
+        label = f'{request["company_name"]} · {request["title"]} · {request["status"]}'
+        with st.expander(label, expanded=request["status"] in {"Recebida", "Em atendimento"}):
+            st.caption(
+                f'{request["user_name"]} · {request["user_email"]} · '
+                f'{request["request_type"]} · prioridade {request["urgency"]}'
+            )
+            if request["details"]:
+                with st.chat_message("user"):
+                    st.write(request["details"])
+            if request["admin_notes"]:
+                with st.chat_message("assistant"):
+                    st.write(request["admin_notes"])
+            for message in support.list_messages(request["id"]):
+                role = "assistant" if message["sender_role"] == "admin" else "user"
+                with st.chat_message(role):
+                    st.write(message["body"])
+                    st.caption(f'{message["sender_name"]} · {_format_datetime(message["created_at"])}')
+
+            c1, c2 = st.columns([3, 1])
+            with c1.form(f'admin_support_reply_{request["id"]}', clear_on_submit=True):
+                reply = st.text_area(
+                    "Responder ao cliente", key=f'admin_support_body_{request["id"]}',
+                    placeholder="Digite a resposta da equipe...", height=90,
+                )
+                if st.form_submit_button("Enviar resposta", type="primary"):
+                    try:
+                        support.add_message(request["id"], user["id"], "admin", reply)
+                        st.rerun()
+                    except SupportError as error:
+                        st.error(str(error))
+            with c2.form(f'admin_support_status_{request["id"]}'):
+                statuses = ["Recebida", "Em atendimento", "Concluída", "Cancelada"]
+                status = st.selectbox(
+                    "Situação", statuses,
+                    index=statuses.index(request["status"]) if request["status"] in statuses else 0,
+                    key=f'admin_support_status_value_{request["id"]}',
+                )
+                if st.form_submit_button("Atualizar situação"):
+                    try:
+                        support.update_status(request["id"], status)
+                        st.rerun()
+                    except SupportError as error:
+                        st.error(str(error))
 
 def knowledge_page():
     st.header("Primeiros Passos")
@@ -1702,28 +1791,7 @@ def admin_page(user, admin_section="Visão geral"):
             st.dataframe(funnel, hide_index=True, width="stretch")
 
     if admin_section == "Atendimentos":
-        service_requests = db.list_assisted_requests()
-        if not service_requests:
-            st.info("Nenhum pedido de atendimento recebido.")
-        for request in service_requests:
-            with st.container(border=True):
-                st.write(f'**{request["company_name"]} · {request["title"]}**')
-                st.caption(
-                    f'{request["user_name"]} · {request["user_email"]} · '
-                    f'{request["request_type"]} · prioridade {request["urgency"]}'
-                )
-                if request["details"]:
-                    st.write(request["details"])
-                with st.form(f'service_{request["id"]}'):
-                    statuses = ["Recebida", "Em atendimento", "Concluída", "Cancelada"]
-                    status = st.selectbox(
-                        "Situação", statuses,
-                        index=statuses.index(request["status"]) if request["status"] in statuses else 0,
-                    )
-                    notes = st.text_area("Retorno visível ao cliente", value=request["admin_notes"] or "")
-                    if st.form_submit_button("Salvar atendimento", type="primary"):
-                        db.update_assisted_request(request["id"], status, notes)
-                        st.rerun()
+        admin_support_page(user)
     if admin_section == "Recuperação":
         recoveries = db.list_password_reset_requests()
         if not recoveries:
@@ -2799,10 +2867,10 @@ def main():
         else:
             pages = [
                 "📅 Calendário", "🔎 Buscar Editais", "⭐ Meus Editais",
-                "📄 Analisar Edital", "👤 Minha Conta",
+                "📄 Analisar Edital", "💬 Suporte", "👤 Minha Conta",
             ]
             if not allowed:
-                pages = ["👤 Minha Conta"]
+                pages = ["💬 Suporte", "👤 Minha Conta"]
         # Navegação programática deve ser aplicada antes de o widget com a chave
         # ``main_navigation`` ser instanciado. Botões de outras telas apenas gravam
         # uma intenção e pedem rerun; ela é consumida aqui na execução seguinte.
@@ -2825,6 +2893,8 @@ def main():
         pipeline_page(db, user)
     elif page == "📄 Analisar Edital":
         analysis_page(db, user, usage)
+    elif page == "💬 Suporte":
+        support_page(user)
     elif page == "👤 Minha Conta":
         essential_account_page(user)
     else:
