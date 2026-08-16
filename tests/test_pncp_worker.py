@@ -5,7 +5,9 @@ from unittest.mock import patch
 
 import requests
 
-from scripts.pncp_sync_worker import SyncWindow, resolve_sync_window, run_sync_cycle
+from scripts.pncp_sync_worker import (
+    SyncWindow, resolve_sync_window, run_sync_cycle, schedule_full_reconciliation,
+)
 from src.pncp import PncpClient, PncpTemporaryError
 
 
@@ -16,7 +18,9 @@ class ResolveDb:
         self.count = count
 
     def latest_incomplete_global_sync_period(self, source):
-        return self.pending
+        if isinstance(self.pending, dict) and ("full" in self.pending or "incremental" in self.pending):
+            return self.pending.get("full" if source == "PNCP_FULL_OPEN" else "incremental")
+        return self.pending if source == "PNCP_INCREMENTAL" else None
 
     def last_successful_sync_run(self, sources):
         return self.anchor
@@ -46,6 +50,18 @@ class FakeRunDb:
 
     def upsert_global_catalog_page(self, items):
         return len(items)
+
+
+class ScheduleDb:
+    def __init__(self, pending=None):
+        self.pending = pending
+        self.saved = []
+
+    def latest_incomplete_global_sync_period(self, source):
+        return self.pending
+
+    def save_global_checkpoint(self, *args, **kwargs):
+        self.saved.append((args, kwargs))
 
 
 class PartialClient:
@@ -84,6 +100,39 @@ class PncpWorkerTests(unittest.TestCase):
         self.assertEqual(window.mode, "update")
         self.assertEqual(window.start_date, date(2026, 8, 10))
         self.assertEqual(window.end_date, date(2026, 8, 12))
+
+    def test_weekly_schedule_creates_all_modalities_once(self):
+        db = ScheduleDb()
+        created = schedule_full_reconciliation(db, today=date(2026, 8, 16), horizon_days=60)
+        self.assertTrue(created)
+        self.assertEqual(len(db.saved), 13)
+        self.assertTrue(all(call[1]["source"] == "PNCP_FULL_OPEN" for call in db.saved))
+        self.assertTrue(all(call[1]["period_end"] == "2026-10-15" for call in db.saved))
+
+        pending_db = ScheduleDb(pending={"publication_day": "open_proposals:range:2026-08-16:2026-10-15"})
+        self.assertFalse(schedule_full_reconciliation(pending_db, today=date(2026, 8, 16)))
+        self.assertEqual(pending_db.saved, [])
+
+    def test_full_reconciliation_has_priority_over_incremental(self):
+        db = ResolveDb(
+            pending={
+                "full": {
+                    "publication_day": "open_proposals:range:2026-08-16:2026-10-15",
+                    "period_start": "2026-08-16",
+                    "period_end": "2026-10-15",
+                },
+                "incremental": {
+                    "publication_day": "update:range:2026-08-15:2026-08-16",
+                    "period_start": "2026-08-15",
+                    "period_end": "2026-08-16",
+                },
+            }
+        )
+        window = resolve_sync_window(db, today=date(2026, 8, 16))
+        self.assertEqual(window.mode, "open_proposals")
+        self.assertEqual(window.checkpoint_source, "PNCP_FULL_OPEN")
+        self.assertEqual(window.run_source, "PNCP_FULL")
+        self.assertTrue(window.resumed)
 
     def test_resolve_new_cycle_overlaps_one_day(self):
         db = ResolveDb(
@@ -144,7 +193,7 @@ class PncpWorkerTests(unittest.TestCase):
         self.assertEqual(session.calls, 4)
         self.assertIn("após 4 tentativas", str(ctx.exception))
 
-    def test_worker_stops_after_first_partial_modality(self):
+    def test_worker_continues_other_modalities_after_non_429_timeout(self):
         db = FakeRunDb()
         window = SyncWindow(
             mode="update",
@@ -152,6 +201,8 @@ class PncpWorkerTests(unittest.TestCase):
             end_date=date(2026, 8, 12),
             period_start="2026-08-11",
             period_end="2026-08-12",
+            checkpoint_source="PNCP_INCREMENTAL",
+            run_source="PNCP_INCREMENTAL",
             resumed=False,
         )
         PartialClient.instances.clear()
@@ -159,8 +210,10 @@ class PncpWorkerTests(unittest.TestCase):
             result = run_sync_cycle(db, window, max_pages_per_modality=10)
 
         self.assertEqual(result["status"], "partial")
-        self.assertEqual(result["pages"], 3)
-        self.assertEqual(len(PartialClient.instances[0].sync_calls), 1)
+        # ordered_modalities sempre inclui as cinco modalidades prioritárias.
+        # O cliente simulado devolve três páginas por modalidade.
+        self.assertEqual(result["pages"], 15)
+        self.assertEqual(len(PartialClient.instances[0].sync_calls), 5)
         self.assertEqual(db.finished[1], "partial")
 
 
