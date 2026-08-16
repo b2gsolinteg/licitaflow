@@ -5,7 +5,9 @@ from unittest.mock import patch
 
 import requests
 
-from scripts.pncp_sync_worker import SyncWindow, resolve_sync_window, run_sync_cycle
+from scripts.pncp_sync_worker import (
+    SyncWindow, resolve_sync_window, run_sync_cycle, schedule_full_reconciliation,
+)
 from src.pncp import PncpClient, PncpTemporaryError
 
 
@@ -50,6 +52,18 @@ class FakeRunDb:
         return len(items)
 
 
+class ScheduleDb:
+    def __init__(self, pending=None):
+        self.pending = pending
+        self.saved = []
+
+    def latest_incomplete_global_sync_period(self, source):
+        return self.pending
+
+    def save_global_checkpoint(self, *args, **kwargs):
+        self.saved.append((args, kwargs))
+
+
 class PartialClient:
     instances = []
 
@@ -86,6 +100,18 @@ class PncpWorkerTests(unittest.TestCase):
         self.assertEqual(window.mode, "update")
         self.assertEqual(window.start_date, date(2026, 8, 10))
         self.assertEqual(window.end_date, date(2026, 8, 12))
+
+    def test_weekly_schedule_creates_all_modalities_once(self):
+        db = ScheduleDb()
+        created = schedule_full_reconciliation(db, today=date(2026, 8, 16), horizon_days=60)
+        self.assertTrue(created)
+        self.assertEqual(len(db.saved), 13)
+        self.assertTrue(all(call[1]["source"] == "PNCP_FULL_OPEN" for call in db.saved))
+        self.assertTrue(all(call[1]["period_end"] == "2026-10-15" for call in db.saved))
+
+        pending_db = ScheduleDb(pending={"publication_day": "open_proposals:range:2026-08-16:2026-10-15"})
+        self.assertFalse(schedule_full_reconciliation(pending_db, today=date(2026, 8, 16)))
+        self.assertEqual(pending_db.saved, [])
 
     def test_full_reconciliation_has_priority_over_incremental(self):
         db = ResolveDb(
