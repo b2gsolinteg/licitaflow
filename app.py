@@ -954,7 +954,69 @@ def login_page():
 
             elif mode == "invite":
                 st.caption("Recebeu um convite? Informe o código enviado pela B2G SaaS.")
-                st.info("Use o fluxo de ativação já enviado no seu convite.")
+                with st.form("activate_invitation"):
+                    email = st.text_input(
+                        "E-mail do convite",
+                        placeholder="seu@email.com",
+                    )
+                    invitation_code = st.text_input(
+                        "Código de acesso",
+                        placeholder="NX-XXXXXXXX",
+                    )
+                    password = st.text_input(
+                        "Crie sua senha",
+                        type="password",
+                        placeholder="Mínimo de 8 caracteres",
+                    )
+                    password_confirmation = st.text_input(
+                        "Confirme sua senha",
+                        type="password",
+                    )
+                    if st.form_submit_button("→  Ativar convite", width="stretch"):
+                        client_ip = _client_ip()
+                        normalized_email = str(email or "").strip().lower()
+                        try:
+                            if not normalized_email or not str(invitation_code or "").strip():
+                                raise ValueError("Informe o e-mail e o código de acesso do convite.")
+                            if len(str(password or "")) < 8:
+                                raise ValueError("A senha deve ter pelo menos 8 caracteres.")
+                            if password != password_confirmation:
+                                raise ValueError("As senhas não coincidem.")
+
+                            security.precheck("invitation_activation", normalized_email, client_ip)
+                            user = db.activate_invitation(
+                                normalized_email,
+                                invitation_code,
+                                password,
+                            )
+                            if not user:
+                                raise ValueError("Não foi possível ativar o convite.")
+
+                            security.register_attempt(
+                                "invitation_activation",
+                                normalized_email,
+                                client_ip,
+                                success=True,
+                            )
+                            token = security.create_session(
+                                user.get("company_id", ""),
+                                user.get("id", ""),
+                            )
+                            st.session_state.user = user
+                            st.session_state.security_session_token = token
+                            st.session_state.motivational_phrase = random.choice(MOTIVATIONAL_PHRASES)
+                            st.session_state.just_logged_in = True
+                            st.rerun()
+                        except RateLimitError as error:
+                            st.warning(str(error))
+                        except ValueError as error:
+                            security.register_attempt(
+                                "invitation_activation",
+                                normalized_email,
+                                client_ip,
+                                success=False,
+                            )
+                            st.warning(str(error))
 
             else:
                 st.caption("Recupere seu acesso usando o e-mail cadastrado.")
