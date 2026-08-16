@@ -1019,8 +1019,72 @@ def login_page():
                             st.warning(str(error))
 
             else:
-                st.caption("Recupere seu acesso usando o e-mail cadastrado.")
-                st.info("Use o fluxo de recuperação de senha já configurado no LicitaNexo.")
+                st.caption("Solicite um código e depois crie uma nova senha.")
+                with st.expander("1. Solicitar código de recuperação", expanded=True):
+                    with st.form("password_recovery_request"):
+                        recovery_email = st.text_input(
+                            "E-mail cadastrado",
+                            placeholder="seu@email.com",
+                            key="password_recovery_request_email",
+                        )
+                        if st.form_submit_button("Solicitar recuperação", width="stretch"):
+                            normalized_email = str(recovery_email or "").strip().lower()
+                            client_ip = _client_ip()
+                            try:
+                                security.precheck("password_recovery_request", normalized_email, client_ip)
+                                db.request_password_reset(normalized_email)
+                                security.register_attempt(
+                                    "password_recovery_request", normalized_email, client_ip, success=True,
+                                )
+                                st.success(
+                                    "Solicitação registrada. Se o e-mail estiver cadastrado, "
+                                    "a equipe de suporte poderá gerar seu código de recuperação."
+                                )
+                            except RateLimitError as error:
+                                st.warning(str(error))
+                            except ValueError as error:
+                                st.warning(str(error))
+
+                with st.expander("2. Usar código e redefinir senha", expanded=False):
+                    with st.form("password_recovery_reset"):
+                        reset_email = st.text_input(
+                            "E-mail cadastrado",
+                            placeholder="seu@email.com",
+                            key="password_recovery_reset_email",
+                        )
+                        recovery_code = st.text_input(
+                            "Código de recuperação",
+                            placeholder="NX-R-XXXXXXXX",
+                        )
+                        new_password = st.text_input(
+                            "Nova senha", type="password", placeholder="Mínimo de 8 caracteres",
+                        )
+                        new_password_confirmation = st.text_input(
+                            "Confirme a nova senha", type="password",
+                        )
+                        if st.form_submit_button("Redefinir senha", width="stretch"):
+                            normalized_email = str(reset_email or "").strip().lower()
+                            client_ip = _client_ip()
+                            try:
+                                if not normalized_email or not str(recovery_code or "").strip():
+                                    raise ValueError("Informe o e-mail e o código de recuperação.")
+                                if len(str(new_password or "")) < 8:
+                                    raise ValueError("A senha deve ter pelo menos 8 caracteres.")
+                                if new_password != new_password_confirmation:
+                                    raise ValueError("As senhas não coincidem.")
+                                security.precheck("password_recovery_reset", normalized_email, client_ip)
+                                db.reset_password(normalized_email, recovery_code, new_password)
+                                security.register_attempt(
+                                    "password_recovery_reset", normalized_email, client_ip, success=True,
+                                )
+                                st.success("Senha alterada. Volte à aba Entrar e use sua nova senha.")
+                            except RateLimitError as error:
+                                st.warning(str(error))
+                            except ValueError as error:
+                                security.register_attempt(
+                                    "password_recovery_reset", normalized_email, client_ip, success=False,
+                                )
+                                st.warning(str(error))
 
         st.markdown(
             """
@@ -1741,10 +1805,14 @@ def admin_page(user, admin_section="Visão geral"):
                         except MailError as error:
                             db.record_email_event("invitation", request["email"], "error", str(error))
                             mail_message = str(error)
-                    st.session_state.last_invitation = {
+                    invitation_data = {
                         "email": request["email"], "code": code, "mail_status": mail_status,
                         "mail_message": mail_message, "trial_days": trial_days,
                     }
+                    st.session_state.last_invitation = invitation_data
+                    st.session_state.setdefault("admin_invitation_codes", {})[
+                        str(request["id"])
+                    ] = invitation_data
                     logger.info("Convite gerado para %s · envio=%s", request["email"], mail_status)
                     st.rerun()
                 if b3.button(
@@ -1851,6 +1919,68 @@ def admin_page(user, admin_section="Visão geral"):
                 "Ativado": r.get("activated_at"),
             } for r in access_requests])
             st.dataframe(funnel, hide_index=True, width="stretch")
+
+            invited_requests = [
+                request for request in access_requests if request.get("status") == "invited"
+            ]
+            if invited_requests:
+                st.markdown("#### Códigos de acesso pendentes")
+                st.caption(
+                    "Por segurança, o banco guarda somente o hash do código. "
+                    "Códigos gerados nesta sessão ficam visíveis abaixo; para convites antigos, "
+                    "gere um novo código, que substitui o anterior."
+                )
+                invitation_codes = st.session_state.setdefault("admin_invitation_codes", {})
+                invited_labels = {
+                    str(request["id"]): f'{request["name"]} · {request["email"]}'
+                    for request in invited_requests
+                }
+                selected_request_id = st.selectbox(
+                    "Convite pendente",
+                    list(invited_labels),
+                    format_func=invited_labels.get,
+                    key="admin_pending_invitation_request",
+                )
+                selected_request = next(
+                    request for request in invited_requests
+                    if str(request["id"]) == selected_request_id
+                )
+                selected_trial_days = int(selected_request.get("approved_trial_days") or 7)
+                if selected_request_id in invitation_codes:
+                    visible_invitation = invitation_codes[selected_request_id]
+                    st.success("Código ativo gerado nesta sessão administrativa.")
+                    st.code(
+                        f'E-mail: {visible_invitation["email"]}\n'
+                        f'Código: {visible_invitation["code"]}\n'
+                        f'Teste: {visible_invitation.get("trial_days", selected_trial_days)} dias'
+                    )
+                else:
+                    st.info(
+                        "O código original não pode ser recuperado porque não é armazenado em texto aberto. "
+                        "Use o botão abaixo para substituí-lo por um novo."
+                    )
+                if st.button(
+                    "Gerar novo código para este convite",
+                    type="primary",
+                    key="admin_regenerate_pending_invitation",
+                ):
+                    code = db.approve_access_request(
+                        selected_request["id"], trial_days=selected_trial_days,
+                    )
+                    invitation_data = {
+                        "email": selected_request["email"],
+                        "code": code,
+                        "mail_status": "manual",
+                        "mail_message": "Novo código gerado para envio ao interessado.",
+                        "trial_days": selected_trial_days,
+                    }
+                    invitation_codes[selected_request_id] = invitation_data
+                    st.session_state.last_invitation = invitation_data
+                    logger.info(
+                        "Código de convite regenerado para %s pela administração",
+                        selected_request["email"],
+                    )
+                    st.rerun()
 
     if admin_section == "Atendimentos":
         admin_support_page(user)
