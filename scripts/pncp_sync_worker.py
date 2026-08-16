@@ -135,6 +135,38 @@ def resolve_sync_window(db: Database, today: date | None = None) -> SyncWindow:
     )
 
 
+def schedule_full_reconciliation(
+    db: Database,
+    today: date | None = None,
+    horizon_days: int = 60,
+) -> bool:
+    """Cria a reconciliação semanal sem reiniciar um trabalho pendente."""
+    if db.latest_incomplete_global_sync_period(FULL_CHECKPOINT_SOURCE):
+        return False
+
+    start_date = today or date.today()
+    end_date = start_date + timedelta(days=max(1, int(horizon_days)))
+    checkpoint_key = (
+        f"open_proposals:range:{start_date.isoformat()}:{end_date.isoformat()}"
+    )
+
+    for modality_code in sorted({int(code) for code in MODALITIES.values()}):
+        db.save_global_checkpoint(
+            modality_code,
+            "",
+            checkpoint_key,
+            1,
+            False,
+            0,
+            "",
+            source=FULL_CHECKPOINT_SOURCE,
+            period_start=start_date.isoformat(),
+            period_end=end_date.isoformat(),
+        )
+
+    return True
+
+
 def ordered_modalities(client: PncpClient):
     """Mesma prioridade da interface administrativa, com fallback local."""
     modalities = client.fetch_modalities()
@@ -382,6 +414,16 @@ def main() -> int:
 
     try:
         with worker_lock(db):
+            if os.getenv("PNCP_AUTO_FULL_RECONCILE", "0") == "1":
+                created = schedule_full_reconciliation(
+                    db,
+                    horizon_days=int(os.getenv("PNCP_FULL_HORIZON_DAYS", "60")),
+                )
+                print(
+                    "PNCP_FULL_AUTO_SCHEDULE " + ("created" if created else "already_pending"),
+                    flush=True,
+                )
+
             window = resolve_sync_window(db)
 
             print(
