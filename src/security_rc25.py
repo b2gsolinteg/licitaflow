@@ -139,7 +139,7 @@ class SecurityService:
                 c.execute("UPDATE security_sessions SET revoked_at=CURRENT_TIMESTAMP WHERE token_hash=?",(th,))
                 raise SessionExpiredError("Sua sessão expirou por segurança. Entre novamente.")
             c.execute("UPDATE security_sessions SET last_seen_at=CURRENT_TIMESTAMP WHERE token_hash=?",(th,))
-            return {"company_id":str(r["company_id"] or ""),"user_id":str(r["user_id"] or "")}
+        return True
 
     def revoke_session(self,token):
         if not token:return
