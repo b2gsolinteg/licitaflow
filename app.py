@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta
+import os
 import random
 import re
 import time
@@ -9,6 +10,7 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+from streamlit_cookies_manager import EncryptedCookieManager
 
 from src.security_rc25 import SecurityService, SecurityError, RateLimitError, SessionExpiredError
 from src.conversion import ConversionService
@@ -42,6 +44,34 @@ PROJECT_ROOT = Path(__file__).parent
 LOGO_PATH = PROJECT_ROOT / "assets" / "licitanexo-logo.png"
 LOGIN_ART_PATH = PROJECT_ROOT / "assets" / "login-licitacoes.png"
 st.set_page_config(page_title=APP_NAME, page_icon="🛡️", layout="wide", initial_sidebar_state="locked")
+
+
+def _cookie_password():
+    value = (
+        os.getenv("LICITANEXO_COOKIE_PASSWORD", "").strip()
+        or os.getenv("COOKIES_PASSWORD", "").strip()
+    )
+    if value:
+        return value
+    try:
+        return str(
+            st.secrets.get("LICITANEXO_COOKIE_PASSWORD")
+            or st.secrets.get("COOKIES_PASSWORD")
+            or ""
+        ).strip()
+    except Exception:
+        return ""
+
+
+_COOKIE_PASSWORD = _cookie_password()
+session_cookies = (
+    EncryptedCookieManager(prefix="licitanexo/session/", password=_COOKIE_PASSWORD)
+    if _COOKIE_PASSWORD
+    else None
+)
+if session_cookies is not None and not session_cookies.ready():
+    st.stop()
+
 logger = configure_logging(PROJECT_ROOT, ENVIRONMENT)
 db = Database(database_path(PROJECT_ROOT))
 commercial = CommercialFoundation(db.path, 7)
@@ -51,6 +81,44 @@ usage = UsageService(db.path)
 conversion = ConversionService(db.path)
 security = SecurityService(db.path, PROJECT_ROOT)
 logger.info("Aplicação iniciada · versão %s · ambiente %s", APP_VERSION, ENVIRONMENT)
+
+
+SESSION_COOKIE_NAME = "security_session_token"
+
+
+def _persist_browser_session(token):
+    if session_cookies is None or not token:
+        return
+    session_cookies[SESSION_COOKIE_NAME] = str(token)
+    session_cookies.save()
+
+
+def _clear_browser_session():
+    if session_cookies is None:
+        return
+    if SESSION_COOKIE_NAME in session_cookies:
+        del session_cookies[SESSION_COOKIE_NAME]
+        session_cookies.save()
+
+
+def _restore_browser_session():
+    if session_cookies is None:
+        return False
+    token = str(session_cookies.get(SESSION_COOKIE_NAME) or "").strip()
+    if not token:
+        return False
+    try:
+        identity = security.validate_session(token)
+        user = db.get_user(identity["company_id"], identity["user_id"])
+        if not user:
+            raise SessionExpiredError("Usuário da sessão não foi encontrado.")
+    except SessionExpiredError:
+        _clear_browser_session()
+        return False
+    st.session_state.user = user
+    st.session_state.security_session_token = token
+    st.session_state.motivational_phrase = random.choice(MOTIVATIONAL_PHRASES)
+    return True
 
 
 @st.cache_data(ttl=15, show_spinner=False)
@@ -892,6 +960,10 @@ def login_page():
                                 conversion.record_event("login", user.get("company_id",""), user.get("id",""), {"email":user.get("email","")})
                                 st.session_state.user = user
                                 st.session_state.security_session_token = token
+                                if remember:
+                                    _persist_browser_session(token)
+                                else:
+                                    _clear_browser_session()
                                 st.session_state.motivational_phrase = random.choice(MOTIVATIONAL_PHRASES)
                                 st.session_state.just_logged_in = True
                                 st.rerun()
@@ -2728,7 +2800,7 @@ def calendar_page(user):
 
 def main():
     apply_brand()
-    if "user" not in st.session_state:
+    if "user" not in st.session_state and not _restore_browser_session():
         login_page()
         return
     user = st.session_state.user
@@ -2736,6 +2808,7 @@ def main():
         security.validate_session(st.session_state.get("security_session_token"))
     except SessionExpiredError as error:
         security.event("session_expired", user.get("email",""), _client_ip(), False, str(error))
+        _clear_browser_session()
         st.session_state.clear()
         st.warning(str(error))
         login_page()
@@ -2790,6 +2863,7 @@ def main():
         if st.button("↪ Sair", width="stretch"):
             security.revoke_session(st.session_state.get("security_session_token"))
             security.event("logout", user.get("email",""), _client_ip(), True, f'user_id={user.get("id","")}')
+            _clear_browser_session()
             st.session_state.clear()
             st.rerun()
     if page == "📅 Calendário":

@@ -6,3 +6,4 @@ pypdf>=5,<7
 reportlab>=4,<5
 psycopg[binary]>=3.3,<4
 psycopg-pool>=3.3,<4
+streamlit-cookies-manager>=0.2,<0.3
