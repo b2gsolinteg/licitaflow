@@ -2124,14 +2124,39 @@ def admin_page(user, admin_section="Visão geral"):
                 "Use quando quiser conferir novamente todas as oportunidades abertas. É mais demorado; "
                 "a atualização diária normal acima é incremental."
             )
-            if st.button("Reconciliar todas as oportunidades abertas", key="admin_full_reconcile", width="stretch"):
+            pending_full = db.latest_incomplete_global_sync_period("PNCP_FULL_OPEN")
+            if pending_full:
+                st.info(
+                    "A reconciliação completa já está na fila automática. O worker "
+                    "retomará os checkpoints até concluir todas as modalidades; não é necessário clicar novamente."
+                )
+            if st.button(
+                "Iniciar reconciliação automática das oportunidades abertas",
+                key="admin_full_reconcile",
+                width="stretch",
+                disabled=bool(pending_full),
+            ):
                 full_start = date.today()
                 full_end = date.today() + timedelta(days=int(horizon_days))
-                full_client = PncpClient(mode="open_proposals", timeout=60, page_delay=1.8, max_attempts=6)
-                _run_pncp_sync(
-                    full_client, full_start, full_end,
-                    "PNCP_FULL", "PNCP_FULL_OPEN",
-                    full_start.isoformat(), full_end.isoformat(), "Reconciliando catálogo completo",
+                checkpoint_key = (
+                    f"open_proposals:range:{full_start.isoformat()}:{full_end.isoformat()}"
+                )
+                for modality_code in sorted({int(code) for code in MODALITIES.values()}):
+                    db.save_global_checkpoint(
+                        modality_code,
+                        "",
+                        checkpoint_key,
+                        1,
+                        False,
+                        0,
+                        "",
+                        source="PNCP_FULL_OPEN",
+                        period_start=full_start.isoformat(),
+                        period_end=full_end.isoformat(),
+                    )
+                st.success(
+                    "Reconciliação agendada. O processamento continuará automaticamente "
+                    "a cada 15 minutos, retomando do último checkpoint até finalizar."
                 )
 
         if recent_runs:
