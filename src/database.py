@@ -1,4 +1,4 @@
-﻿import sqlite3
+import sqlite3
 import re
 import hashlib
 import secrets
@@ -13,6 +13,21 @@ from .config import APP_VERSION, LEGAL_VERSION, TRIAL_DAYS
 from .db_runtime import ClosingSQLiteConnection, connect_runtime, using_postgres
 from .security import hash_password, verify_password
 from .pncp import canonical_modality_name
+
+
+def _timestamp_not_expired(value, *, allow_missing=False):
+    """Compare SQLite text or PostgreSQL timestamps without mixing SQL types."""
+    if value is None or not str(value).strip():
+        return allow_missing
+    try:
+        if isinstance(value, datetime):
+            expires_at = value
+        else:
+            expires_at = datetime.fromisoformat(str(value).strip().replace("Z", "+00:00"))
+        now = datetime.now(expires_at.tzinfo) if expires_at.tzinfo else datetime.now()
+        return expires_at >= now
+    except (TypeError, ValueError):
+        return False
 
 
 class Database:
@@ -1037,8 +1052,12 @@ class Database:
         code = str(invitation_code or "").strip().upper()
         with self.connect() as conn:
             request = conn.execute("""
-                SELECT * FROM access_requests WHERE email=? AND status='invited' AND (invitation_expires_at IS NULL OR invitation_expires_at >= CURRENT_TIMESTAMP)
+                SELECT * FROM access_requests WHERE email=? AND status='invited'
             """, (normalized_email,)).fetchone()
+            if request and not _timestamp_not_expired(
+                request["invitation_expires_at"], allow_missing=True
+            ):
+                request = None
             if not request or not verify_password(code, request["invitation_hash"]):
                 raise ValueError("E-mail ou código de convite inválido.")
             if conn.execute("SELECT 1 FROM users WHERE email=?", (normalized_email,)).fetchone():
@@ -1145,9 +1164,10 @@ class Database:
                 FROM password_reset_requests r
                 JOIN users u ON u.id=r.user_id
                 WHERE u.email=? AND r.status='code_generated'
-                  AND r.expires_at >= CURRENT_TIMESTAMP
                 ORDER BY r.code_generated_at DESC LIMIT 1
             """, (normalized_email,)).fetchone()
+            if request and not _timestamp_not_expired(request["expires_at"]):
+                request = None
             if not request or not verify_password(code, request["code_hash"]):
                 raise ValueError("E-mail ou código de recuperação inválido ou expirado.")
             conn.execute(
