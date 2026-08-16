@@ -16,7 +16,9 @@ class ResolveDb:
         self.count = count
 
     def latest_incomplete_global_sync_period(self, source):
-        return self.pending
+        if isinstance(self.pending, dict) and ("full" in self.pending or "incremental" in self.pending):
+            return self.pending.get("full" if source == "PNCP_FULL_OPEN" else "incremental")
+        return self.pending if source == "PNCP_INCREMENTAL" else None
 
     def last_successful_sync_run(self, sources):
         return self.anchor
@@ -85,6 +87,27 @@ class PncpWorkerTests(unittest.TestCase):
         self.assertEqual(window.start_date, date(2026, 8, 10))
         self.assertEqual(window.end_date, date(2026, 8, 12))
 
+    def test_full_reconciliation_has_priority_over_incremental(self):
+        db = ResolveDb(
+            pending={
+                "full": {
+                    "publication_day": "open_proposals:range:2026-08-16:2026-10-15",
+                    "period_start": "2026-08-16",
+                    "period_end": "2026-10-15",
+                },
+                "incremental": {
+                    "publication_day": "update:range:2026-08-15:2026-08-16",
+                    "period_start": "2026-08-15",
+                    "period_end": "2026-08-16",
+                },
+            }
+        )
+        window = resolve_sync_window(db, today=date(2026, 8, 16))
+        self.assertEqual(window.mode, "open_proposals")
+        self.assertEqual(window.checkpoint_source, "PNCP_FULL_OPEN")
+        self.assertEqual(window.run_source, "PNCP_FULL")
+        self.assertTrue(window.resumed)
+
     def test_resolve_new_cycle_overlaps_one_day(self):
         db = ResolveDb(
             anchor={"finished_at": "2026-08-12T18:30:00", "started_at": "2026-08-12T18:00:00"}
@@ -144,7 +167,7 @@ class PncpWorkerTests(unittest.TestCase):
         self.assertEqual(session.calls, 4)
         self.assertIn("após 4 tentativas", str(ctx.exception))
 
-    def test_worker_stops_after_first_partial_modality(self):
+    def test_worker_continues_other_modalities_after_non_429_timeout(self):
         db = FakeRunDb()
         window = SyncWindow(
             mode="update",
@@ -152,6 +175,8 @@ class PncpWorkerTests(unittest.TestCase):
             end_date=date(2026, 8, 12),
             period_start="2026-08-11",
             period_end="2026-08-12",
+            checkpoint_source="PNCP_INCREMENTAL",
+            run_source="PNCP_INCREMENTAL",
             resumed=False,
         )
         PartialClient.instances.clear()
@@ -160,7 +185,7 @@ class PncpWorkerTests(unittest.TestCase):
 
         self.assertEqual(result["status"], "partial")
         self.assertEqual(result["pages"], 3)
-        self.assertEqual(len(PartialClient.instances[0].sync_calls), 1)
+        self.assertEqual(len(PartialClient.instances[0].sync_calls), 2)
         self.assertEqual(db.finished[1], "partial")
 
 
