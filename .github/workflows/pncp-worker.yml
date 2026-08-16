@@ -3,7 +3,8 @@ name: PNCP Worker
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "7,22,37,52 * * * *"
+    - cron: "30 5 * * 0"
   pull_request:
     paths:
       - "scripts/pncp_sync_worker.py"
@@ -57,6 +58,8 @@ jobs:
       PNCP_FULL_TIMEOUT: "60"
       PNCP_FULL_MAX_ATTEMPTS: "6"
       PNCP_FULL_PAGE_DELAY: "1.8"
+      PNCP_FULL_HORIZON_DAYS: "60"
+      PNCP_AUTO_FULL_RECONCILE: ${{ github.event_name == 'schedule' && github.event.schedule == '30 5 * * 0' && '1' || '0' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
