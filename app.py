@@ -1996,7 +1996,14 @@ def admin_page(user, admin_section="Visão geral"):
                             status_box.warning(
                                 "O PNCP pediu redução de ritmo (429). O progresso ficou salvo e a próxima execução retoma do ponto interrompido."
                             )
-                        break
+                            break
+                        status_box.warning(
+                            f"{name} ficou incompleta por lentidão do PNCP. "
+                            "O ponto foi salvo e a reconciliação continuará pelas demais modalidades."
+                        )
+                        if idx < len(ordered_modalities):
+                            time.sleep(3.0)
+                        continue
                     if idx < len(ordered_modalities):
                         time.sleep(1.2)
 
@@ -2120,7 +2127,7 @@ def admin_page(user, admin_section="Visão geral"):
             if st.button("Reconciliar todas as oportunidades abertas", key="admin_full_reconcile", width="stretch"):
                 full_start = date.today()
                 full_end = date.today() + timedelta(days=int(horizon_days))
-                full_client = PncpClient(mode="open_proposals", timeout=30, page_delay=1.3, max_attempts=4)
+                full_client = PncpClient(mode="open_proposals", timeout=60, page_delay=1.8, max_attempts=6)
                 _run_pncp_sync(
                     full_client, full_start, full_end,
                     "PNCP_FULL", "PNCP_FULL_OPEN",
