@@ -63,9 +63,8 @@ def translate_sql(statement):
     replacements=[
       (r"datetime\('now','start of month','\+1 month'\)", "(date_trunc('month', CURRENT_TIMESTAMP) + INTERVAL '1 month')"),
       (r"datetime\('now','start of month'\)", "date_trunc('month', CURRENT_TIMESTAMP)"),
-      (r"datetime\('now','-30 days'\)", "(CURRENT_TIMESTAMP - INTERVAL '30 days')"),
-      (r"datetime\('now','-24 hours'\)", "(CURRENT_TIMESTAMP - INTERVAL '24 hours')"),
-      (r"datetime\('now','\+30 minutes'\)", "(CURRENT_TIMESTAMP + INTERVAL '30 minutes')"),
+      (r"datetime\('now',\s*'([+-]\d+)\s+(seconds?|minutes?|hours?|days?|months?|years?)'\)",
+       r"(CURRENT_TIMESTAMP + INTERVAL '\1 \2')"),
       (r"datetime\('now',\s*%s\)", "(CURRENT_TIMESTAMP + (%s)::interval)"),
       (r"datetime\(([^,()]+),\s*%s\)", r"(CAST(\1 AS TIMESTAMP) + (%s)::interval)"),
       (r"datetime\(([^()]+)\)", r"CAST(\1 AS TIMESTAMP)"),
