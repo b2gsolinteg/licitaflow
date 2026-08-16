@@ -3,7 +3,7 @@ name: PNCP Worker
 on:
   workflow_dispatch:
   schedule:
-    - cron: "17 * * * *"
+    - cron: "*/15 * * * *"
   pull_request:
     paths:
       - "scripts/pncp_sync_worker.py"
@@ -54,6 +54,9 @@ jobs:
       PNCP_WORKER_MAX_ATTEMPTS: "4"
       PNCP_WORKER_PAGE_DELAY: "0.25"
       PNCP_WORKER_MAX_PAGES_PER_MODALITY: "120"
+      PNCP_FULL_TIMEOUT: "60"
+      PNCP_FULL_MAX_ATTEMPTS: "6"
+      PNCP_FULL_PAGE_DELAY: "1.8"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
