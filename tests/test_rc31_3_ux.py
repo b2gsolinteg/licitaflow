@@ -63,7 +63,7 @@ class Rc313UxContracts(unittest.TestCase):
 
     def test_version_is_rc31_3(self):
         source = (ROOT / "src" / "config.py").read_text(encoding="utf-8")
-        self.assertIn('APP_VERSION = "1.0 Essential RC31.3"', source)
+        self.assertIn('APP_VERSION = "1.0 Essential RC31.3.1"', source)
 
 
 if __name__ == "__main__":

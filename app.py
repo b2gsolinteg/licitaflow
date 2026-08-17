@@ -38,7 +38,15 @@ from src.company_ui import company_page
 from src.company_intelligence import profile_search_ready, rank_opportunities
 from src.sources import source_label, opportunity_source_and_portal, pncp_official_url
 from src.logging_setup import configure_logging
-from src.help_guides import render_sidebar_guides
+def render_sidebar_guides(page: str) -> None:
+    """Carrega a ajuda sob demanda; falha do PDF nunca derruba o app."""
+    try:
+        import src as _src  # garante o pacote-pai em reruns/hot reload do Streamlit
+        from src.help_guides import render_sidebar_guides as _render_sidebar_guides
+        _render_sidebar_guides(page)
+    except Exception:
+        st.caption("📘 Guia PDF temporariamente indisponível.")
+
 from src.mailer import MailError, is_configured as mail_is_configured, mail_config, send_invitation, send_recovery_code, send_test_email
 
 
