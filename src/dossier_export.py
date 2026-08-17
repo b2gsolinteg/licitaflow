@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from io import BytesIO
+from pathlib import Path
 from xml.sax.saxutils import escape
 
 import pandas as pd
@@ -11,7 +12,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import mm
-from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Image, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from .journey import journey_progress, list_journey_steps, sync_automatic_completion
 from .pricing import item_financials, pricing_summary
@@ -21,6 +22,8 @@ from .supplier_directory import list_company_suppliers, list_opportunity_supplie
 NAVY = "152238"
 GOLD = "D6A84B"
 LIGHT = "F4F6F8"
+LOGO_PATH = Path(__file__).resolve().parents[1] / "assets" / "licitanexo-logo.png"
+B2G_SIGNATURE = "Desenvolvido por B2G SaaS | Business to Growth"
 
 _STAGE_LABELS = {
     "Nova oportunidade": "Salvo",
@@ -301,6 +304,58 @@ def opportunity_dossier_excel(bundle: dict) -> bytes:
     return output.getvalue()
 
 
+
+def _dossier_footer(canvas, doc):
+    canvas.saveState()
+    page_width, _ = landscape(A4)
+    y = 6 * mm
+    canvas.setStrokeColor(colors.HexColor("#D6A84B"))
+    canvas.setLineWidth(0.7)
+    canvas.line(doc.leftMargin, y + 3.5 * mm, page_width - doc.rightMargin, y + 3.5 * mm)
+    canvas.setFillColor(colors.HexColor("#667085"))
+    canvas.setFont("Helvetica", 7)
+    canvas.drawString(doc.leftMargin, y, "LicitaNexo | Desenvolvido por B2G SaaS")
+    canvas.drawRightString(page_width - doc.rightMargin, y, f"Página {canvas.getPageNumber()}")
+    canvas.restoreState()
+
+
+def _dossier_brand_story(styles):
+    blocks = []
+    if LOGO_PATH.exists():
+        blocks.append(Image(str(LOGO_PATH), width=58 * mm, height=(58 * mm) / 3.54))
+    else:
+        blocks.append(Paragraph("<b>LicitaNexo</b>", styles["Title"]))
+    blocks.append(Spacer(1, 1.2 * mm))
+    blocks.append(Paragraph(
+        f'<font color="#152238" size="8"><b>{escape(B2G_SIGNATURE)}</b></font>',
+        styles["BodyText"],
+    ))
+    blocks.append(Spacer(1, 2 * mm))
+    rule = Table([[""]], colWidths=[272 * mm], rowHeights=[1.4 * mm])
+    rule.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#D6A84B"))]))
+    blocks.append(rule)
+    blocks.append(Spacer(1, 3 * mm))
+    return blocks
+
+
+def _dossier_why_box(styles):
+    text = (
+        "Por que preencher tudo: datas organizam prazos; quantidades e preços alimentam a proposta; custos, frete, impostos e fornecedores "
+        "mostram a margem real; Jornada, checklist e documentos reduzem pendências. Quanto mais completos e atuais os dados, mais confiável "
+        "fica este dossiê para revisão antes da participação."
+    )
+    box = Table([[Paragraph(escape(text), styles["BodyText"])]], colWidths=[266 * mm])
+    box.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F5F7FA")),
+        ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#DDE3EA")),
+        ("LINEBEFORE", (0, 0), (0, -1), 3, colors.HexColor("#D6A84B")),
+        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+        ("TOPPADDING", (0, 0), (-1, -1), 7),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+    ]))
+    return box
+
 def _table(data, widths=None, font_size=7):
     table = Table(data, repeatRows=1, colWidths=widths)
     table.setStyle(TableStyle([
@@ -324,10 +379,13 @@ def opportunity_dossier_pdf(bundle: dict) -> bytes:
     output = BytesIO()
     doc = SimpleDocTemplate(
         output, pagesize=landscape(A4), rightMargin=9 * mm, leftMargin=9 * mm,
-        topMargin=9 * mm, bottomMargin=9 * mm,
+        topMargin=10 * mm, bottomMargin=16 * mm,
+        title="LicitaNexo - Dossiê de Participação",
+        author="B2G SaaS - LicitaNexo",
+        subject="Dossiê operacional de participação em licitação",
     )
-    story = [
-        Paragraph("<b>LicitaNexo</b> · Dossiê de Participação", styles["Title"]),
+    story = _dossier_brand_story(styles) + [
+        Paragraph("<b>Dossiê de Participação</b>", styles["Title"]),
         Paragraph(
             f'<b>{escape(_text(summary.get("agency")))}</b> · {escape(_text(summary.get("modality")))} · '
             f'{escape(_text(summary.get("city")))}/{escape(_text(summary.get("state")))}',
@@ -344,6 +402,8 @@ def opportunity_dossier_pdf(bundle: dict) -> bytes:
         ["Valor estimado", _brl(summary.get("estimated_value")), "Jornada", f'{summary.get("journey_done", 0)}/{summary.get("journey_total", 0)} ({summary.get("journey_percent", 0)}%)'],
     ]
     story.append(_table(info, [32*mm, 93*mm, 32*mm, 93*mm], 8))
+    story.append(Spacer(1, 3 * mm))
+    story.append(_dossier_why_box(styles))
     story.append(Spacer(1, 4 * mm))
 
     financial = [["Itens", "Ref. itens", "Minha proposta", "Custo previsto", "Lucro bruto", "Margem geral"]]
@@ -425,5 +485,5 @@ def opportunity_dossier_pdf(bundle: dict) -> bytes:
         "itens manuais dependem da conferência do usuário. Confirme sempre edital, Termo de Referência, anexos e portal oficial antes do envio da proposta.",
         styles["BodyText"],
     ))
-    doc.build(story)
+    doc.build(story, onFirstPage=_dossier_footer, onLaterPages=_dossier_footer)
     return output.getvalue()

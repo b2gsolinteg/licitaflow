@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from openpyxl import load_workbook
+from pypdf import PdfReader
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -87,6 +88,10 @@ class DossierExportTests(unittest.TestCase):
         payload = opportunity_dossier_pdf(self.sample_bundle())
         self.assertTrue(payload.startswith(b"%PDF"))
         self.assertGreater(len(payload), 1500)
+        reader = PdfReader(io.BytesIO(payload))
+        text = "\n".join((page.extract_text() or "") for page in reader.pages)
+        self.assertIn("Desenvolvido por B2G SaaS", text)
+        self.assertIn("Por que preencher tudo", text)
 
 
 if __name__ == "__main__":
