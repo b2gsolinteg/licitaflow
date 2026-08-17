@@ -1,0 +1,51 @@
+name: PostgreSQL Migrations
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: postgres-migrations-production
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Production schema migration
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      LICITANEXO_DB_BACKEND: postgres
+      LICITANEXO_DB_SCHEMA: licitanexo
+      LICITANEXO_PGHOST: ${{ secrets.LICITANEXO_PGHOST }}
+      LICITANEXO_PGPORT: "5432"
+      LICITANEXO_PGDATABASE: postgres
+      LICITANEXO_PGUSER: ${{ secrets.LICITANEXO_PGUSER }}
+      LICITANEXO_PGPASSWORD: ${{ secrets.LICITANEXO_PGPASSWORD }}
+      LICITANEXO_PGSSLMODE: require
+      LICITANEXO_SCHEMA_STRICT: "0"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install database dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip check
+
+      - name: Compile migration tooling
+        run: python -m compileall -q src/db_migrations.py src/db_runtime.py scripts/migrate_postgres.py scripts/check_postgres_schema.py
+
+      - name: Apply versioned migrations
+        run: python scripts/migrate_postgres.py
+
+      - name: Verify migration state
+        run: python scripts/check_postgres_schema.py
