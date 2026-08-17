@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/home/runner/work/licitaflow/licitaflow/scripts/patch_rc31_1.py", line 96, in <module>
+    company = replace_once(
+              ^^^^^^^^^^^^^
+  File "/home/runner/work/licitaflow/licitaflow/scripts/patch_rc31_1.py", line 21, in replace_once
+    raise AssertionError(f"{label}: esperado 1 trecho, encontrado {count}")
+AssertionError: import fornecedores empresa: esperado 1 trecho, encontrado 0
