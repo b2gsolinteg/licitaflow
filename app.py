@@ -38,6 +38,7 @@ from src.company_ui import company_page
 from src.company_intelligence import profile_search_ready, rank_opportunities
 from src.sources import source_label, opportunity_source_and_portal, pncp_official_url
 from src.logging_setup import configure_logging
+from src.help_guides import render_sidebar_guides
 from src.mailer import MailError, is_configured as mail_is_configured, mail_config, send_invitation, send_recovery_code, send_test_email
 
 
@@ -796,7 +797,7 @@ def login_page():
             st.markdown(nav_html, unsafe_allow_html=True)
 
             if mode == "login":
-                with st.form("login"):
+                with st.form("login", clear_on_submit=False, enter_to_submit=False):
                     email = st.text_input("E-mail", placeholder="seu@email.com")
                     password = st.text_input("Senha", type="password", placeholder="Sua senha")
                     st.markdown('<div class="ln-forgot"><a href="?auth=recovery">Esqueceu a senha?</a></div>', unsafe_allow_html=True)
@@ -821,7 +822,7 @@ def login_page():
 
             elif mode == "request":
                 st.caption("Comece com 7 dias grátis, sem cartão. Depois, escolha sua forma de contratação.")
-                with st.form("access_request"):
+                with st.form("access_request", clear_on_submit=False, enter_to_submit=False):
                     company = st.text_input("Empresa / Razão social")
                     cnpj = st.text_input("CNPJ", placeholder="00.000.000/0000-00")
                     name = st.text_input("Seu nome")
@@ -871,7 +872,7 @@ def login_page():
 
             elif mode == "invite":
                 st.caption("Recebeu um convite? Informe o código enviado pela B2G SaaS.")
-                with st.form("activate_invitation"):
+                with st.form("activate_invitation", clear_on_submit=False, enter_to_submit=False):
                     email = st.text_input(
                         "E-mail do convite",
                         placeholder="seu@email.com",
@@ -938,7 +939,7 @@ def login_page():
             else:
                 st.caption("Solicite um código e depois crie uma nova senha.")
                 with st.expander("1. Solicitar código de recuperação", expanded=True):
-                    with st.form("password_recovery_request"):
+                    with st.form("password_recovery_request", clear_on_submit=False, enter_to_submit=False):
                         recovery_email = st.text_input(
                             "E-mail cadastrado",
                             placeholder="seu@email.com",
@@ -963,7 +964,7 @@ def login_page():
                                 st.warning(str(error))
 
                 with st.expander("2. Usar código e redefinir senha", expanded=False):
-                    with st.form("password_recovery_reset"):
+                    with st.form("password_recovery_reset", clear_on_submit=False, enter_to_submit=False):
                         reset_email = st.text_input(
                             "E-mail cadastrado",
                             placeholder="seu@email.com",
@@ -2717,7 +2718,7 @@ def essential_account_page(user):
     default_srp = profile.get("search_srp") if profile.get("search_srp") in srp_options else "Todos"
     default_order = profile.get("search_order") if profile.get("search_order") in order_options else "Certame mais próximo"
 
-    with st.form("essential_search_profile"):
+    with st.form("essential_search_profile", clear_on_submit=False, enter_to_submit=False):
         keyword = st.text_input(
             "O que você procura?", value=profile.get("search_keyword") or "",
             placeholder="Ex.: medicamentos, uniformes, manutenção de ar-condicionado",
@@ -3010,6 +3011,7 @@ def main():
         elif st.session_state.get("main_navigation") not in pages:
             st.session_state["main_navigation"] = pages[0]
         page = st.radio("Navegação", pages, key="main_navigation")
+        render_sidebar_guides(page)
         if st.button("↪ Sair", width="stretch"):
             security.revoke_session(st.session_state.get("security_session_token"))
             security.event("logout", user.get("email",""), _client_ip(), True, f'user_id={user.get("id","")}')

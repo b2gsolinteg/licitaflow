@@ -210,33 +210,104 @@ def pricing_workspace(db, company_id, opportunity):
             suppliers = suppliers_by_item.get(str(item["id"]), [])
             st.markdown("#### Fornecedores e custos")
             if suppliers:
-                for supplier in suppliers:
-                    total_supplier_unit = _supplier_final_unit(
+                ranked_suppliers = sorted(
+                    suppliers,
+                    key=lambda supplier: (
+                        _supplier_final_unit(supplier, float(item.get("commission") or 0)),
+                        str(supplier.get("supplier_name") or "").lower(),
+                    ),
+                )
+                best_supplier_id = ranked_suppliers[0]["id"] if ranked_suppliers else None
+                comparison_rows = []
+                final_costs = {}
+                for supplier in ranked_suppliers:
+                    final_unit = _supplier_final_unit(
                         supplier, float(item.get("commission") or 0)
                     )
-                    delta = finances["sale_price"] - total_supplier_unit
-                    row_left, row_values, row_actions = st.columns([4.5, 3.2, 2.3], vertical_alignment="center")
-                    marker = "✅ Em uso" if supplier.get("is_selected") else "Cotação"
-                    row_left.markdown(f'**{supplier["supplier_name"]}** · {marker}')
-                    lead = supplier.get("lead_time_days")
-                    details = f'Prazo: {lead if lead is not None else "—"} dia(s)'
-                    if supplier.get("notes"):
-                        details += f' · {supplier.get("notes")}'
-                    row_left.caption(details)
-                    row_values.markdown(
-                        f'**Custo final/un.: {format_brl(total_supplier_unit)}**  \n'
-                        f'Folga/un.: **{format_brl(delta)}**'
+                    final_costs[supplier["id"]] = final_unit
+                    delta = finances["sale_price"] - final_unit
+                    potential_margin = (
+                        (delta / finances["sale_price"] * 100)
+                        if finances["sale_price"] > 0 else None
                     )
-                    with row_actions:
-                        a1, a2 = st.columns(2)
-                        if supplier.get("is_selected"):
-                            a1.success("Em uso")
-                        elif a1.button("Usar", key=f'use_supplier_{supplier["id"]}', width="stretch"):
-                            select_supplier(db, company_id, item["id"], supplier["id"])
-                            _fragment_refresh()
-                        if a2.button("Excluir", key=f'delete_supplier_{supplier["id"]}', width="stretch"):
-                            delete_supplier(db, company_id, item["id"], supplier["id"])
-                            _fragment_refresh()
+                    if supplier.get("is_selected"):
+                        situation = "✅ Em uso"
+                    elif supplier["id"] == best_supplier_id:
+                        situation = "🏆 Melhor custo"
+                    else:
+                        situation = "Cotação"
+                    lead = supplier.get("lead_time_days")
+                    comparison_rows.append({
+                        "Fornecedor": supplier.get("supplier_name") or "Fornecedor",
+                        "Custo base": format_brl(supplier.get("unit_cost")),
+                        "Frete": format_brl(supplier.get("freight_unit")),
+                        "Impostos": format_brl(supplier.get("taxes_unit")),
+                        "Outros": format_brl(supplier.get("other_unit_costs")),
+                        "Custo final": format_brl(final_unit),
+                        "Folga/un.": format_brl(delta),
+                        "Margem possível": f"{potential_margin:.1f}%" if potential_margin is not None else "—",
+                        "Prazo": f"{lead} dia(s)" if lead is not None else "—",
+                        "Situação": situation,
+                    })
+
+                st.caption("Comparação ordenada pelo menor custo final por unidade.")
+                st.dataframe(
+                    comparison_rows,
+                    hide_index=True,
+                    width="stretch",
+                    height=min(max(120, 38 * len(comparison_rows) + 42), 360),
+                    column_config={
+                        "Fornecedor": st.column_config.TextColumn(width="large"),
+                        "Custo base": st.column_config.TextColumn(width="small"),
+                        "Frete": st.column_config.TextColumn(width="small"),
+                        "Impostos": st.column_config.TextColumn(width="small"),
+                        "Outros": st.column_config.TextColumn(width="small"),
+                        "Custo final": st.column_config.TextColumn(width="small"),
+                        "Folga/un.": st.column_config.TextColumn(width="small"),
+                        "Margem possível": st.column_config.TextColumn(width="small"),
+                        "Prazo": st.column_config.TextColumn(width="small"),
+                        "Situação": st.column_config.TextColumn(width="medium"),
+                    },
+                )
+                if ranked_suppliers:
+                    best = ranked_suppliers[0]
+                    st.caption(
+                        f'🏆 Melhor custo atual: {best.get("supplier_name") or "Fornecedor"} - '
+                        f'{format_brl(final_costs[best["id"]])}/un.'
+                    )
+
+                    option_ids = [supplier["id"] for supplier in ranked_suppliers]
+                    selected_quote_id = st.selectbox(
+                        "Cotação para usar ou gerenciar",
+                        option_ids,
+                        key=f'manage_supplier_{item["id"]}',
+                        format_func=lambda supplier_id: next(
+                            f'{supplier.get("supplier_name") or "Fornecedor"} - '
+                            f'{format_brl(final_costs[supplier_id])}'
+                            for supplier in ranked_suppliers if supplier["id"] == supplier_id
+                        ),
+                    )
+                    selected_quote = next(
+                        supplier for supplier in ranked_suppliers
+                        if supplier["id"] == selected_quote_id
+                    )
+                    a1, a2 = st.columns([2, 1])
+                    if a1.button(
+                        "Usar fornecedor selecionado",
+                        key=f'use_supplier_selected_{item["id"]}',
+                        width="stretch",
+                        disabled=bool(selected_quote.get("is_selected")),
+                        type="primary",
+                    ):
+                        select_supplier(db, company_id, item["id"], selected_quote_id)
+                        _fragment_refresh()
+                    if a2.button(
+                        "Excluir cotação",
+                        key=f'delete_supplier_selected_{item["id"]}',
+                        width="stretch",
+                    ):
+                        delete_supplier(db, company_id, item["id"], selected_quote_id)
+                        _fragment_refresh()
             elif item.get("supplier"):
                 st.info(
                     f'Fornecedor legado: {item.get("supplier")} · custo {format_brl(item.get("unit_cost"))}. '
