@@ -18,8 +18,9 @@ def _month_bounds_utc(reference=None):
         end = datetime(now.year + 1, 1, 1, tzinfo=timezone.utc)
     else:
         end = datetime(now.year, now.month + 1, 1, tzinfo=timezone.utc)
-    # O formato com espaço é compatível com timestamps TEXT legados do SQLite e
-    # também é aceito nativamente por colunas TIMESTAMPTZ do PostgreSQL.
+    if using_postgres():
+        return start, end
+    # SQLite legado armazena timestamps como TEXT.
     return (
         start.strftime("%Y-%m-%d %H:%M:%S+00:00"),
         end.strftime("%Y-%m-%d %H:%M:%S+00:00"),
