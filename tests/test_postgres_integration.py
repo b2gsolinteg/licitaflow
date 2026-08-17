@@ -185,6 +185,31 @@ class PostgresIntegrationTests(unittest.TestCase):
                 )
                 """,
             ]
+            statements.extend([
+                """
+                CREATE TABLE opportunities(
+                    id TEXT PRIMARY KEY, company_id TEXT NOT NULL,
+                    pncp_control_number TEXT, agency TEXT NOT NULL DEFAULT '',
+                    city TEXT NOT NULL DEFAULT '', state TEXT NOT NULL DEFAULT '',
+                    modality TEXT NOT NULL DEFAULT '', published_at TEXT, opening_at TEXT, closing_at TEXT,
+                    object TEXT NOT NULL DEFAULT '', estimated_value DOUBLE PRECISION,
+                    source_url TEXT NOT NULL DEFAULT '', srp INTEGER NOT NULL DEFAULT 0,
+                    source_name TEXT NOT NULL DEFAULT 'PNCP', source_channel TEXT NOT NULL DEFAULT 'PNCP',
+                    stage TEXT NOT NULL DEFAULT 'Oportunidade',
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+                """,
+                """
+                CREATE TABLE opportunity_quote_items(
+                    id TEXT PRIMARY KEY, opportunity_id TEXT NOT NULL, company_id TEXT NOT NULL,
+                    description TEXT NOT NULL, quantity DOUBLE PRECISION NOT NULL DEFAULT 1,
+                    unit_cost DOUBLE PRECISION NOT NULL DEFAULT 0, freight DOUBLE PRECISION NOT NULL DEFAULT 0,
+                    taxes DOUBLE PRECISION NOT NULL DEFAULT 0, other_costs DOUBLE PRECISION NOT NULL DEFAULT 0,
+                    sale_price DOUBLE PRECISION NOT NULL DEFAULT 0, supplier TEXT NOT NULL DEFAULT '',
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+                """,
+            ])
             for statement in statements:
                 cursor.execute(statement)
             cursor.execute(
@@ -228,6 +253,26 @@ class PostgresIntegrationTests(unittest.TestCase):
         }
         for key in expected:
             self.assertEqual(types.get(key), "timestamp with time zone", key)
+
+    def test_company_intelligence_schema_is_available(self):
+        from src.db_runtime import connect_runtime
+
+        with connect_runtime(ROOT / "data" / "ci.db") as connection:
+            rows = connection.execute(
+                """
+                SELECT table_name,column_name,data_type
+                FROM information_schema.columns
+                WHERE table_schema=? AND table_name IN (
+                    'company_profiles','company_document_uploads','opportunity_item_suppliers'
+                )
+                """,
+                (self.schema,),
+            ).fetchall()
+        columns = {(row["table_name"], row["column_name"]): row["data_type"] for row in rows}
+        self.assertIn(("company_profiles", "excluded_keywords"), columns)
+        self.assertIn(("company_profiles", "profile_search_enabled"), columns)
+        self.assertEqual(columns.get(("company_document_uploads", "created_at")), "timestamp with time zone")
+        self.assertEqual(columns.get(("opportunity_item_suppliers", "created_at")), "timestamp with time zone")
 
     def test_migrations_are_idempotent(self):
         from src.db_migrations import run_postgres_migrations

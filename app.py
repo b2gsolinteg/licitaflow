@@ -34,6 +34,8 @@ from src.intelligence_ui import analysis_page
 from src.legal import PRIVACY_TEXT, TERMS_TEXT
 from src.pncp import MODALITIES, PncpClient
 from src.pipeline_ui import pipeline_page
+from src.company_ui import company_page
+from src.company_intelligence import profile_search_ready, rank_opportunities
 from src.sources import source_label, opportunity_source_and_portal, pncp_official_url
 from src.logging_setup import configure_logging
 from src.mailer import MailError, is_configured as mail_is_configured, mail_config, send_invitation, send_recovery_code, send_test_email
@@ -2439,6 +2441,18 @@ def search_page(user):
     st.header("🔎 Buscar Editais")
     st.caption("Monitoramos as principais fontes de licitações públicas do Brasil. Separe assuntos diferentes por vírgula: medicamentos, uniformes, luvas.")
 
+    profile_ready = profile_search_ready(profile)
+    profile_enabled_raw = profile.get("profile_search_enabled")
+    profile_enabled_default = bool(int(profile_enabled_raw if profile_enabled_raw is not None else 1))
+    use_profile = st.toggle(
+        "✨ Priorizar oportunidades compatíveis com minha empresa",
+        value=profile_enabled_default,
+        key="radar_profile_match",
+        help="Ordena os resultados por aderência ao perfil da empresa sem esconder oportunidades.",
+    )
+    if use_profile and not profile_ready:
+        st.info("Complete produtos/serviços, CNAEs ou palavras-chave em Minha Empresa para ativar a aderência automática.")
+
     criteria = st.session_state.get("radar_search_criteria") or {}
 
     def _csv_list(value):
@@ -2534,6 +2548,7 @@ def search_page(user):
                 "states": selected_states, "modalities": selected_modalities,
                 "srp": srp_label, "horizon": horizon_label, "order": order_label,
                 "minimum": minimum, "maximum": maximum,
+                "use_profile": bool(use_profile and profile_ready),
             }
             st.session_state.radar_search_criteria = criteria
             st.session_state.catalog_page = 1
@@ -2584,6 +2599,8 @@ def search_page(user):
     items = [item for item in items if _nature_matches(item, criteria["nature"])]
     for item in items:
         item["nature"] = _opportunity_nature(item)
+    if criteria.get("use_profile") and profile_ready:
+        items = rank_opportunities(items, profile)
 
     catalog_total = db.global_catalog_count()
     st.caption(
@@ -2625,6 +2642,12 @@ def search_page(user):
         for column, item in zip(columns, page_items[index:index + 2]):
             with column:
                 with st.container(border=True):
+                    if criteria.get("use_profile") and "_match_score" in item:
+                        score = int(item.get("_match_score") or 0)
+                        st.markdown(f"**✨ Aderência à sua empresa: {score}%**")
+                        reasons = item.get("_match_reasons") or []
+                        if reasons:
+                            st.caption("Encontrado por: " + " · ".join(reasons[:3]))
                     st.markdown(f'#### {item.get("agency") or "Órgão não informado"}')
                     st.write(item.get("object") or "Objeto não informado")
                     m1, m2 = st.columns(2)
@@ -2974,7 +2997,7 @@ def main():
         else:
             pages = [
                 "📅 Calendário", "🔎 Buscar Editais", "⭐ Meus Editais",
-                "📄 Analisar Edital", "💬 Suporte", "👤 Minha Conta",
+                "📄 Analisar Edital", "🏢 Minha Empresa", "💬 Suporte", "👤 Minha Conta",
             ]
             if not allowed:
                 pages = ["💬 Suporte", "👤 Minha Conta"]
@@ -3000,6 +3023,8 @@ def main():
         pipeline_page(db, user)
     elif page == "📄 Analisar Edital":
         analysis_page(db, user, usage)
+    elif page == "🏢 Minha Empresa":
+        company_page(db, user)
     elif page == "💬 Suporte":
         support_page(user)
     elif page == "👤 Minha Conta":
