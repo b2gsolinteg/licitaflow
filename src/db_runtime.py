@@ -76,7 +76,7 @@ def translate_sql(statement):
 
     # Known timestamp TEXT comparisons that SQLite accepted implicitly.
     for col in ("created_at","updated_at","expires_at","trial_ends_at","window_started_at","last_seen_at","requested_at"):
-        s=re.sub(rf"\b{col}\b\s*(>=|<=|>|<)\s*(date_trunc\(|\(CURRENT_TIMESTAMP|CURRENT_TIMESTAMP|CAST\()",
+        s=re.sub(rf"\b{col}\b\s*(>=|<=|>|<)\s*(date_trunc\(|\(date_trunc\(|\(CURRENT_TIMESTAMP|CURRENT_TIMESTAMP|CAST\()",
                  rf"CAST({col} AS TIMESTAMP) \1 \2",s,flags=re.I)
 
     # SQLite INSERT OR IGNORE -> PostgreSQL ON CONFLICT DO NOTHING.
@@ -302,3 +302,4 @@ def connect_runtime(sqlite_path, search_fold=None):
         c.create_function("search_fold", 1, search_fold)
     c.execute("PRAGMA foreign_keys=ON"); c.execute("PRAGMA busy_timeout=30000")
     return c
+
