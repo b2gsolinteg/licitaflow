@@ -13,6 +13,7 @@ on:
       - "src/pncp.py"
       - "src/database.py"
       - "src/db_runtime.py"
+      - "requirements.lock"
 
 concurrency:
   group: pncp-worker-production
@@ -32,9 +33,12 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+          cache-dependency-path: requirements.lock
 
-      - name: Dependencias
-        run: pip install -r requirements.txt
+      - name: Dependencias fixadas
+        run: |
+          python -m pip install -r requirements.lock
+          python -m pip check
 
       - name: Testes simulados PNCP
         run: python -m unittest -v tests/test_pncp_worker.py
@@ -51,6 +55,7 @@ jobs:
       LICITANEXO_PGDATABASE: postgres
       LICITANEXO_PGUSER: ${{ secrets.LICITANEXO_PGUSER }}
       LICITANEXO_PGPASSWORD: ${{ secrets.LICITANEXO_PGPASSWORD }}
+      LICITANEXO_PGSSLMODE: require
       PNCP_WORKER_TIMEOUT: "30"
       PNCP_WORKER_MAX_ATTEMPTS: "4"
       PNCP_WORKER_PAGE_DELAY: "0.25"
@@ -69,9 +74,12 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+          cache-dependency-path: requirements.lock
 
-      - name: Dependencias
-        run: pip install -r requirements.txt
+      - name: Dependencias fixadas
+        run: |
+          python -m pip install -r requirements.lock
+          python -m pip check
 
       - name: Atualizar catalogo PNCP
         run: python scripts/pncp_sync_worker.py
