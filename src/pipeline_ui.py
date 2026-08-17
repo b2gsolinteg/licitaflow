@@ -7,7 +7,9 @@ from .sources import pncp_official_url, source_label, opportunity_source_and_por
 from .analysis_engine import analyze_essential_pages, extract_pdf_pages
 from .exports import saved_editals_excel, saved_editals_pdf
 from .pricing_ui import pricing_workspace
+from .journey_ui import journey_workspace
 from .company_ui import render_document_readiness
+from .pncp_items import PncpItemsError, fetch_contract_documents
 
 
 ESSENTIAL_STAGES = ["Salvo", "Analisando", "Vou participar", "Encerrado"]
@@ -69,32 +71,35 @@ def pipeline_page(db, user):
                     st.success("Edital cadastrado em Meus Editais.")
                     st.rerun()
 
-    all_rows = db.pipeline_summaries(company_id, "")
-    export_rows = []
-    for export_row in all_rows:
-        export_item = dict(export_row)
-        export_item["stage_display"] = _DB_TO_STAGE.get(export_item.get("stage"), "Salvo")
-        details = db.get_details(company_id, export_item["id"]) or {}
-        export_item["notes"] = details.get("notes") or ""
-        if not export_item.get("certame_at"):
-            export_item["certame_at"] = details.get("certame_at")
-        export_rows.append(export_item)
-
-    if export_rows:
+    export_key = f"pipeline_exports_{company_id}"
+    if st.button("📦 Preparar / atualizar arquivos de exportação", key=f"prepare_exports_{company_id}"):
+        with st.spinner("Preparando exportação..."):
+            all_rows = db.pipeline_summaries(company_id, "")
+            export_rows = []
+            for export_row in all_rows:
+                export_item = dict(export_row)
+                export_item["stage_display"] = _DB_TO_STAGE.get(export_item.get("stage"), "Salvo")
+                details = db.get_details(company_id, export_item["id"]) or {}
+                export_item["notes"] = details.get("notes") or ""
+                if not export_item.get("certame_at"):
+                    export_item["certame_at"] = details.get("certame_at")
+                export_rows.append(export_item)
+            st.session_state[export_key] = {
+                "xlsx": saved_editals_excel(export_rows, user.get("company_name") or ""),
+                "pdf": saved_editals_pdf(export_rows, user.get("company_name") or ""),
+                "count": len(export_rows),
+            }
+    prepared_exports = st.session_state.get(export_key)
+    if prepared_exports:
+        st.caption(f'{prepared_exports["count"]} edital(is) no último pacote preparado.')
         e1, e2 = st.columns(2)
         e1.download_button(
-            "📊 Exportar todos para Excel",
-            saved_editals_excel(export_rows, user.get("company_name") or ""),
-            "meus_editais_licitanexo.xlsx",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            width="stretch",
+            "📊 Baixar Excel", prepared_exports["xlsx"], "meus_editais_licitanexo.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", width="stretch",
         )
         e2.download_button(
-            "📄 Exportar todos para PDF",
-            saved_editals_pdf(export_rows, user.get("company_name") or ""),
-            "meus_editais_licitanexo.pdf",
-            "application/pdf",
-            width="stretch",
+            "📄 Baixar PDF", prepared_exports["pdf"], "meus_editais_licitanexo.pdf",
+            "application/pdf", width="stretch",
         )
 
     c1, c2 = st.columns([3, 2])
@@ -183,16 +188,24 @@ def opportunity_detail(db, company_id, opportunity):
     else:
         st.warning("Não foi possível montar um link oficial desta oportunidade.")
 
-    summary, pricing, analysis = st.tabs(["Resumo", "💰 Precificação", "Análise do edital"])
-    with summary:
-        with st.form(f"essential_summary_{opportunity['id']}"):
+    section = st.radio(
+        "Área do edital",
+        ["📋 Visão geral", "✅ Jornada", "💰 Precificação", "📄 Documentos e análise"],
+        horizontal=True,
+        label_visibility="collapsed",
+        key=f"opportunity_workspace_{opportunity['id']}",
+    )
+    if section == "📋 Visão geral":
+        with st.form(f"essential_summary_{opportunity['id']}", enter_to_submit=False):
             notes = st.text_area("Minhas anotações", value=details.get("notes") or "", height=140)
             if st.form_submit_button("Salvar anotação", type="primary"):
                 db.update_details(company_id, opportunity["id"], notes=notes)
                 st.success("Anotação salva.")
-    with pricing:
+    elif section == "✅ Jornada":
+        journey_workspace(db, company_id, opportunity)
+    elif section == "💰 Precificação":
         pricing_workspace(db, company_id, opportunity)
-    with analysis:
+    else:
         edital_analysis_tab(db, company_id, opportunity)
 
     with st.expander("Mais ações"):
@@ -204,13 +217,65 @@ def opportunity_detail(db, company_id, opportunity):
 
 
 def edital_analysis_tab(db, company_id, opportunity):
-    st.subheader("Entenda o edital")
-    st.caption("Envie o PDF para localizar objeto, itens/quantidades/preços, documentação e pontos de atenção. Sem nota de aderência.")
-    uploaded = st.file_uploader("Edital em PDF", type=["pdf"], key=f"edital_pdf_{opportunity['id']}")
-    if uploaded and st.button("Analisar edital", type="primary", width="stretch", key=f"analyze_{opportunity['id']}"):
+    st.subheader("Documentos e análise do edital")
+    st.caption(
+        "Analise o edital junto com o Termo de Referência e outros anexos. Para editais PNCP, "
+        "a Precificação pode importar itens e valores oficiais diretamente da API estruturada."
+    )
+
+    control_number = str(opportunity.get("pncp_control_number") or "").strip()
+    documents_key = f"pncp_documents_{opportunity['id']}"
+    if control_number:
+        if st.button(
+            "📎 Consultar documentos oficiais no PNCP",
+            key=f"fetch_pncp_documents_{opportunity['id']}",
+        ):
+            try:
+                with st.spinner("Consultando documentos oficiais..."):
+                    st.session_state[documents_key] = fetch_contract_documents(control_number)
+            except PncpItemsError as error:
+                st.warning(str(error))
+        official_documents = st.session_state.get(documents_key) or []
+        if official_documents:
+            with st.expander(f"Documentos oficiais encontrados ({len(official_documents)})", expanded=True):
+                for index, document in enumerate(official_documents):
+                    left, right = st.columns([5, 2], vertical_alignment="center")
+                    title = document.get("title") or document.get("type") or "Documento"
+                    left.write(f"**{title}**")
+                    details = " · ".join(
+                        value for value in (document.get("type"), document.get("published_at")) if value
+                    )
+                    if details:
+                        left.caption(details)
+                    url = str(document.get("url") or "")
+                    if url.startswith(("http://", "https://")):
+                        right.link_button("Abrir documento", url, key=f"official_doc_{opportunity['id']}_{index}", width="stretch")
+
+    uploaded_files = st.file_uploader(
+        "Edital, Termo de Referência e anexos em PDF",
+        type=["pdf"],
+        accept_multiple_files=True,
+        key=f"edital_pdf_{opportunity['id']}",
+        help="Você pode selecionar vários PDFs de uma vez. A análise considera o conjunto enviado.",
+    )
+    if uploaded_files:
+        st.caption(
+            f"{len(uploaded_files)} arquivo(s) selecionado(s). A numeração de páginas segue a ordem dos arquivos enviados."
+        )
+    if uploaded_files and st.button(
+        "Analisar documentos", type="primary", width="stretch", key=f"analyze_{opportunity['id']}"
+    ):
         try:
-            with st.spinner("Lendo o edital..."):
-                pages = extract_pdf_pages(uploaded.getvalue())
+            with st.spinner("Lendo edital, Termo de Referência e anexos..."):
+                pages = []
+                names = []
+                for uploaded in uploaded_files:
+                    try:
+                        file_pages = extract_pdf_pages(uploaded.getvalue())
+                    except ValueError as error:
+                        raise ValueError(f"{uploaded.name}: {error}") from error
+                    pages.extend(file_pages)
+                    names.append(uploaded.name)
                 object_text, required_documents, alerts, findings = analyze_essential_pages(pages)
                 findings = [f for f in findings if f.get("category") != "Objeto"]
                 findings.insert(0, {
@@ -219,14 +284,17 @@ def edital_analysis_tab(db, company_id, opportunity):
                     "page_number": None,
                     "recommended_action": "Confira a descrição completa no edital e anexos.",
                 })
-                analysis_id = db.save_edital_analysis(company_id, opportunity["id"], uploaded.name, 0, len(pages), findings)
+                filename = " + ".join(names)[:240] or "documentos.pdf"
+                analysis_id = db.save_edital_analysis(
+                    company_id, opportunity["id"], filename, 0, len(pages), findings
+                )
                 st.session_state[f"analysis_{opportunity['id']}"] = analysis_id
-            st.success("Análise concluída.")
+            st.success("Análise concluída sobre o conjunto de documentos.")
             st.rerun()
         except ValueError as error:
             st.error(str(error))
         except Exception as error:
-            st.error(f"Não foi possível analisar este PDF: {error}")
+            st.error(f"Não foi possível analisar estes documentos: {error}")
 
     analyses = db.list_analyses(company_id, opportunity["id"])
     if not analyses:

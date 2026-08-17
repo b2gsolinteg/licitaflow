@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 APP_NAME = "LicitaNexo"
-APP_VERSION = "1.0 Essential RC31.0"
+APP_VERSION = "1.0 Essential RC31.1"
 APP_TAGLINE = "Simples para começar. Útil para vencer."
 COMPANY_SIGNATURE = "Powered by B2G SaaS · Business to Growth"
 APP_POSITIONING = "Seu departamento de licitações em um único lugar."

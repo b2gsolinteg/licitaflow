@@ -187,7 +187,7 @@ def recent_supplier_quotes(db, company_id: str, supplier_name: str, limit: int =
         return []
     with db.connect() as conn:
         rows = conn.execute("""
-            SELECT s.*, q.description, q.lot_number, q.unit_measure, o.agency, o.pncp_control_number
+            SELECT s.*, q.description, q.lot_number, o.agency, o.pncp_control_number
             FROM opportunity_item_suppliers s
             JOIN opportunity_quote_items q ON q.id=s.quote_item_id AND q.company_id=s.company_id
             JOIN opportunities o ON o.id=s.opportunity_id AND o.company_id=s.company_id

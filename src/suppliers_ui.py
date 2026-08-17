@@ -12,9 +12,13 @@ from .supplier_directory import (
 
 
 def _refresh():
-    st.rerun()
+    try:
+        st.rerun(scope="fragment")
+    except Exception:
+        st.rerun()
 
 
+@st.fragment
 def supplier_directory_page(db, company_id: str):
     st.markdown("### Fornecedores da empresa")
     st.caption(

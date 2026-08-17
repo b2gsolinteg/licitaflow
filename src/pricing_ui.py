@@ -3,7 +3,7 @@ from __future__ import annotations
 import streamlit as st
 
 from .formatters import format_brl, parse_brl
-from .pncp_items import PncpItemsError, fetch_contract_items, import_contract_items
+from .pncp_items import (PncpItemsError, ensure_sqlite_quote_source_schema, fetch_contract_items, import_contract_items)
 from .pricing import (
     add_supplier,
     delete_supplier,
@@ -58,6 +58,7 @@ def _supplier_final_unit(supplier: dict, fixed_cost: float = 0) -> float:
 def pricing_workspace(db, company_id, opportunity):
     opportunity_id = opportunity["id"]
     ensure_sqlite_pricing_schema(db)
+    ensure_sqlite_quote_source_schema(db)
     items = db.list_quote_items(company_id, opportunity_id)
     profile = db.get_company_profile(company_id)
     desired_margin = float(profile.get("desired_margin") or 15)
@@ -177,8 +178,12 @@ def pricing_workspace(db, company_id, opportunity):
         unit_measure = str(item.get("unit_measure") or "").strip()
         source_kind = str(item.get("source_kind") or "manual").strip().lower()
         header = f'{item.get("lot_number") or "Item"} · {item.get("description") or "Sem descrição"}'
+        display_header = header if len(header) <= 220 else header[:217].rstrip() + "..."
         with st.container(border=True):
-            st.markdown(f"### {header}")
+            st.markdown(f"#### {display_header}")
+            if display_header != header:
+                with st.expander("Ver descrição completa do item"):
+                    st.write(header)
             badges = []
             if source_kind == "pncp":
                 badges.append("⚡ item oficial PNCP")
