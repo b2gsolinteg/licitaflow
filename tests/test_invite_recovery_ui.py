@@ -12,9 +12,15 @@ class InviteRecoveryUiTests(unittest.TestCase):
         ast.parse(APP_SOURCE)
 
     def test_public_password_recovery_has_request_and_reset_steps(self):
-        self.assertIn('st.form("password_recovery_request")', APP_SOURCE)
+        self.assertIn(
+            'st.form("password_recovery_request", clear_on_submit=False, enter_to_submit=False)',
+            APP_SOURCE,
+        )
         self.assertIn('db.request_password_reset(normalized_email)', APP_SOURCE)
-        self.assertIn('st.form("password_recovery_reset")', APP_SOURCE)
+        self.assertIn(
+            'st.form("password_recovery_reset", clear_on_submit=False, enter_to_submit=False)',
+            APP_SOURCE,
+        )
         self.assertIn(
             'db.reset_password(normalized_email, recovery_code, new_password)',
             APP_SOURCE,
