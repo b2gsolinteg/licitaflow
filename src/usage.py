@@ -27,6 +27,13 @@ def _month_bounds_utc(reference=None):
     )
 
 
+def _created_at_expression(alias=""):
+    column = f"{alias}.created_at" if alias else "created_at"
+    # Durante o rollout a coluna pode estar como TEXT (schema legado) ou
+    # TIMESTAMPTZ (após migration). O CAST funciona nos dois estados.
+    return f"CAST({column} AS TIMESTAMPTZ)" if using_postgres() else column
+
+
 class UsageService:
     DEFAULT_ANALYSIS_LIMIT = 15
 
@@ -183,15 +190,16 @@ class UsageService:
 
     def month_usage(self, company_id, event_type="analysis"):
         month_start, next_month = _month_bounds_utc()
+        created_at = _created_at_expression()
         with self.connect() as conn:
             row = conn.execute(
-                """
+                f"""
                 SELECT COALESCE(SUM(units),0) AS units,
                        COALESCE(SUM(estimated_cost_cents),0) AS cost
                 FROM usage_events
                 WHERE company_id=? AND event_type=?
-                  AND created_at >= ?
-                  AND created_at < ?
+                  AND {created_at} >= ?
+                  AND {created_at} < ?
                 """,
                 (str(company_id), str(event_type), month_start, next_month),
             ).fetchone()
@@ -288,9 +296,10 @@ class UsageService:
 
     def admin_summary(self):
         month_start, next_month = _month_bounds_utc()
+        created_at = _created_at_expression("u")
         with self.connect() as conn:
             rows = conn.execute(
-                """
+                f"""
                 SELECT u.company_id,
                        COALESCE(c.name,'') AS company_name,
                        SUM(CASE WHEN u.event_type='analysis' THEN u.units ELSE 0 END) AS analyses,
@@ -299,8 +308,8 @@ class UsageService:
                        MAX(u.created_at) AS last_activity
                 FROM usage_events u
                 LEFT JOIN companies c ON c.id=u.company_id
-                WHERE u.created_at >= ?
-                  AND u.created_at < ?
+                WHERE {created_at} >= ?
+                  AND {created_at} < ?
                 GROUP BY u.company_id, c.name
                 ORDER BY estimated_cost_cents DESC, analyses DESC, searches DESC
                 """,
