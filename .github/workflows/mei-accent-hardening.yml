@@ -1,0 +1,43 @@
+name: MEI Accent Hardening
+
+on:
+  push:
+    branches:
+      - agent/licitanexo-mei-discovery
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/licitanexo-mei-discovery
+          fetch-depth: 0
+
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Apply accent hardening
+        run: python scripts/patch_mei_accent_search.py
+
+      - name: Validate targeted tests
+        env:
+          LICITANEXO_DB_BACKEND: sqlite
+        run: |
+          python -m compileall -q src/mei_catalog.py tests/test_mei_catalog.py
+          python -m unittest tests.test_mei_catalog -v
+
+      - name: Commit validated patch and remove one-shot tooling
+        run: |
+          rm -f scripts/patch_mei_accent_search.py .github/workflows/mei-accent-hardening.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: busca MEI tolerante a acentos"
+          git push origin HEAD:agent/licitanexo-mei-discovery
