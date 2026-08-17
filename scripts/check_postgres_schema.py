@@ -25,6 +25,10 @@ EXPECTED_TIMESTAMPS = {
     ("usage_events", "created_at"),
     ("billing_checkouts", "created_at"),
     ("billing_checkouts", "updated_at"),
+    ("company_profiles", "cnpj_card_uploaded_at"),
+    ("company_document_uploads", "created_at"),
+    ("opportunity_item_suppliers", "created_at"),
+    ("opportunity_item_suppliers", "updated_at"),
 }
 
 

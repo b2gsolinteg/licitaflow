@@ -6,6 +6,8 @@ from .formatters import format_brl
 from .sources import pncp_official_url, source_label, opportunity_source_and_portal
 from .analysis_engine import analyze_essential_pages, extract_pdf_pages
 from .exports import saved_editals_excel, saved_editals_pdf
+from .pricing_ui import pricing_workspace
+from .company_ui import render_document_readiness
 
 
 ESSENTIAL_STAGES = ["Salvo", "Analisando", "Vou participar", "Encerrado"]
@@ -181,13 +183,15 @@ def opportunity_detail(db, company_id, opportunity):
     else:
         st.warning("Não foi possível montar um link oficial desta oportunidade.")
 
-    summary, analysis = st.tabs(["Resumo", "Análise do edital"])
+    summary, pricing, analysis = st.tabs(["Resumo", "💰 Precificação", "Análise do edital"])
     with summary:
         with st.form(f"essential_summary_{opportunity['id']}"):
             notes = st.text_area("Minhas anotações", value=details.get("notes") or "", height=140)
             if st.form_submit_button("Salvar anotação", type="primary"):
                 db.update_details(company_id, opportunity["id"], notes=notes)
                 st.success("Anotação salva.")
+    with pricing:
+        pricing_workspace(db, company_id, opportunity)
     with analysis:
         edital_analysis_tab(db, company_id, opportunity)
 
@@ -261,6 +265,7 @@ def edital_analysis_tab(db, company_id, opportunity):
                 st.caption(item["evidence"])
     else:
         st.info("Nenhuma exigência documental das regras atuais foi localizada automaticamente. Confira a habilitação e os anexos.")
+    render_document_readiness(db, company_id, opportunity["id"], document_findings)
     if attention_findings:
         with st.expander("Outros pontos de atenção"):
             for item in attention_findings:

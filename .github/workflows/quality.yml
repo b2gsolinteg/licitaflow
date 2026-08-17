@@ -97,10 +97,10 @@ jobs:
           python -m pip check
 
       - name: Compile database modules
-        run: python -m compileall -q src scripts tests/test_postgres_integration.py
+        run: python -m compileall -q src scripts tests/test_postgres_integration.py tests/test_postgres_company_intelligence.py
 
       - name: Run PostgreSQL integration suite
-        run: python tests/test_postgres_integration.py -v
+        run: python -m unittest discover -s tests -p 'test_postgres*.py' -v
 
       - name: Verify migration history and native types
         run: python scripts/check_postgres_schema.py
