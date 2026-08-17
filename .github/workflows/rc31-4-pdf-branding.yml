@@ -32,6 +32,11 @@ jobs:
           python -m pip install -r requirements.lock
           python -m pip check
 
+      - name: Install PDF renderer
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+
       - name: Apply RC31.4 patch
         run: python scripts/patch_rc31_4_pdf_branding.py
 
