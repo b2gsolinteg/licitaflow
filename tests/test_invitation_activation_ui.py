@@ -13,7 +13,10 @@ class InvitationActivationUiTests(unittest.TestCase):
         ast.parse(self.source)
 
     def test_invitation_tab_renders_and_submits_activation_form(self):
-        self.assertIn('with st.form("activate_invitation"):', self.source)
+        self.assertIn(
+            'with st.form("activate_invitation", clear_on_submit=False, enter_to_submit=False):',
+            self.source,
+        )
         self.assertIn('"Código de acesso"', self.source)
         self.assertIn('"Confirme sua senha"', self.source)
         self.assertIn("db.activate_invitation(", self.source)
