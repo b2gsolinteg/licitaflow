@@ -32,6 +32,19 @@ jobs:
           python -m pip install -r requirements.lock
           python -m pip check
 
+      - name: Normalize patch script
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("scripts/patch_rc31_1.py")
+          text = path.read_text(encoding="utf-8")
+          old = """    'import streamlit as st\\n\\nfrom .formatters import format_brl',\n    'import streamlit as st\\n\\nfrom .formatters import format_brl\\nfrom .suppliers_ui import supplier_directory_page',"""
+          new = """    'import streamlit as st',\n    'import streamlit as st\\nfrom .suppliers_ui import supplier_directory_page',"""
+          if old not in text:
+              raise SystemExit("trecho de import da empresa não encontrado no patch")
+          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          PY
+
       - name: Apply deterministic RC31.1 patch
         run: |
           set +e
