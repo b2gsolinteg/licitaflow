@@ -2,6 +2,7 @@ DO $$
 DECLARE
     item RECORD;
     current_type TEXT;
+    current_default TEXT;
 BEGIN
     -- Converte somente colunas existentes que ainda são TEXT. Valores inválidos
     -- fazem a migration falhar de forma explícita, evitando corrupção silenciosa.
@@ -64,14 +65,22 @@ BEGIN
             ('global_pncp_catalog','last_seen_at',FALSE)
         ) AS values_list(table_name, column_name, nullable_column)
     LOOP
-        SELECT data_type
-        INTO current_type
+        SELECT data_type, column_default
+        INTO current_type, current_default
         FROM information_schema.columns
         WHERE table_schema = current_schema()
           AND table_name = item.table_name
           AND column_name = item.column_name;
 
         IF current_type = 'text' THEN
+            IF current_default IS NOT NULL THEN
+                EXECUTE format(
+                    'ALTER TABLE %I ALTER COLUMN %I DROP DEFAULT',
+                    item.table_name,
+                    item.column_name
+                );
+            END IF;
+
             IF item.nullable_column THEN
                 EXECUTE format(
                     'ALTER TABLE %I ALTER COLUMN %I TYPE TIMESTAMPTZ USING NULLIF(BTRIM(%I), '''')::timestamptz',
@@ -84,6 +93,14 @@ BEGIN
                     'ALTER TABLE %I ALTER COLUMN %I TYPE TIMESTAMPTZ USING %I::timestamptz',
                     item.table_name,
                     item.column_name,
+                    item.column_name
+                );
+            END IF;
+
+            IF current_default IS NOT NULL THEN
+                EXECUTE format(
+                    'ALTER TABLE %I ALTER COLUMN %I SET DEFAULT CURRENT_TIMESTAMP',
+                    item.table_name,
                     item.column_name
                 );
             END IF;
