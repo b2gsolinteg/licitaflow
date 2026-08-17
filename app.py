@@ -478,92 +478,6 @@ def apply_brand():
         }
 
 
-        /* ====================================================
-           LICITANEXO - PATCH MENU LATERAL
-           ==================================================== */
-
-        [data-testid="stSidebar"] {
-            background:#FFFFFF !important;
-            border-right:1px solid #E3E8EF !important;
-        }
-
-        /*
-         * Mant?m dispon?vel o bot?o que reabre a sidebar
-         * quando ela estiver recolhida.
-         */
-        [data-testid="stSidebarCollapsedControl"] {
-            display:flex !important;
-            visibility:visible !important;
-            opacity:1 !important;
-            z-index:999999 !important;
-        }
-
-        /*
-         * Permite rolar o menu sem reduzir o zoom do navegador.
-         */
-        [data-testid="stSidebar"] > div:first-child {
-            overflow-y:auto !important;
-            overflow-x:hidden !important;
-            max-height:100vh !important;
-        }
-
-        /*
-         * Tamanho confort?vel para desktop.
-         */
-        @media (min-width:901px) {
-            [data-testid="stSidebar"] {
-                width:310px !important;
-                min-width:310px !important;
-                max-width:310px !important;
-            }
-
-            [data-testid="stSidebar"] > div:first-child {
-                width:310px !important;
-                max-width:310px !important;
-            }
-        }
-
-        /*
-         * Menu administrativo compacto, mas leg?vel.
-         */
-        [data-testid="stSidebar"] div[role="radiogroup"] {
-            gap:.12rem !important;
-        }
-
-        [data-testid="stSidebar"] div[role="radiogroup"] label {
-            min-height:2.05rem !important;
-            padding:.18rem .32rem !important;
-            border-radius:7px !important;
-        }
-
-        [data-testid="stSidebar"] div[role="radiogroup"] label p {
-            font-size:.94rem !important;
-            line-height:1.20rem !important;
-        }
-
-        /*
-         * Bot?o Sair.
-         */
-        [data-testid="stSidebar"] .stButton button {
-            background:#C99A2E !important;
-            color:#172033 !important;
-            border:1px solid #C99A2E !important;
-            font-weight:800 !important;
-        }
-
-        [data-testid="stSidebar"] .stButton button * {
-            color:#172033 !important;
-        }
-
-        /*
-         * Tablet e celular.
-         */
-        @media (max-width:900px) {
-            [data-testid="stSidebar"] {
-                max-width:88vw !important;
-            }
-        }
-
 </style>
     """, unsafe_allow_html=True)
 
@@ -776,8 +690,10 @@ def login_page():
 
         .ln-forgot {
             text-align:right;margin-top:-2.1rem;margin-bottom:1.15rem;padding-right:.1rem;
-            font-size:.78rem;color:#C8870C;position:relative;z-index:4;pointer-events:none;
+            font-size:.78rem;color:#C8870C;position:relative;z-index:4;
         }
+        .ln-forgot a {color:#C8870C !important;text-decoration:none;font-weight:700;}
+        .ln-forgot a:hover {text-decoration:underline;}
         .ln-login-footer {
             width:min(calc(41.5vw - 3rem),650px);margin:1.05rem 0 0 1.15rem;
             color:#E1E7EE;text-align:center;font-size:.84rem;line-height:1.55;
@@ -881,8 +797,7 @@ def login_page():
                 with st.form("login"):
                     email = st.text_input("E-mail", placeholder="seu@email.com")
                     password = st.text_input("Senha", type="password", placeholder="Sua senha")
-                    remember = st.checkbox("Lembrar de mim", value=True)
-                    st.markdown('<div class="ln-forgot">Esqueceu a senha?</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="ln-forgot"><a href="?auth=recovery">Esqueceu a senha?</a></div>', unsafe_allow_html=True)
                     if st.form_submit_button("→  Entrar no LicitaNexo", width="stretch"):
                         client_ip = _client_ip()
                         try:
