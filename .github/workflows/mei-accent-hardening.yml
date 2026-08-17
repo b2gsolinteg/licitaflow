@@ -23,6 +23,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install locked dependencies
+        run: |
+          python -m pip install -r requirements.lock
+          python -m pip check
+
       - name: Apply accent hardening
         run: python scripts/patch_mei_accent_search.py
 
