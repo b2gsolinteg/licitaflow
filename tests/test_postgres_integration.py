@@ -46,6 +46,35 @@ class PostgresIntegrationTests(unittest.TestCase):
                 )
                 """,
                 """
+                CREATE TABLE users(
+                    id TEXT PRIMARY KEY,
+                    company_id TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    email TEXT NOT NULL UNIQUE,
+                    password_hash TEXT NOT NULL DEFAULT '',
+                    role TEXT NOT NULL DEFAULT 'owner',
+                    terms_accepted_at TEXT,
+                    privacy_accepted_at TEXT,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    last_login_at TEXT
+                )
+                """,
+                """
+                CREATE TABLE assisted_requests(
+                    id TEXT PRIMARY KEY,
+                    company_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    request_type TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    details TEXT NOT NULL DEFAULT '',
+                    urgency TEXT NOT NULL DEFAULT 'Normal',
+                    status TEXT NOT NULL DEFAULT 'Recebida',
+                    admin_notes TEXT NOT NULL DEFAULT '',
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+                """,
+                """
                 CREATE TABLE security_events(
                     id BIGSERIAL PRIMARY KEY,
                     event_type TEXT NOT NULL,
@@ -161,6 +190,9 @@ class PostgresIntegrationTests(unittest.TestCase):
             cursor.execute(
                 "INSERT INTO companies(id,name) VALUES ('c1','Empresa CI')"
             )
+            cursor.execute(
+                "INSERT INTO users(id,company_id,name,email,role) VALUES ('u1','c1','Cliente CI','ci@example.com','owner')"
+            )
         connection.commit()
         connection.close()
 
@@ -179,6 +211,7 @@ class PostgresIntegrationTests(unittest.TestCase):
             ("security_sessions", "expires_at"),
             ("usage_events", "created_at"),
             ("billing_checkouts", "created_at"),
+            ("assisted_request_messages", "created_at"),
         }
         with connect_runtime(ROOT / "data" / "ci.db") as connection:
             rows = connection.execute(
@@ -237,7 +270,7 @@ class PostgresIntegrationTests(unittest.TestCase):
                     9,
                     0,
                     "{}",
-                    old_timestamp.isoformat(),
+                    old_timestamp,
                 ),
             )
         month = usage.month_usage("c1", "analysis")
