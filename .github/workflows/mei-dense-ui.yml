@@ -1,0 +1,51 @@
+name: MEI Dense UI
+
+on:
+  push:
+    branches:
+      - mei-preview
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-commit:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: mei-preview
+          fetch-depth: 0
+
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply compact UI patch
+        run: python scripts/patch_mei_dense_ui.py
+
+      - name: Compile and contract checks
+        run: |
+          python -m compileall -q mei_app.py
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('mei_app.py').read_text(encoding='utf-8')
+          assert '1.0 MEI Preview 2' in text
+          assert '_html_money' in text
+          assert 'st.write({' not in text
+          assert 'ln-radar-summary' in text
+          assert 'Ver quanto o governo pagou' in text
+          print('UI contracts OK')
+          PY
+
+      - name: Commit validated patch and remove one-shot tooling
+        run: |
+          rm -f scripts/patch_mei_dense_ui.py .github/workflows/mei-dense-ui.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "ui: compactar LicitaNexo MEI e corrigir itens"
+          git push origin HEAD:mei-preview
