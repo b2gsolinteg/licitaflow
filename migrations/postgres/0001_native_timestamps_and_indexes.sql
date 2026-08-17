@@ -109,7 +109,10 @@ BEGIN
         EXECUTE 'CREATE INDEX IF NOT EXISTS ix_support_messages_request_created ON assisted_request_messages(request_id,created_at)';
     END IF;
     IF to_regclass('billing_checkouts') IS NOT NULL THEN
-        EXECUTE 'CREATE UNIQUE INDEX IF NOT EXISTS ux_billing_provider_id ON billing_checkouts(provider_id) WHERE provider_id <> ''''';
+        EXECUTE format(
+            'CREATE UNIQUE INDEX IF NOT EXISTS ux_billing_provider_id ON billing_checkouts(provider_id) WHERE provider_id <> %L',
+            ''
+        );
         EXECUTE 'CREATE INDEX IF NOT EXISTS ix_billing_local_status_created ON billing_checkouts(local_status,created_at DESC)';
     END IF;
 END
