@@ -1,0 +1,61 @@
+name: LicitaNexo MEI Smoke
+
+on:
+  pull_request:
+    paths:
+      - "mei_app.py"
+      - "src/mei_*.py"
+      - "tests/test_mei_catalog.py"
+      - "tests/test_postgres_mei.py"
+      - ".github/workflows/mei-preview-smoke.yml"
+
+permissions:
+  contents: read
+
+env:
+  LICITANEXO_DB_BACKEND: sqlite
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  python314-streamlit:
+    name: Python 3.14 · Streamlit boot
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: requirements.lock
+
+      - name: Install locked dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.lock
+          python -m pip check
+
+      - name: Compile MEI app
+        run: python -m compileall -q mei_app.py src/mei_catalog.py src/mei_portals.py tests/test_mei_catalog.py
+
+      - name: Run MEI tests
+        run: python -m unittest tests.test_mei_catalog -v
+
+      - name: Boot Streamlit and check health
+        run: |
+          streamlit run mei_app.py --server.headless true --server.port 8502 > /tmp/mei-streamlit.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent http://127.0.0.1:8502/_stcore/health | grep -q ok; then
+              echo "MEI_STREAMLIT_BOOT=PASS"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/mei-streamlit.log
+          echo "MEI_STREAMLIT_BOOT=FAIL"
+          exit 1
