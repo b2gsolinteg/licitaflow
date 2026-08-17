@@ -20,9 +20,9 @@ class FakePriceClient:
 
     def fetch_prices(self, catalog_code, state="", kind="Material", start_date=None, max_pages=12):
         return [
-            {"homologated_unit_value": 12.0, "published_at": "2026-08-01", "brand": "Marca A", "supplier": "Fornecedor 1"},
-            {"homologated_unit_value": 14.0, "published_at": "2026-07-01", "brand": "Marca A", "supplier": "Fornecedor 2"},
-            {"homologated_unit_value": 10.0, "published_at": "2026-06-01", "brand": "Marca B", "supplier": "Fornecedor 1"},
+            {"homologated_unit_value": 12.0, "published_at": "2026-08-01", "brand": "Circulo", "supplier": "Fornecedor 1"},
+            {"homologated_unit_value": 14.0, "published_at": "2026-07-01", "brand": "Circulo", "supplier": "Fornecedor 2"},
+            {"homologated_unit_value": 10.0, "published_at": "2026-06-01", "brand": "EuroRoma", "supplier": "Fornecedor 1"},
         ]
 
 
@@ -108,16 +108,16 @@ class MeiCatalogTests(unittest.TestCase):
 
     def test_price_summary_uses_homologated_values_and_brand_counts(self):
         summary = summarize_price_history([
-            {"homologated_unit_value": 10, "published_at": "2026-06-01", "brand": "Marca B", "supplier": "Fornecedor 1"},
-            {"homologated_unit_value": 14, "published_at": "2026-07-01", "brand": "Marca A", "supplier": "Fornecedor 2"},
-            {"homologated_unit_value": 12, "published_at": "2026-08-01", "brand": "Marca A", "supplier": "Fornecedor 1"},
+            {"homologated_unit_value": 10, "published_at": "2026-06-01", "brand": "EuroRoma", "supplier": "Fornecedor 1"},
+            {"homologated_unit_value": 14, "published_at": "2026-07-01", "brand": "Circulo", "supplier": "Fornecedor 2"},
+            {"homologated_unit_value": 12, "published_at": "2026-08-01", "brand": "Circulo", "supplier": "Fornecedor 1"},
         ])
         self.assertEqual(3, summary["count"])
         self.assertEqual(12, summary["median"])
         self.assertEqual(10, summary["minimum"])
         self.assertEqual(14, summary["maximum"])
         self.assertEqual(12, summary["last_price"])
-        self.assertEqual("Marca A", summary["brands"][0]["name"])
+        self.assertEqual("Circulo", summary["brands"][0]["name"])
         self.assertEqual(2, summary["brands"][0]["count"])
 
     def test_price_history_can_discover_catalog_code_without_user_profile(self):
