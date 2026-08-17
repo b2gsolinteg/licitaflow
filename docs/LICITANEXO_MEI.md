@@ -12,6 +12,7 @@ Preço de lançamento pretendido: **R$ 29,90/mês**.
 
 - exploração sem palavra-chave obrigatória;
 - busca por Brasil, região, estado, cidade e modalidade;
+- busca tolerante a acentos em cidades e palavras-chave;
 - palavra-chave opcional;
 - cards claros com órgão, cidade, valor, prazo e modalidade;
 - identificação do portal de disputa;
