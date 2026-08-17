@@ -9,7 +9,7 @@ from .exports import saved_editals_excel, saved_editals_pdf
 from .pricing_ui import pricing_workspace
 from .journey_ui import journey_workspace
 from .company_ui import render_document_readiness
-from .pncp_items import PncpItemsError, fetch_contract_documents
+from .pncp_items import PncpItemsError, fetch_contract_documents, fetch_contract_items, import_contract_items
 
 
 ESSENTIAL_STAGES = ["Salvo", "Analisando", "Vou participar", "Encerrado"]
@@ -48,7 +48,7 @@ def pipeline_page(db, user):
 
     with st.expander("➕ Cadastrar edital manualmente"):
         st.caption("Use quando o edital não tiver sido localizado na busca do LicitaNexo.")
-        with st.form("manual_opportunity", clear_on_submit=True):
+        with st.form("manual_opportunity", clear_on_submit=False, enter_to_submit=False):
             agency = st.text_input("Órgão / entidade")
             obj = st.text_area("Objeto")
             c1, c2, c3 = st.columns(3)
@@ -162,7 +162,7 @@ def opportunity_detail(db, company_id, opportunity):
             parsed_certame = datetime.fromisoformat(str(current_certame).replace("Z", "+00:00")) if current_certame else None
         except (TypeError, ValueError):
             parsed_certame = None
-        with st.form(f"certame_form_{opportunity['id']}"):
+        with st.form(f"certame_form_{opportunity['id']}", enter_to_submit=False):
             d1, d2 = st.columns(2)
             certame_date = d1.date_input("Data", value=parsed_certame.date() if parsed_certame else date.today())
             certame_time = d2.time_input("Horário", value=parsed_certame.time().replace(second=0, microsecond=0) if parsed_certame else time(9, 0))
@@ -224,6 +224,35 @@ def edital_analysis_tab(db, company_id, opportunity):
     )
 
     control_number = str(opportunity.get("pncp_control_number") or "").strip()
+    if control_number:
+        with st.container(border=True):
+            p1, p2 = st.columns([5, 2], vertical_alignment="center")
+            p1.markdown("**⚡ Levar itens oficiais para a Precificação**")
+            p1.caption(
+                "Quando o PNCP disponibiliza itens estruturados, o LicitaNexo usa descrição, quantidade, "
+                "unidade e preço de referência sem depender da leitura da tabela do PDF."
+            )
+            if p2.button(
+                "Importar itens",
+                key=f"analysis_import_pncp_items_{opportunity['id']}",
+                type="primary",
+                width="stretch",
+            ):
+                try:
+                    with st.spinner("Importando itens oficiais do PNCP..."):
+                        official_items = fetch_contract_items(control_number)
+                        result = import_contract_items(
+                            db, company_id, opportunity["id"], control_number, official_items
+                        )
+                    st.session_state[f"opportunity_workspace_{opportunity['id']}"] = "💰 Precificação"
+                    if result["imported"]:
+                        st.success(f'{result["imported"]} item(ns) levado(s) para a Precificação.')
+                    else:
+                        st.info("Os itens oficiais já estavam na Precificação ou não foram disponibilizados pelo PNCP.")
+                    st.rerun()
+                except (PncpItemsError, ValueError) as error:
+                    st.warning(str(error))
+
     documents_key = f"pncp_documents_{opportunity['id']}"
     if control_number:
         if st.button(
@@ -249,7 +278,7 @@ def edital_analysis_tab(db, company_id, opportunity):
                         left.caption(details)
                     url = str(document.get("url") or "")
                     if url.startswith(("http://", "https://")):
-                        right.link_button("Abrir documento", url, key=f"official_doc_{opportunity['id']}_{index}", width="stretch")
+                        right.link_button(f"Abrir documento {index + 1}", url, width="stretch")
 
     uploaded_files = st.file_uploader(
         "Edital, Termo de Referência e anexos em PDF",

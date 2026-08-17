@@ -41,7 +41,7 @@ def list_company_suppliers(db, company_id: str, *, active_only: bool = True) -> 
     where = " AND active=1" if active_only else ""
     with db.connect() as conn:
         rows = conn.execute(
-            f"SELECT * FROM company_suppliers WHERE company_id=?{where} ORDER BY name COLLATE NOCASE",
+            f"SELECT * FROM company_suppliers WHERE company_id=?{where} ORDER BY LOWER(name), name",
             (company_id,),
         ).fetchall()
     return [dict(row) for row in rows]
