@@ -34,11 +34,12 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+          cache-dependency-path: requirements.lock
 
-      - name: Install database dependencies
+      - name: Install locked database dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
+          python -m pip install -r requirements.lock
           python -m pip check
 
       - name: Compile migration tooling
