@@ -76,7 +76,7 @@ def translate_sql(statement):
 
     # Known timestamp TEXT comparisons that SQLite accepted implicitly.
     for col in ("created_at","updated_at","expires_at","trial_ends_at","window_started_at","last_seen_at","requested_at"):
-        s=re.sub(rf"\b{col}\b\s*(>=|<=|>|<)\s*(date_trunc\(|\(CURRENT_TIMESTAMP|CURRENT_TIMESTAMP|CAST\()",
+        s=re.sub(rf"\b{col}\b\s*(>=|<=|>|<)\s*(date_trunc\(|\(date_trunc\(|\(CURRENT_TIMESTAMP|CURRENT_TIMESTAMP|CAST\()",
                  rf"CAST({col} AS TIMESTAMP) \1 \2",s,flags=re.I)
 
     # SQLite INSERT OR IGNORE -> PostgreSQL ON CONFLICT DO NOTHING.
@@ -258,47 +258,3 @@ def _pg_pool():
                 _PG_AUTH_BLOCKED_UNTIL=time.monotonic()+300
                 _PG_AUTH_BLOCKED_REASON=str(exc).splitlines()[0][:240]
             raise
-        _PG_POOL=pool
-        _PG_POOL_KEY=pool_key
-        if previous is not None:
-            try:previous.close()
-            except Exception:pass
-        return pool
-
-
-def _pg_connect():
-    global _PG_AUTH_BLOCKED_UNTIL, _PG_AUTH_BLOCKED_REASON
-    if time.monotonic() < _PG_AUTH_BLOCKED_UNTIL:
-        remaining=max(1, int(_PG_AUTH_BLOCKED_UNTIL-time.monotonic()))
-        raise sqlite3.OperationalError(
-            f"PostgreSQL bloqueado após falha de autenticação. Aguarde {remaining}s. "
-            f"{_PG_AUTH_BLOCKED_REASON}"
-        )
-    try:
-        pool=_pg_pool()
-        lease=pool.connection(timeout=float(os.getenv("LICITANEXO_PG_POOL_TIMEOUT","12")))
-        raw=lease.__enter__()
-    except Exception as exc:
-        if _looks_like_auth_failure(exc):
-            _PG_AUTH_BLOCKED_UNTIL=time.monotonic()+300
-            _PG_AUTH_BLOCKED_REASON=str(exc).splitlines()[0][:240]
-        raise
-    return PostgresCompatConnection(raw,lease=lease)
-
-
-class ClosingSQLiteConnection(sqlite3.Connection):
-    def __exit__(self, exc_type, exc_value, traceback):
-        try:
-            return super().__exit__(exc_type, exc_value, traceback)
-        finally:
-            self.close()
-
-
-def connect_runtime(sqlite_path, search_fold=None):
-    if using_postgres(): return _pg_connect()
-    path=Path(sqlite_path); path.parent.mkdir(parents=True,exist_ok=True)
-    c=sqlite3.connect(str(path),timeout=30,factory=ClosingSQLiteConnection); c.row_factory=sqlite3.Row
-    if search_fold is not None:
-        c.create_function("search_fold", 1, search_fold)
-    c.execute("PRAGMA foreign_keys=ON"); c.execute("PRAGMA busy_timeout=30000")
-    return c
