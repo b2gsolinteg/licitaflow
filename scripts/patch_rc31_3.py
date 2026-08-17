@@ -60,14 +60,16 @@ app = replace_once(
 )
 write("app.py", app)
 
-# Formulário manual de edital também não deve apagar conteúdo ao pressionar Enter.
+# O formulário manual já foi endurecido no RC31.2; preserva a garantia.
 pipeline = read("src/pipeline_ui.py")
-pipeline = replace_once(
-    pipeline,
-    'with st.form("manual_opportunity", clear_on_submit=True):',
-    'with st.form("manual_opportunity", clear_on_submit=False, enter_to_submit=False):',
-    "edital manual sem enter",
-)
+manual_safe = 'with st.form("manual_opportunity", clear_on_submit=False, enter_to_submit=False):'
+if manual_safe not in pipeline:
+    pipeline = replace_once(
+        pipeline,
+        'with st.form("manual_opportunity", clear_on_submit=True):',
+        manual_safe,
+        "edital manual sem enter",
+    )
 write("src/pipeline_ui.py", pipeline)
 
 # Precificação: comparação de fornecedores em tabela de largura total, sem Markdown com R$.
