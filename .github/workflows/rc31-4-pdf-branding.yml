@@ -1,0 +1,85 @@
+name: RC31.4 PDF Branding
+
+on:
+  push:
+    branches:
+      - agent/rc31-4-branded-pdfs
+
+permissions:
+  contents: write
+
+env:
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  patch-test-render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/rc31-4-branded-pdfs
+          fetch-depth: 0
+
+      - name: Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install locked dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.lock
+          python -m pip check
+
+      - name: Apply RC31.4 patch
+        run: python scripts/patch_rc31_4_pdf_branding.py
+
+      - name: Compile application
+        run: python -m compileall -q app.py src tests
+
+      - name: Run full SQLite suite
+        run: python -m unittest discover -s tests -v
+
+      - name: Generate PDF previews
+        run: |
+          mkdir -p /tmp/licitanexo-pdf-preview
+          python - <<'PY'
+          from pathlib import Path
+          from src.help_guides import guide_pdf, full_manual_pdf
+          from src.dossier_export import opportunity_dossier_pdf
+          from tests.test_dossier_export import DossierExportTests
+
+          out = Path('/tmp/licitanexo-pdf-preview')
+          out.joinpath('guia-minha-empresa.pdf').write_bytes(guide_pdf('🏢 Minha Empresa'))
+          out.joinpath('guia-meus-editais.pdf').write_bytes(guide_pdf('⭐ Meus Editais'))
+          out.joinpath('manual-completo.pdf').write_bytes(full_manual_pdf())
+          out.joinpath('dossie-participacao.pdf').write_bytes(
+              opportunity_dossier_pdf(DossierExportTests().sample_bundle())
+          )
+          PY
+          for pdf in /tmp/licitanexo-pdf-preview/*.pdf; do
+            base="${pdf%.pdf}"
+            pdftoppm -f 1 -singlefile -png -r 160 "$pdf" "$base"
+          done
+          ls -lh /tmp/licitanexo-pdf-preview
+
+      - name: Remove one-shot tooling and commit validated patch
+        run: |
+          rm -f scripts/patch_rc31_4_pdf_branding.py .github/workflows/rc31-4-pdf-branding.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "feat: PDFs branded e educativos RC31.4"
+            git push origin HEAD:agent/rc31-4-branded-pdfs
+          fi
+
+      - name: Upload visual previews
+        uses: actions/upload-artifact@v4
+        with:
+          name: rc31-4-pdf-previews
+          path: /tmp/licitanexo-pdf-preview/
+          if-no-files-found: error
