@@ -6,6 +6,7 @@ from .formatters import format_brl
 from .sources import pncp_official_url, source_label, opportunity_source_and_portal
 from .analysis_engine import analyze_essential_pages, extract_pdf_pages
 from .exports import saved_editals_excel, saved_editals_pdf
+from .dossier_export import build_opportunity_dossier, opportunity_dossier_excel, opportunity_dossier_pdf
 from .pricing_ui import pricing_workspace
 from .journey_ui import journey_workspace
 from .company_ui import render_document_readiness
@@ -187,6 +188,50 @@ def opportunity_detail(db, company_id, opportunity):
         st.link_button("📄 Ver publicação no PNCP", official, type="primary", width="stretch")
     else:
         st.warning("Não foi possível montar um link oficial desta oportunidade.")
+
+    dossier_key = f"opportunity_dossier_{opportunity['id']}"
+    with st.expander("📦 Dossiê de participação · PDF e Excel"):
+        st.caption(
+            "Gere um pacote completo para revisar, imprimir ou levar para a sessão: resumo do edital, Jornada, "
+            "itens, preços, custos, fornecedores, margem, documentos, checklist e análise. O Excel separa as informações em abas."
+        )
+        if st.button(
+            "Preparar / atualizar dossiê",
+            key=f"prepare_dossier_{opportunity['id']}",
+            type="primary",
+            width="stretch",
+        ):
+            try:
+                with st.spinner("Montando dossiê com todas as áreas deste edital..."):
+                    bundle = build_opportunity_dossier(db, company_id, opportunity)
+                    st.session_state[dossier_key] = {
+                        "pdf": opportunity_dossier_pdf(bundle),
+                        "xlsx": opportunity_dossier_excel(bundle),
+                        "generated_at": datetime.now().strftime("%d/%m/%Y %H:%M"),
+                    }
+            except Exception as error:
+                st.error(f"Não foi possível gerar o dossiê: {error}")
+
+        prepared = st.session_state.get(dossier_key)
+        if prepared:
+            st.caption(f'Dossiê preparado em {prepared["generated_at"]}. Gere novamente após alterar preços, fornecedores ou Jornada.')
+            d1, d2 = st.columns(2)
+            d1.download_button(
+                "📄 Baixar dossiê PDF",
+                prepared["pdf"],
+                "dossie_participacao_licitanexo.pdf",
+                "application/pdf",
+                key=f"download_dossier_pdf_{opportunity['id']}",
+                width="stretch",
+            )
+            d2.download_button(
+                "📊 Baixar dossiê Excel",
+                prepared["xlsx"],
+                "dossie_participacao_licitanexo.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key=f"download_dossier_xlsx_{opportunity['id']}",
+                width="stretch",
+            )
 
     section = st.radio(
         "Área do edital",
