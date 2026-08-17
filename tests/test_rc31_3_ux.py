@@ -20,6 +20,9 @@ class HelpGuidePdfTests(unittest.TestCase):
             self.assertGreaterEqual(len(reader.pages), 1, page)
             text = "\n".join((p.extract_text() or "") for p in reader.pages)
             self.assertIn("LicitaNexo", text)
+            self.assertIn("Desenvolvido por B2G SaaS", text)
+            self.assertIn("Por que preencher estas informações", text)
+            self.assertTrue(guide["why_fill"], page)
             self.assertTrue(guide["title"].split(" - ")[0].split()[0] in text)
 
     def test_full_manual_has_all_sections(self):
@@ -63,7 +66,7 @@ class Rc313UxContracts(unittest.TestCase):
 
     def test_version_is_rc31_3(self):
         source = (ROOT / "src" / "config.py").read_text(encoding="utf-8")
-        self.assertIn('APP_VERSION = "1.0 Essential RC31.3.1"', source)
+        self.assertIn('APP_VERSION = "1.0 Essential RC31.4"', source)
 
 
 if __name__ == "__main__":
