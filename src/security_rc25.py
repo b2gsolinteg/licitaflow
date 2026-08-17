@@ -264,10 +264,14 @@ class SecurityService:
                 )
                 raise SessionExpiredError("Sua sessão expirou por segurança. Entre novamente.")
 
-            connection.execute(
-                "UPDATE security_sessions SET last_seen_at=? WHERE token_hash=?",
-                (_timestamp_value(now), token_hash),
-            )
+            # A sessão continua validada em toda execução completa, porém o heartbeat
+            # só grava no banco quando passou pelo menos 60s. Fragments de UI não precisam
+            # escrever no PostgreSQL a cada interação de preço/fornecedor.
+            if not last_seen or (now - last_seen).total_seconds() >= 60:
+                connection.execute(
+                    "UPDATE security_sessions SET last_seen_at=? WHERE token_hash=?",
+                    (_timestamp_value(now), token_hash),
+                )
         return True
 
     def revoke_session(self, token):

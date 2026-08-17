@@ -4,6 +4,7 @@ from datetime import date, datetime
 
 import pandas as pd
 import streamlit as st
+from .suppliers_ui import supplier_directory_page
 
 from .company_intelligence import (
     document_readiness,
@@ -46,11 +47,15 @@ def company_page(db, user):
         "apoiar a análise documental e reduzir pesquisas manuais."
     )
 
-    profile_tab, documents_tab, explanation_tab = st.tabs([
-        "Perfil e Cartão CNPJ", "Documentos", "Como o Radar usa meu perfil",
-    ])
+    section = st.radio(
+        "Área da empresa",
+        ["Perfil e Cartão CNPJ", "Documentos", "Fornecedores", "Como o Radar usa meu perfil"],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="company_workspace_section",
+    )
 
-    with profile_tab:
+    if section == "Perfil e Cartão CNPJ":
         st.markdown("### Cartão CNPJ")
         st.caption(
             "Envie o Cartão CNPJ em PDF ou imagem. Em PDF com texto, o LicitaNexo tenta preencher "
@@ -208,7 +213,7 @@ def company_page(db, user):
         else:
             st.warning("Preencha ao menos produtos/serviços, interesses, palavras-chave ou CNAEs para ativar a aderência.")
 
-    with documents_tab:
+    elif section == "Documentos":
         st.markdown("### Cofre documental da empresa")
         st.caption(
             "Mantenha situação e validade dos documentos essenciais. Na análise de um edital, o LicitaNexo cruza "
@@ -266,7 +271,10 @@ def company_page(db, user):
                     except ValueError as error:
                         st.warning(str(error))
 
-    with explanation_tab:
+    elif section == "Fornecedores":
+        supplier_directory_page(db, company_id)
+
+    else:
         st.markdown("### O perfil não esconde oportunidades")
         st.write(
             "Quando a opção de aderência está ligada, o LicitaNexo mantém os filtros escolhidos pelo usuário e "
