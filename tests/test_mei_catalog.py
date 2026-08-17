@@ -43,8 +43,8 @@ class MeiCatalogTests(unittest.TestCase):
                 ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """,
                 (
-                    "1", "12345678000199-1-10/2026", "Prefeitura de Londrina",
-                    "Londrina", "PR", "Pregão eletrônico", "2026-08-10T12:00:00",
+                    "1", "12345678000199-1-10/2026", "Prefeitura de São José dos Pinhais",
+                    "São José dos Pinhais", "PR", "Pregão eletrônico", "2026-08-10T12:00:00",
                     "2026-08-18T10:00:00", "2099-08-20T10:00:00",
                     "Aquisição de materiais de artesanato e barbante",
                     36070.44, "https://www.gov.br/compras/", 0, "Compras.gov", "PNCP",
@@ -76,9 +76,9 @@ class MeiCatalogTests(unittest.TestCase):
 
     def test_region_and_city_filters_do_not_require_keyword(self):
         self.assertIn("PR", states_for_region("Sul"))
-        rows = self.service.search(region="Sul", city="Londrina", keyword="")
+        rows = self.service.search(region="Sul", city="São José dos Pinhais", keyword="")
         self.assertEqual(1, len(rows))
-        self.assertEqual("Londrina", rows[0]["city"])
+        self.assertEqual("São José dos Pinhais", rows[0]["city"])
         self.assertEqual("Compras.gov", rows[0]["portal"])
         self.assertEqual("Gratuito", rows[0]["portal_access"])
 

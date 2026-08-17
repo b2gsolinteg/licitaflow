@@ -85,7 +85,7 @@ class MeiCatalogService:
             params.extend(sorted(selected_states))
         if city:
             clauses.append("search_fold(city) LIKE ?")
-            params.append(f"%{city.casefold()}%")
+            params.append(f"%{self.db._search_fold(city)}%")
         if selected_modalities:
             placeholders = ",".join("?" for _ in selected_modalities)
             clauses.append(f"modality IN ({placeholders})")
@@ -98,7 +98,7 @@ class MeiCatalogService:
                     keyword_clauses.append(
                         "(search_fold(object) LIKE ? OR search_fold(agency) LIKE ? OR search_fold(city) LIKE ?)"
                     )
-                    folded = f"%{term.casefold()}%"
+                    folded = f"%{self.db._search_fold(term)}%"
                     params.extend((folded, folded, folded))
                 clauses.append("(" + " OR ".join(keyword_clauses) + ")")
 
