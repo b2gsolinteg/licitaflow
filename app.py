@@ -391,231 +391,28 @@ def _document_alerts(company_id):
 def apply_brand():
     st.markdown("""
         <style>
-        .stApp {background:linear-gradient(145deg,#07111f 0%,#0b1627 55%,#101b2c 100%);}
-        [data-testid="stSidebar"] {background:#FFFFFF;border-right:1px solid #E3E8EF;}
-        header[data-testid="stHeader"] {background:transparent !important;height:0 !important;}
-        [data-testid="stToolbar"], [data-testid="stDecoration"], #MainMenu {display:none !important;}
-        [data-testid="stSidebar"] * {color:#172033 !important;}
-        [data-testid="stSidebar"] [data-testid="stCaptionContainer"] * {color:#667085 !important;}
-        [data-testid="stSidebar"] hr {border-color:#E3E8EF !important;}
-        [data-testid="stSidebar"] .stButton button {background:#C99A2E !important;color:#172033 !important;border:1px solid #C99A2E !important;font-weight:800 !important;}
-        [data-testid="stSidebar"] .stButton button * {color:#172033 !important;}
-        [data-testid="stSidebar"] div[role="radiogroup"] {
-            gap:.10rem !important;
-        }
-        [data-testid="stSidebar"] div[role="radiogroup"] label {
-            min-height:1.72rem !important;
-            padding:.10rem .20rem !important;
-            border-radius:7px !important;
-        }
-        [data-testid="stSidebar"] div[role="radiogroup"] label p {
-            font-size:.88rem !important;
-            line-height:1.10rem !important;
-        }
-        .brand-mark {font-size:2.25rem;font-weight:800;color:#F2F5F9;line-height:1}
-        .brand-mark span {color:#C99A2E}
-        .brand-tagline {color:#A9B6C8;margin-top:.45rem;margin-bottom:1.4rem}
-        .nexo-card {border:1px solid #26354A;border-left:5px solid #C99A2E;
-                   border-radius:14px;padding:1rem 1.2rem;background:#101C2D;margin:.6rem 0}
-        .success-language {color:#5DD39E;font-weight:600}
-        div[data-testid="stMetric"] {background:#101C2D;border:1px solid #26354A;
-            border-radius:14px;padding:16px;box-shadow:0 10px 24px rgba(0,0,0,.14)}
-        div[data-testid="stVerticalBlockBorderWrapper"] {border-color:#26354A;border-radius:14px;}
-        .stButton>button[kind="primary"], .stDownloadButton>button {border-radius:10px;}
-        /* Essential: menos área vazia e comportamento melhor em telas pequenas. */
-        .block-container {padding-top:1.15rem;padding-bottom:2rem;max-width:1240px;}
-        @media (max-width: 768px) {
-            .block-container {padding-top:.55rem;padding-left:.7rem;padding-right:.7rem;}
-            [data-testid="stImage"] img {max-width:100% !important;height:auto !important;}
-            .stTabs [data-baseweb="tab-list"] {gap:.05rem;overflow-x:auto;}
-            .stTabs [data-baseweb="tab"] {padding-left:.4rem;padding-right:.4rem;white-space:nowrap;}
-            .stButton button, .stDownloadButton button {min-height:2.65rem;}
-        }
-        
-        /* ====================================================
-           LICITANEXO - PATCH MENU LATERAL
-           ==================================================== */
-
-        [data-testid="stSidebar"] {
-            background:#FFFFFF !important;
-            border-right:1px solid #E3E8EF !important;
-        }
-
-        /*
-         * Mant?m dispon?vel o bot?o que reabre a sidebar
-         * quando ela estiver recolhida.
-         */
-        [data-testid="stSidebarCollapsedControl"] {
-            display:flex !important;
-            visibility:visible !important;
-            opacity:1 !important;
-            z-index:999999 !important;
-        }
-
-        /*
-         * Permite rolar o menu sem reduzir o zoom do navegador.
-         */
-        [data-testid="stSidebar"] > div:first-child {
-            overflow-y:auto !important;
-            overflow-x:hidden !important;
-            max-height:100vh !important;
-        }
-
-        /*
-         * Tamanho confort?vel para desktop.
-         */
-        @media (min-width:901px) {
-            [data-testid="stSidebar"] {
-                width:310px !important;
-                min-width:310px !important;
-                max-width:310px !important;
-            }
-
-            [data-testid="stSidebar"] > div:first-child {
-                width:310px !important;
-                max-width:310px !important;
-            }
-        }
-
-        /*
-         * Menu administrativo compacto, mas leg?vel.
-         */
-        /* MENU LATERAL TOTALMENTE PREENCHIDO: cada opção usa 100% da largura útil. */
-        [data-testid="stSidebar"],
-        [data-testid="stSidebar"] > div:first-child {
-            min-height:100vh !important;
-            height:100vh !important;
-        }
-
-        [data-testid="stSidebar"] [data-testid="stRadio"],
-        [data-testid="stSidebar"] div[role="radiogroup"] {
-            width:100% !important;
-        }
-
-        [data-testid="stSidebar"] div[role="radiogroup"] {
-            gap:.18rem !important;
-        }
-
-        [data-testid="stSidebar"] div[role="radiogroup"] label {
-            width:100% !important;
-            box-sizing:border-box !important;
-            min-height:2.62rem !important;
-            padding:.42rem .58rem !important;
-            border-radius:9px !important;
-            border:1px solid #E5EAF0 !important;
-            background:#F8FAFC !important;
-            transition:background .12s ease,border-color .12s ease,box-shadow .12s ease !important;
-        }
-
-        [data-testid="stSidebar"] div[role="radiogroup"] label:hover {
-            background:#F2F5F8 !important;
-            border-color:#D5DDE7 !important;
-        }
-
-        [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
-            background:#10243F !important;
-            border-color:#C99A2E !important;
-            box-shadow:inset 4px 0 0 #C99A2E !important;
-        }
-
-        [data-testid="stSidebar"] div[role="radiogroup"] label p {
-            font-size:.94rem !important;
-            line-height:1.22rem !important;
-            width:100% !important;
-        }
-
-        [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p {
-            color:#FFFFFF !important;
-            font-weight:800 !important;
-        }
-
-        /*
-         * Bot?o Sair.
-         */
-        [data-testid="stSidebar"] .stButton button {
-            background:#C99A2E !important;
-            color:#172033 !important;
-            border:1px solid #C99A2E !important;
-            font-weight:800 !important;
-        }
-
-        [data-testid="stSidebar"] .stButton button * {
-            color:#172033 !important;
-        }
-
-        /*
-         * Tablet e celular.
-         */
-        @media (max-width:900px) {
-            [data-testid="stSidebar"] {
-                max-width:88vw !important;
-            }
-        }
-
-        /* Radar rápido: itens oficiais já visíveis no resultado, sem abrir outra tela. */
-        .radar-items-box {
-            margin:.72rem 0 .62rem;
-            padding:.68rem .72rem;
-            background:#F8FBFF;
-            border:1px solid #DDE7F2;
-            border-radius:11px;
-        }
-        .radar-items-title {
-            color:#17324F;
-            font-weight:850;
-            font-size:.84rem;
-            margin-bottom:.28rem;
-        }
-        .radar-item-row {
-            display:grid;
-            grid-template-columns:minmax(0,1fr) 88px 108px;
-            gap:.45rem;
-            align-items:start;
-            padding:.34rem 0;
-            border-top:1px solid #E7EDF5;
-        }
-        .radar-item-row:first-of-type {border-top:0;}
-        .radar-item-name {
-            color:#2B4057;
-            font-size:.78rem;
-            line-height:1.28;
-            overflow-wrap:anywhere;
-        }
-        .radar-item-qty,.radar-item-price {
-            color:#607086;
-            font-size:.72rem;
-            line-height:1.28;
-            text-align:right;
-        }
-        .radar-item-price {color:#17324F;font-weight:800;}
-        .radar-items-more {color:#738196;font-size:.71rem;margin-top:.32rem;}
-        @media(max-width:760px) {
-            .radar-item-row {grid-template-columns:1fr;gap:.1rem;}
-            .radar-item-qty,.radar-item-price {text-align:left;}
-        }
-
-
-
-        /* RC31.6 · navegação operacional inspirada em apps de busca, com identidade LicitaNexo. */
-        [data-testid="stSidebar"] .stButton button {
-            width:100% !important; min-height:2.72rem !important; justify-content:flex-start !important;
-            background:#FFFFFF !important; color:#172033 !important; border:1px solid #E2E8F0 !important;
-            border-radius:10px !important; box-shadow:none !important; font-weight:750 !important;
-        }
-        [data-testid="stSidebar"] .stButton button * {color:#172033 !important;}
-        [data-testid="stSidebar"] .stButton button[kind="primary"] {
-            background:#10243F !important; border-color:#10243F !important; color:#FFFFFF !important;
-            box-shadow:inset 4px 0 0 #C99A2E !important;
-        }
-        [data-testid="stSidebar"] .stButton button[kind="primary"] * {color:#FFFFFF !important;}
-        [data-testid="stSidebar"] .st-key-sidebar_logout button {
-            justify-content:center !important; background:#F2F5F8 !important; color:#516176 !important;
-            border-color:#DDE4EC !important; box-shadow:none !important;
-        }
-        [data-testid="stSidebar"] .st-key-sidebar_logout button * {color:#516176 !important;}
-        [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {margin-top:.45rem !important;}
-
-</style>
+        .stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"]{background:#FFFFFF !important;color:#293746 !important;}
+        header[data-testid="stHeader"]{background:transparent !important;height:0 !important;}
+        [data-testid="stToolbar"],[data-testid="stDecoration"],#MainMenu{display:none !important;}
+        [data-testid="stAppViewContainer"] *{font-weight:400 !important;}
+        [data-testid="stSidebar"]{background:#FFFFFF !important;border-right:1px solid #E3E8ED !important;}
+        [data-testid="stSidebar"] *{color:#293746 !important;}
+        [data-testid="stSidebar"] > div:first-child{overflow-y:auto !important;overflow-x:hidden !important;max-height:100vh !important;}
+        @media(min-width:901px){[data-testid="stSidebar"],[data-testid="stSidebar"] > div:first-child{width:250px !important;min-width:250px !important;max-width:250px !important;}}
+        [data-testid="stSidebar"] .stButton button{width:100% !important;min-height:2.15rem !important;justify-content:flex-start !important;background:#FFFFFF !important;color:#293746 !important;border:1px solid #DCE3E8 !important;border-radius:8px !important;box-shadow:none !important;padding:.20rem .48rem !important;}
+        [data-testid="stSidebar"] .stButton button[kind="primary"]{background:#EDF3F4 !important;color:#293746 !important;border-color:#B9CDD0 !important;box-shadow:none !important;}
+        [data-testid="stSidebar"] .st-key-sidebar_logout button{justify-content:center !important;background:#F4F7F9 !important;}
+        [data-testid="stSidebar"] [data-testid="stCaptionContainer"]{margin-top:.18rem !important;margin-bottom:.04rem !important;}
+        [data-testid="stSidebar"] [data-testid="stImage"] img{max-width:190px !important;width:190px !important;margin:0 auto !important;display:block !important;}
+        .block-container{padding-top:1.1rem;padding-bottom:2rem;max-width:1240px;}
+        div[data-testid="stVerticalBlockBorderWrapper"],div[data-testid="stMetric"]{background:#FFFFFF !important;border-color:#DCE3E8 !important;box-shadow:none !important;}
+        [data-baseweb="input"],[data-baseweb="base-input"],[data-baseweb="select"] > div,textarea{background:#FFFFFF !important;color:#293746 !important;border-color:#CCD6DD !important;box-shadow:none !important;}
+        input,textarea{background:#FFFFFF !important;color:#293746 !important;-webkit-text-fill-color:#293746 !important;}
+        .stButton>button,.stDownloadButton>button{background:#FFFFFF !important;color:#293746 !important;border:1px solid #CCD6DD !important;box-shadow:none !important;}
+        .stButton>button[kind="primary"],.stDownloadButton>button[kind="primary"]{background:#EAF2F3 !important;color:#293746 !important;border-color:#ADC6C9 !important;}
+        .brand-mark{font-size:2.1rem;color:#293746;line-height:1}.brand-mark span{color:#5F858A}.brand-tagline{color:#667786;margin-top:.45rem;margin-bottom:1.4rem}
+        @media(max-width:768px){.block-container{padding-top:.55rem;padding-left:.7rem;padding-right:.7rem}.stButton button,.stDownloadButton button{min-height:2.55rem;}}
+        </style>
     """, unsafe_allow_html=True)
 
 
@@ -3101,6 +2898,18 @@ def calendar_page(user):
         </style>""",
         unsafe_allow_html=True,
     )
+    st.markdown(
+        """<style>
+        .calendar-title,.agenda-head h3,.notes-panel-title{color:#293746 !important;font-weight:400 !important;}
+        .calendar-subtitle,.agenda-head span,.notes-panel-sub{color:#667786 !important;}
+        .month-card,.agenda-card,.date-badge{background:#FFFFFF !important;border-color:#DCE3E8 !important;box-shadow:none !important;color:#293746 !important;}
+        .month-name,.month-count,.weekdays,.day,.agenda-agency,.agenda-object,.agenda-meta,.date-badge strong,.date-badge small{color:#293746 !important;font-weight:400 !important;}
+        .month-count{background:#F4F7F9 !important;border-color:#DCE3E8 !important;}
+        .day.event{background:#EAF2F3 !important;color:#293746 !important;box-shadow:none !important;}
+        .day.today{outline:1px solid #9FB4BA !important;}
+        </style>""",
+        unsafe_allow_html=True,
+    )
     st.markdown('<div class="calendar-title">Calendário de certames</div>', unsafe_allow_html=True)
     st.markdown('<div class="calendar-subtitle">Veja rapidamente o que vem pela frente e mantenha seus lembretes em um só lugar.</div>', unsafe_allow_html=True)
 
@@ -3176,7 +2985,7 @@ def calendar_page(user):
             if len(calendar_rows) > 6:
                 st.caption(f"+ {len(calendar_rows) - 6} certame(s) futuro(s) registrados.")
         else:
-            st.info("Nenhum certame agendado. Em Meus Editais, informe a data do certame para que ele apareça aqui.")
+            st.info("Nenhum certame agendado. Na Minha lista, escolha Vou participar e informe o dia e a hora do certame.")
 
     st.markdown('<div class="notes-panel-title">Anotações rápidas</div>', unsafe_allow_html=True)
     st.markdown('<div class="notes-panel-sub">Registre lembretes de operação sem transformar o LicitaNexo em um sistema pesado de tarefas.</div>', unsafe_allow_html=True)
@@ -3241,7 +3050,7 @@ def main():
             st.image(str(LOGO_PATH), width="stretch")
         else:
             st.markdown("## 🛡️ LicitaNexo")
-        st.markdown(f'<div style="color:#10243F;font-weight:850">LicitaNexo · {APP_VERSION}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="color:#293746">LicitaNexo · {APP_VERSION}</div>', unsafe_allow_html=True)
         st.markdown('<div style="color:#718096;font-size:.80rem;margin-bottom:.7rem">B2G SaaS · Business to Growth</div>', unsafe_allow_html=True)
         st.markdown(
             f'<div style="background:#F7F9FC;border:1px solid #E3E8EF;border-radius:12px;padding:.65rem .72rem;margin-bottom:.75rem">'
@@ -3267,10 +3076,7 @@ def main():
                 "🔎 Buscar licitações", "🗺️ Por Estado", "📍 Por Cidade",
                 "☰ Por Modalidade", "⚙️ Filtro avançado", "🏆 Top 50",
             ]
-            work_pages = [
-                "❤️ Minha lista", "📋 Meus Editais", "📄 Analisar Edital",
-                "🏢 Minha Empresa", "📅 Calendário",
-            ]
+            work_pages = ["❤️ Minha lista", "📅 Calendário"]
             account_pages = ["🔔 Preferências", "📡 Radar de licitações", "💬 Suporte", "👤 Minha Conta"]
             pages = [*explore_pages, *work_pages, *account_pages]
             if not allowed:
@@ -3303,14 +3109,8 @@ def main():
             _nav_group("MINHA ÁREA", work_pages, "work")
             _nav_group("CONTA", account_pages, "account")
 
-            guide_page = {
-                "🔎 Buscar licitações": "🔎 Buscar Editais",
-                "📋 Meus Editais": "⭐ Meus Editais",
-            }.get(page, page)
-            if guide_page in {
-                "📅 Calendário", "🔎 Buscar Editais", "⭐ Meus Editais",
-                "📄 Analisar Edital", "🏢 Minha Empresa", "💬 Suporte", "👤 Minha Conta",
-            }:
+            guide_page = {"🔎 Buscar licitações": "🔎 Buscar Editais"}.get(page, page)
+            if guide_page in {"📅 Calendário", "🔎 Buscar Editais", "💬 Suporte", "👤 Minha Conta"}:
                 render_sidebar_guides(guide_page)
 
         if st.button("↪ Sair", key="sidebar_logout", width="stretch"):
@@ -3333,12 +3133,6 @@ def main():
         essential_top50_page(db, user)
     elif page == "❤️ Minha lista":
         essential_my_list_page(db, user)
-    elif page == "📋 Meus Editais":
-        pipeline_page(db, user)
-    elif page == "📄 Analisar Edital":
-        analysis_page(db, user, usage)
-    elif page == "🏢 Minha Empresa":
-        company_page(db, user)
     elif page == "📅 Calendário":
         calendar_page(user)
     elif page == "🔔 Preferências":
