@@ -8,11 +8,15 @@ from .pncp_items import PncpItemsError, fetch_contract_items_preview
 def fetch_radar_item_summaries(
     control_numbers,
     *,
-    max_workers: int = 6,
-    preview_items: int = 4,
+    max_workers: int = 4,
+    preview_items: int = 20,
     fetcher=fetch_contract_items_preview,
 ) -> dict[str, dict]:
-    """Busca previews dos itens em paralelo sem deixar uma falha quebrar o Radar."""
+    """Busca até 20 itens por oportunidade em paralelo sem deixar uma falha quebrar a pesquisa.
+
+    O Essential privilegia leitura rápida no próprio resultado. A chamada continua limitada à
+    primeira página de cada contratação; listas maiores só são carregadas quando o usuário pede.
+    """
     controls = list(dict.fromkeys(
         str(value or "").strip() for value in control_numbers if str(value or "").strip()
     ))
@@ -26,7 +30,8 @@ def fetch_radar_item_summaries(
     if not controls:
         return result
 
-    workers = max(1, min(int(max_workers or 1), 8, len(controls)))
+    preview_items = max(1, min(int(preview_items or 20), 20))
+    workers = max(1, min(int(max_workers or 1), 6, len(controls)))
     with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = {
             executor.submit(fetcher, control, limit=preview_items): control
@@ -37,7 +42,7 @@ def fetch_radar_item_summaries(
             try:
                 pack = future.result() or {}
                 result[control] = {
-                    "items": list(pack.get("items") or [])[: max(1, int(preview_items))],
+                    "items": list(pack.get("items") or [])[:preview_items],
                     "item_count": int(pack.get("item_count") or 0),
                     "count_known": bool(pack.get("count_known")),
                     "has_more": bool(pack.get("has_more")),

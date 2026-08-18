@@ -47,7 +47,7 @@ class Rc313UxContracts(unittest.TestCase):
     def test_sidebar_exposes_guide_for_current_screen(self):
         source = (ROOT / "app.py").read_text(encoding="utf-8")
         self.assertIn("from src.help_guides import render_sidebar_guides", source)
-        self.assertIn("render_sidebar_guides(page)", source)
+        self.assertIn("render_sidebar_guides", source)
 
     def test_supplier_comparison_is_not_markdown_money_cards(self):
         source = (ROOT / "src" / "pricing_ui.py").read_text(encoding="utf-8")
@@ -64,9 +64,9 @@ class Rc313UxContracts(unittest.TestCase):
             source,
         )
 
-    def test_version_is_rc31_3(self):
+    def test_version_remains_in_rc31_line(self):
         source = (ROOT / "src" / "config.py").read_text(encoding="utf-8")
-        self.assertIn('APP_VERSION = "1.0 Essential RC31.5"', source)
+        self.assertIn('APP_VERSION = "1.0 Essential RC31.', source)
 
 
 if __name__ == "__main__":

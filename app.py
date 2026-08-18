@@ -37,6 +37,17 @@ from src.pncp_items import PncpItemsError, fetch_contract_items
 from src.radar_items import fetch_radar_item_summaries
 from src.pipeline_ui import pipeline_page
 from src.company_ui import company_page
+from src.essential_discovery import (
+    search_page as essential_search_page,
+    state_page as essential_state_page,
+    city_page as essential_city_page,
+    modality_page as essential_modality_page,
+    advanced_search_page as essential_advanced_search_page,
+    top50_page as essential_top50_page,
+    my_list_page as essential_my_list_page,
+    preferences_page as essential_preferences_page,
+    radar_page as essential_radar_page,
+)
 from src.company_intelligence import profile_search_ready, rank_opportunities
 from src.sources import source_label, opportunity_source_and_portal, pncp_official_url
 from src.logging_setup import configure_logging
@@ -106,6 +117,8 @@ def _cached_admin_pncp_snapshot():
         "last_update": db.last_catalog_update(),
         "recent_runs": db.list_sync_runs(10),
         "modality_counts": modality_counts,
+        "state_counts": db.global_catalog_group_counts("state"),
+        "quality": db.global_catalog_quality_stats(),
     }
 
 
@@ -581,6 +594,26 @@ def apply_brand():
             .radar-item-qty,.radar-item-price {text-align:left;}
         }
 
+
+
+        /* RC31.6 · navegação operacional inspirada em apps de busca, com identidade LicitaNexo. */
+        [data-testid="stSidebar"] .stButton button {
+            width:100% !important; min-height:2.72rem !important; justify-content:flex-start !important;
+            background:#FFFFFF !important; color:#172033 !important; border:1px solid #E2E8F0 !important;
+            border-radius:10px !important; box-shadow:none !important; font-weight:750 !important;
+        }
+        [data-testid="stSidebar"] .stButton button * {color:#172033 !important;}
+        [data-testid="stSidebar"] .stButton button[kind="primary"] {
+            background:#10243F !important; border-color:#10243F !important; color:#FFFFFF !important;
+            box-shadow:inset 4px 0 0 #C99A2E !important;
+        }
+        [data-testid="stSidebar"] .stButton button[kind="primary"] * {color:#FFFFFF !important;}
+        [data-testid="stSidebar"] .st-key-sidebar_logout button {
+            justify-content:center !important; background:#F2F5F8 !important; color:#516176 !important;
+            border-color:#DDE4EC !important; box-shadow:none !important;
+        }
+        [data-testid="stSidebar"] .st-key-sidebar_logout button * {color:#516176 !important;}
+        [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {margin-top:.45rem !important;}
 
 </style>
     """, unsafe_allow_html=True)
@@ -2162,11 +2195,18 @@ def admin_page(user, admin_section="Visão geral"):
         else:
             health_label, health_icon = "Atenção", "🔴"
 
-        h1, h2, h3, h4 = st.columns(4)
-        h1.metric("Editais no catálogo", catalog_stats["total"])
-        h2.metric("Novos hoje", catalog_stats["new_today"])
-        h3.metric("Com prazo futuro", catalog_stats["open_now"])
-        h4.metric("Status", f"{health_icon} {health_label}")
+        quality = pncp_snapshot.get("quality") or {}
+        state_counts = pncp_snapshot.get("state_counts") or []
+        h1, h2, h3, h4, h5 = st.columns(5)
+        h1.metric("Total bruto no banco", catalog_stats["total"])
+        h2.metric("Com prazo futuro", quality.get("future_deadline", catalog_stats.get("open_now", 0)))
+        h3.metric("Sem prazo informado", quality.get("without_deadline", 0))
+        h4.metric("Novos hoje", catalog_stats["new_today"])
+        h5.metric("Status", f"{health_icon} {health_label}")
+        st.info(
+            "O total bruto não é o mesmo número exibido ao cliente. A área de busca mostra o recorte de oportunidades abertas/viáveis; "
+            "use estes indicadores para distinguir catálogo total, registros sem prazo e oportunidades com prazo futuro."
+        )
         st.caption(
             f"Catálogo atualizado em: {str(last_update or 'Nunca')[:19].replace('T', ' ')} · "
             f"Versão: {APP_VERSION}"
@@ -2181,6 +2221,16 @@ def admin_page(user, admin_section="Visão geral"):
         if modality_rows:
             st.dataframe(pd.DataFrame(modality_rows), hide_index=True, width="stretch")
         st.caption(f"Soma das modalidades: {modality_total} · Total do catálogo: {catalog_stats['total']}")
+        if state_counts:
+            st.markdown("#### Cobertura por UF")
+            state_frame = pd.DataFrame([
+                {"UF": row.get("label"), "Quantidade": int(row.get("total") or 0)}
+                for row in state_counts
+            ])
+            st.dataframe(state_frame, hide_index=True, width="stretch", height=min(460, 38 + 31 * len(state_frame)))
+        q1, q2 = st.columns(2)
+        q1.metric("Sem URL do portal", quality.get("without_portal_url", 0))
+        q2.metric("Sem valor estimado", quality.get("without_value", 0))
         if modality_total != catalog_stats["total"]:
             st.warning(
                 f"Há diferença de {catalog_stats['total'] - modality_total} registro(s) entre o total e a distribuição. "
@@ -3185,24 +3235,26 @@ def main():
         legal_acceptance_page(user)
         return
     allowed, access_message, account = db.subscription_access(user["company_id"])
+    admin_section = None
     with st.sidebar:
         if LOGO_PATH.exists():
             st.image(str(LOGO_PATH), width="stretch")
         else:
             st.markdown("## 🛡️ LicitaNexo")
-        st.markdown(f'<div style="color:#C99A2E;font-weight:700">LicitaNexo · {APP_VERSION}</div>', unsafe_allow_html=True)
-        st.markdown('<div style="color:#C99A2E;font-size:.86rem">Powered by B2G SaaS · Business to Growth</div>', unsafe_allow_html=True)
-        st.markdown('<div style="color:#C99A2E;font-size:.86rem;margin-bottom:.8rem">Período de teste</div>', unsafe_allow_html=True)
-        st.markdown(f"### {_greeting(user)} 👋")
-        if _is_admin_user(user):
-            st.caption(f"Ambiente: {ENVIRONMENT}")
-        admin_label = None
-        admin_section = None
+        st.markdown(f'<div style="color:#10243F;font-weight:850">LicitaNexo · {APP_VERSION}</div>', unsafe_allow_html=True)
+        st.markdown('<div style="color:#718096;font-size:.80rem;margin-bottom:.7rem">B2G SaaS · Business to Growth</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div style="background:#F7F9FC;border:1px solid #E3E8EF;border-radius:12px;padding:.65rem .72rem;margin-bottom:.75rem">'
+            f'<div style="font-weight:850;color:#172033">{_greeting(user)} 👋</div>'
+            f'<div style="font-size:.76rem;color:#718096">{escape(str(user.get("name") or user.get("email") or "Minha conta"))}</div></div>',
+            unsafe_allow_html=True,
+        )
+
         if _is_admin_user(user):
             pending = _cached_pending_access_requests()
-            admin_label = f"Administração · {pending} pendente(s)" if pending else "Administração"
-            pages = [admin_label]
-            st.markdown("##### Sala de Controle")
+            page = "Administração"
+            st.caption(f"Ambiente: {ENVIRONMENT}")
+            st.markdown("##### SALA DE CONTROLE")
             admin_section = st.radio(
                 "Funções administrativas",
                 ADMIN_SECTIONS,
@@ -3211,37 +3263,88 @@ def main():
                 label_visibility="collapsed",
             )
         else:
-            pages = [
+            explore_pages = [
+                "🔎 Buscar licitações", "🗺️ Por Estado", "📍 Por Cidade",
+                "☰ Por Modalidade", "⚙️ Filtro avançado", "🏆 Top 50",
+            ]
+            work_pages = [
+                "❤️ Minha lista", "📋 Meus Editais", "📄 Analisar Edital",
+                "🏢 Minha Empresa", "📅 Calendário",
+            ]
+            account_pages = ["🔔 Preferências", "📡 Radar de licitações", "💬 Suporte", "👤 Minha Conta"]
+            pages = [*explore_pages, *work_pages, *account_pages]
+            if not allowed:
+                explore_pages, work_pages = [], []
+                account_pages = ["💬 Suporte", "👤 Minha Conta"]
+                pages = account_pages
+
+            requested_page = st.session_state.pop("_navigation_request", None)
+            if requested_page in pages:
+                st.session_state["main_navigation"] = requested_page
+            if st.session_state.get("main_navigation") not in pages:
+                st.session_state["main_navigation"] = pages[0]
+            page = st.session_state["main_navigation"]
+
+            def _nav_group(title, options, group_key):
+                nonlocal page
+                if not options:
+                    return
+                st.caption(title)
+                for index, option in enumerate(options):
+                    selected = page == option
+                    if st.button(
+                        option, key=f"nav_{group_key}_{index}",
+                        type="primary" if selected else "secondary", width="stretch",
+                    ):
+                        st.session_state["main_navigation"] = option
+                        st.rerun()
+
+            _nav_group("EXPLORAR", explore_pages, "explore")
+            _nav_group("MINHA ÁREA", work_pages, "work")
+            _nav_group("CONTA", account_pages, "account")
+
+            guide_page = {
+                "🔎 Buscar licitações": "🔎 Buscar Editais",
+                "📋 Meus Editais": "⭐ Meus Editais",
+            }.get(page, page)
+            if guide_page in {
                 "📅 Calendário", "🔎 Buscar Editais", "⭐ Meus Editais",
                 "📄 Analisar Edital", "🏢 Minha Empresa", "💬 Suporte", "👤 Minha Conta",
-            ]
-            if not allowed:
-                pages = ["💬 Suporte", "👤 Minha Conta"]
-        # Navegação programática deve ser aplicada antes de o widget com a chave
-        # ``main_navigation`` ser instanciado. Botões de outras telas apenas gravam
-        # uma intenção e pedem rerun; ela é consumida aqui na execução seguinte.
-        requested_page = st.session_state.pop("_navigation_request", None)
-        if requested_page in pages:
-            st.session_state["main_navigation"] = requested_page
-        elif st.session_state.get("main_navigation") not in pages:
-            st.session_state["main_navigation"] = pages[0]
-        page = st.radio("Navegação", pages, key="main_navigation")
-        render_sidebar_guides(page)
-        if st.button("↪ Sair", width="stretch"):
+            }:
+                render_sidebar_guides(guide_page)
+
+        if st.button("↪ Sair", key="sidebar_logout", width="stretch"):
             security.revoke_session(st.session_state.get("security_session_token"))
-            security.event("logout", user.get("email",""), _client_ip(), True, f'user_id={user.get("id","")}')
+            security.event("logout", user.get("email", ""), _client_ip(), True, f'user_id={user.get("id", "")}')
             st.session_state.clear()
             st.rerun()
-    if page == "📅 Calendário":
-        calendar_page(user)
-    elif page == "🔎 Buscar Editais":
-        search_page(user)
-    elif page == "⭐ Meus Editais":
+
+    if page == "🔎 Buscar licitações":
+        essential_search_page(db, user, usage)
+    elif page == "🗺️ Por Estado":
+        essential_state_page(db, user)
+    elif page == "📍 Por Cidade":
+        essential_city_page(db, user)
+    elif page == "☰ Por Modalidade":
+        essential_modality_page(db, user)
+    elif page == "⚙️ Filtro avançado":
+        essential_advanced_search_page(db, user)
+    elif page == "🏆 Top 50":
+        essential_top50_page(db, user)
+    elif page == "❤️ Minha lista":
+        essential_my_list_page(db, user)
+    elif page == "📋 Meus Editais":
         pipeline_page(db, user)
     elif page == "📄 Analisar Edital":
         analysis_page(db, user, usage)
     elif page == "🏢 Minha Empresa":
         company_page(db, user)
+    elif page == "📅 Calendário":
+        calendar_page(user)
+    elif page == "🔔 Preferências":
+        essential_preferences_page(db, user)
+    elif page == "📡 Radar de licitações":
+        essential_radar_page(db, user)
     elif page == "💬 Suporte":
         support_page(user)
     elif page == "👤 Minha Conta":

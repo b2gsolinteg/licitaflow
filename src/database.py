@@ -2182,6 +2182,41 @@ class Database:
         return saved
 
 
+    def global_catalog_group_counts(self, column, closing_from=None):
+        """Contagens leves para Estado/Cidade/Modalidade sem carregar o catálogo inteiro."""
+        allowed = {"state", "city", "modality"}
+        if column not in allowed:
+            raise ValueError("Agrupamento de catálogo inválido.")
+        sql = f"SELECT {column} AS label, COUNT(*) AS total FROM global_pncp_catalog WHERE trim({column})<>''"
+        params = []
+        if closing_from:
+            sql += " AND (closing_at IS NULL OR date(closing_at)>=date(?))"
+            params.append(str(closing_from)[:10])
+        sql += f" GROUP BY {column} ORDER BY COUNT(*) DESC, {column} ASC"
+        with self.connect() as conn:
+            return [dict(row) for row in conn.execute(sql, params).fetchall()]
+
+    def global_catalog_quality_stats(self):
+        """Diagnóstico simples para a Sala de Controle explicar o número exibido ao cliente."""
+        with self.connect() as conn:
+            row = conn.execute("""
+                SELECT COUNT(*) AS total,
+                       SUM(CASE WHEN closing_at IS NULL THEN 1 ELSE 0 END) AS without_deadline,
+                       SUM(CASE WHEN closing_at IS NOT NULL AND date(closing_at) >= CURRENT_DATE THEN 1 ELSE 0 END) AS future_deadline,
+                       SUM(CASE WHEN closing_at IS NOT NULL AND date(closing_at) < CURRENT_DATE THEN 1 ELSE 0 END) AS expired_deadline,
+                       SUM(CASE WHEN trim(source_url)='' THEN 1 ELSE 0 END) AS without_portal_url,
+                       SUM(CASE WHEN estimated_value IS NULL OR estimated_value<=0 THEN 1 ELSE 0 END) AS without_value
+                FROM global_pncp_catalog
+            """).fetchone()
+        return {
+            "total": int(row["total"] or 0),
+            "without_deadline": int(row["without_deadline"] or 0),
+            "future_deadline": int(row["future_deadline"] or 0),
+            "expired_deadline": int(row["expired_deadline"] or 0),
+            "without_portal_url": int(row["without_portal_url"] or 0),
+            "without_value": int(row["without_value"] or 0),
+        }
+
     def global_catalog_stats(self):
         with self.connect() as conn:
             row = conn.execute("""
@@ -2246,7 +2281,7 @@ class Database:
             )]
         return states, modalities
 
-    def list_global_catalog(self, search="", states=None, modalities=None, srp=None, minimum=None,
+    def list_global_catalog(self, search="", states=None, cities=None, modalities=None, srp=None, minimum=None,
                             maximum=None, closing_from=None, closing_to=None, limit=5000,
                             order_by="recent"): 
         sql = "SELECT * FROM global_pncp_catalog WHERE 1=1"
@@ -2282,6 +2317,10 @@ class Database:
         if states:
             sql += f" AND state IN ({','.join('?' for _ in states)})"
             params.extend(states)
+        cities = [str(city).strip() for city in (cities or []) if str(city).strip()]
+        if cities:
+            sql += " AND (" + " OR ".join("lower(city)=lower(?)" for _ in cities) + ")"
+            params.extend(cities)
         modalities = [canonical_modality_name(m) for m in (modalities or []) if m]
         if modalities:
             # O PNCP pode armazenar a mesma modalidade com hífen, por exemplo

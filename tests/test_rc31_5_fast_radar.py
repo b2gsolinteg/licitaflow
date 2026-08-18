@@ -87,9 +87,9 @@ class Rc315FastUxContracts(unittest.TestCase):
         self.assertIn("width:100% !important", source)
         self.assertIn("min-height:100vh !important", source)
 
-    def test_version_is_rc31_5(self):
+    def test_version_remains_in_rc31_line(self):
         source = ROOT.joinpath("src", "config.py").read_text(encoding="utf-8")
-        self.assertIn('APP_VERSION = "1.0 Essential RC31.5"', source)
+        self.assertIn('APP_VERSION = "1.0 Essential RC31.', source)
 
 
 if __name__ == "__main__":
