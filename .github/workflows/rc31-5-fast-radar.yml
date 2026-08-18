@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/rc31-5-fast-radar-sidebar
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -59,6 +62,7 @@ jobs:
           PY
 
       - name: Remove one-shot tooling and commit validated patch
+        if: github.event_name == 'push'
         run: |
           rm -f scripts/patch_rc31_5_fast_radar.py .github/workflows/rc31-5-fast-radar.yml
           git config user.name "github-actions[bot]"
