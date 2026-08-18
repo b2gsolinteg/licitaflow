@@ -1,0 +1,82 @@
+name: LicitaNexo MEI Preview 3
+
+on:
+  push:
+    branches:
+      - mei-preview
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: mei-preview
+          fetch-depth: 0
+
+      - name: Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install locked dependencies
+        run: pip install -r requirements.lock
+
+      - name: Apply Preview 3 patch
+        run: python scripts/patch_mei_preview3.py
+
+      - name: Compile and targeted tests
+        env:
+          LICITANEXO_DB_BACKEND: sqlite
+        run: |
+          python -m compileall -q mei_app.py src tests
+          python -m unittest tests.test_mei_catalog -v
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('mei_app.py').read_text(encoding='utf-8')
+          required = [
+              '1.0 MEI Preview 3',
+              'Todas as oportunidades',
+              'Por região',
+              'Por estado',
+              'Por cidade',
+              'Por modalidade',
+              'Em destaque',
+              'Ver preços pagos pelo governo',
+              'def _highlight_page():',
+          ]
+          missing = [item for item in required if item not in text]
+          if missing:
+              raise SystemExit(f'Contratos ausentes: {missing}')
+          print('Contratos Preview 3: OK')
+          PY
+
+      - name: Boot Streamlit and check health
+        env:
+          LICITANEXO_DB_BACKEND: sqlite
+        run: |
+          streamlit run mei_app.py --server.headless true --server.port 8501 > /tmp/mei-preview3.log 2>&1 &
+          pid=$!
+          trap 'kill $pid || true' EXIT
+          for i in $(seq 1 25); do
+            if curl -fsS http://127.0.0.1:8501/_stcore/health | grep -qi ok; then
+              echo "Streamlit health OK"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/mei-preview3.log
+          exit 1
+
+      - name: Commit validated Preview 3
+        run: |
+          rm -f scripts/patch_mei_preview3.py .github/workflows/mei-preview3.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "ui: LicitaNexo MEI Preview 3 com navegação por descoberta"
+          git push origin HEAD:mei-preview
