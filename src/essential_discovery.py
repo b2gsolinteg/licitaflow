@@ -4,7 +4,6 @@ from datetime import date, datetime
 from html import escape
 from zoneinfo import ZoneInfo
 
-import pandas as pd
 import streamlit as st
 
 from .formatters import format_brl, parse_brl
@@ -29,21 +28,21 @@ def _apply_styles() -> None:
         [data-testid="stMain"] h1,[data-testid="stMain"] h2,[data-testid="stMain"] h3,
         [data-testid="stMain"] p,[data-testid="stMain"] label p,[data-testid="stMain"] .stCaption p{color:#10243F;}
         [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]{background:#FFFFFF;border-color:#DDE4EC !important;box-shadow:0 8px 22px rgba(16,36,63,.06);}
-        .ln-discovery-title{font-size:2rem;font-weight:900;letter-spacing:-.025em;margin:.05rem 0 .2rem;color:#F7F9FC}
-        .ln-discovery-sub{color:#AEBBCD;font-size:.96rem;margin:0 0 1rem}
+        .ln-discovery-title{font-size:2rem;font-weight:900;letter-spacing:-.025em;margin:.05rem 0 .2rem;color:#10243F}
+        .ln-discovery-sub{color:#607086;font-size:.96rem;margin:0 0 1rem}
         .ln-opportunity-shell{margin:.75rem 0}
         .ln-modality-badge{display:inline-block;background:#E7F8EC;color:#176B3A;border:1px solid #BDE9CA;
             border-radius:999px;padding:.2rem .6rem;font-weight:850;font-size:.72rem;text-transform:uppercase;letter-spacing:.02em}
-        .ln-reference{font-weight:900;font-size:1.05rem;color:#F7F9FC;margin:.42rem 0 .7rem}
+        .ln-reference{font-weight:900;font-size:1.05rem;color:#10243F;margin:.42rem 0 .7rem}
         .ln-info-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.55rem;margin:.15rem 0 .8rem}
         .ln-info-box{background:#F8FAFC;border:1px solid #DCE4EE;border-radius:12px;padding:.68rem .72rem;min-height:84px}
         .ln-info-label{font-size:.69rem;color:#718096;font-weight:850;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.32rem}
         .ln-info-value{color:#10243F;font-size:.9rem;line-height:1.28;font-weight:650}
         .ln-info-extra{color:#C66B12;font-size:.69rem;font-weight:800;margin-top:.35rem}
-        .ln-object-label{font-size:.72rem;color:#D7A52E;font-weight:900;text-transform:uppercase;margin:.3rem 0 .18rem}
+        .ln-object-label{font-size:.72rem;color:#9A6E12;font-weight:900;text-transform:uppercase;margin:.3rem 0 .18rem}
         .ln-portal-box{background:#0D1D31;border:1px solid #2A405B;border-radius:11px;padding:.65rem .75rem;margin:.65rem 0}
         .ln-portal-main{color:#F4F7FA;font-weight:800;font-size:.85rem}
-        .ln-portal-detail{color:#9FB0C4;font-size:.74rem;line-height:1.35;margin-top:.2rem}
+        .ln-portal-detail{color:#B5C1CF;font-size:.74rem;line-height:1.35;margin-top:.2rem}
         .ln-items-box{background:#F8FBFF;border:1px solid #DDE7F2;border-radius:12px;padding:.72rem .78rem;margin:.65rem 0}
         .ln-items-title{color:#17324F;font-weight:900;font-size:.88rem;margin-bottom:.4rem}
         .ln-item-row{display:grid;grid-template-columns:48px minmax(0,1fr) 130px 132px;gap:.5rem;align-items:start;
@@ -53,8 +52,8 @@ def _apply_styles() -> None:
         .ln-item-desc{font-size:.78rem;line-height:1.32}
         .ln-item-qty,.ln-item-price{font-size:.74rem;line-height:1.32;color:#52657C;text-align:right}
         .ln-items-note{font-size:.72rem;color:#6D7F93;margin-top:.35rem}
-        .ln-section-label{font-size:.72rem;color:#8EA0B6;font-weight:850;letter-spacing:.05em;text-transform:uppercase;margin:.95rem 0 .35rem}
-        .ln-state-count{font-size:.73rem;color:#8090A5}
+        .ln-section-label{font-size:.72rem;color:#66788D;font-weight:850;letter-spacing:.05em;text-transform:uppercase;margin:.95rem 0 .35rem}
+        .ln-state-count{font-size:.73rem;color:#607086}
         @media(max-width:900px){
             .ln-info-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
             .ln-item-row{grid-template-columns:38px minmax(0,1fr)}
@@ -287,7 +286,8 @@ def _render_card(db, user: dict, item: dict, pack: dict) -> None:
     city = str(item.get("city") or "Município não informado")
     state = str(item.get("state") or "--")
     agency = str(item.get("agency") or "Órgão não informado")
-    value = format_brl(item.get("estimated_value"))
+    estimated_value = item.get("estimated_value")
+    value = format_brl(estimated_value) if estimated_value not in (None, "") else "Não informado"
     opening = item.get("opening_at") or item.get("closing_at")
     deadline = item.get("closing_at")
     opening_text = _datetime_text(opening)
@@ -366,7 +366,7 @@ def _render_results(db, user: dict, items: list[dict], *, page_key: str, per_pag
         if n1.button("◀ Anterior", disabled=current <= 1, key=f"{page_key}_prev", width="stretch"):
             st.session_state[page_key] = current - 1
             st.rerun()
-        n2.markdown(f"<div style='text-align:center;padding:.7rem'>Página {current} de {total_pages}</div>", unsafe_allow_html=True)
+        n2.markdown(f"<div style='text-align:center;padding:.7rem;color:#52657C'>Página {current} de {total_pages}</div>", unsafe_allow_html=True)
         if n3.button("Próxima ▶", disabled=current >= total_pages, key=f"{page_key}_next", width="stretch"):
             st.session_state[page_key] = current + 1
             st.rerun()
@@ -580,9 +580,11 @@ def my_list_page(db, user: dict) -> None:
         with st.container(border=True):
             st.markdown(f"### {row.get('agency') or 'Órgão não informado'}")
             st.write(row.get("object") or "Objeto não informado")
+            estimated_value = row.get("estimated_value")
+            value = format_brl(estimated_value) if estimated_value not in (None, "") else "Não informado"
             st.caption(
                 f"{row.get('city') or 'Município não informado'}/{row.get('state') or '--'} · "
-                f"{row.get('modality') or 'Modalidade não informada'} · {format_brl(row.get('estimated_value'))} · "
+                f"{row.get('modality') or 'Modalidade não informada'} · {value} · "
                 f"{_datetime_text(row.get('closing_at'))}"
             )
             st.caption(f"Portal: {portal} · {access['label']} · Fonte: {source_name}")
@@ -600,7 +602,7 @@ def my_list_page(db, user: dict) -> None:
                 st.session_state["_navigation_request"] = "📋 Meus Editais"
                 st.rerun()
             if c3.button("Remover", key=f"list_remove_{row['id']}", width="stretch"):
-                db.delete_opportunity(company_id, row["id"])
+                db.update_stage(company_id, row["id"], "Arquivada")
                 st.rerun()
 
 
