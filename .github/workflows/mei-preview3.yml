@@ -74,7 +74,7 @@ jobs:
 
       - name: Commit validated Preview 3
         run: |
-          rm -f scripts/patch_mei_preview3.py .github/workflows/mei-preview3.yml
+          rm -f scripts/patch_mei_preview3.py .github/workflows/mei-preview3.yml docs/mei-preview3-trigger.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
