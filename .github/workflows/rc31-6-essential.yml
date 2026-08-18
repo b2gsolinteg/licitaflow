@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/rc31-6-essential-discovery
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
