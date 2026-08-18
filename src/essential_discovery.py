@@ -24,6 +24,11 @@ def _apply_styles() -> None:
     st.markdown(
         """
         <style>
+        .stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"]{background:#EEF2F6 !important;}
+        [data-testid="stMain"] .block-container{max-width:1180px !important;padding-top:1.45rem !important;}
+        [data-testid="stMain"] h1,[data-testid="stMain"] h2,[data-testid="stMain"] h3,
+        [data-testid="stMain"] p,[data-testid="stMain"] label p,[data-testid="stMain"] .stCaption p{color:#10243F;}
+        [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]{background:#FFFFFF;border-color:#DDE4EC !important;box-shadow:0 8px 22px rgba(16,36,63,.06);}
         .ln-discovery-title{font-size:2rem;font-weight:900;letter-spacing:-.025em;margin:.05rem 0 .2rem;color:#F7F9FC}
         .ln-discovery-sub{color:#AEBBCD;font-size:.96rem;margin:0 0 1rem}
         .ln-opportunity-shell{margin:.75rem 0}

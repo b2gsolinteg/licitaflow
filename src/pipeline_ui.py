@@ -65,17 +65,19 @@ def pipeline_page(db, user):
                     st.warning("Informe pelo menos o órgão e o objeto do edital.")
                 else:
                     certame_at = datetime.combine(certame_date, certame_time).isoformat(timespec="minutes") if certame_date else None
-                    db.add_manual_opportunity(
+                    opportunity_id = db.add_manual_opportunity(
                         company_id, agency.strip(), obj.strip(), city.strip(), state.strip().upper(),
                         modality.strip(), certame_at=certame_at, source_url=source_url.strip(),
                     )
-                    st.success("Edital cadastrado em Meus Editais.")
+                    if opportunity_id:
+                        db.update_stage(company_id, opportunity_id, "Em análise")
+                    st.success("Edital cadastrado e colocado em preparação.")
                     st.rerun()
 
     export_key = f"pipeline_exports_{company_id}"
     if st.button("📦 Preparar / atualizar arquivos de exportação", key=f"prepare_exports_{company_id}"):
         with st.spinner("Preparando exportação..."):
-            all_rows = db.pipeline_summaries(company_id, "")
+            all_rows = [row for row in db.pipeline_summaries(company_id, "") if row.get("stage") != "Nova oportunidade"]
             export_rows = []
             for export_row in all_rows:
                 export_item = dict(export_row)
@@ -106,12 +108,12 @@ def pipeline_page(db, user):
     c1, c2 = st.columns([3, 2])
     search = c1.text_input("Buscar nos meus editais", placeholder="Órgão ou objeto")
     status_filter = c2.selectbox("Status", ["Todos", *ESSENTIAL_STAGES])
-    rows = db.pipeline_summaries(company_id, search)
+    rows = [row for row in db.pipeline_summaries(company_id, search) if row.get("stage") != "Nova oportunidade"]
     if status_filter != "Todos":
         rows = [row for row in rows if _DB_TO_STAGE.get(row.get("stage"), "Salvo") == status_filter]
 
     if not rows:
-        st.info("Nenhum edital salvo aqui. Use Buscar Editais e salve somente o que merece sua atenção.")
+        st.info("Nenhum edital em preparação. Vá até Minha lista e escolha Começar preparação quando uma oportunidade merecer estudo.")
         return
 
     for row in rows:
