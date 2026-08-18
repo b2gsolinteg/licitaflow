@@ -7,7 +7,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-from src.mei_preview4_app import main
+from src.mei_preview5_app import main
 
 
 if __name__ == "__main__":
