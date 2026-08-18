@@ -28,15 +28,20 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          import re, subprocess
-          path = Path('.github/workflows/rc31-8-clean-essential-patch.yml')
-          text = path.read_text(encoding='utf-8')
+          import subprocess
+
+          text = Path('.github/workflows/rc31-8-clean-essential-patch.yml').read_text(encoding='utf-8')
           for target in ('Add Brazilian state flags', 'Apply clean Essential patch'):
-              pattern = re.compile(rf'^      - name: {re.escape(target)}\n        run: \|\n(?P<body>(?:          .*\n)+)', re.M)
-              match = pattern.search(text)
-              if not match:
+              marker = f'      - name: {target}\n        run: |\n'
+              start = text.find(marker)
+              if start < 0:
                   raise SystemExit(f'Etapa não encontrada: {target}')
-              body = ''.join(line[10:] if line.startswith('          ') else line for line in match.group('body').splitlines(True))
+              start += len(marker)
+              end = text.find('\n      - name:', start)
+              if end < 0:
+                  end = len(text)
+              raw = text[start:end]
+              body = '\n'.join(line[10:] if line.startswith('          ') else line for line in raw.splitlines()) + '\n'
               subprocess.run(['bash', '-lc', body], check=True)
           PY
       - name: Compile and run SQLite suite
@@ -52,6 +57,6 @@ jobs:
           git fetch origin main
           git checkout origin/main -- .github/workflows/quality.yml
           git rm .github/workflows/rc31-8-clean-essential-patch.yml
-          git add .streamlit/config.toml app.py src/config.py src/sources.py src/database.py src/essential_discovery.py assets/state_flags tests/test_rc31_6_essential.py tests/test_rc31_8_clean_essential.py .github/workflows/quality.yml
+          git add -A
           git commit -m "feat: simplificar Essential com busca clara e decisões rápidas"
           git push origin HEAD:agent/rc31-8-clean-essential
