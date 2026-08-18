@@ -39,7 +39,7 @@ class ArchitectureContractTests(unittest.TestCase):
 
     def test_sidebar_css_patch_is_not_duplicated(self):
         source = (ROOT / "app.py").read_text(encoding="utf-8")
-        marker = "LICITANEXO - PATCH MENU LATERAL"
+        marker = '[data-testid="stSidebar"]{background:#FFFFFF !important;border-right:1px solid #E3E8ED !important;}'
         self.assertEqual(source.count(marker), 1)
 
     def test_versioned_migration_tool_has_checksum_and_lock(self):
