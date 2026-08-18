@@ -1,3 +1,4 @@
+# retrigger RC31.7
 name: RC31.7 Simple UX Patch
 
 on:
@@ -143,7 +144,6 @@ jobs:
               '🌐 Portal de disputa: ': '🌐 Onde participar: ',
               'Fonte do dado: {escape(source_name)}. {escape(access["detail"])}': '{escape(access["detail"])} Fonte: {escape(source_name)}.',
               'Nenhuma licitação encontrada com esses filtros. Altere apenas o que for necessário e pesquise novamente.': 'Nenhum edital aberto foi encontrado. Tente retirar um filtro ou pesquisar outra palavra.',
-              '{len(items)} licitação(ões) encontrada(s).': '{len(items):,} editais abertos para participação".replace(",", ".")',
               'Digite o que procura e veja as oportunidades com os itens já abertos. Campo vazio amplia a busca.': 'Pesquise pelo que deseja vender. Se deixar em branco, mostramos editais de vários tipos.',
               'Comece por uma palavra, um estado ou simplesmente clique em Buscar licitações para explorar tudo que está aberto.': 'Digite uma palavra, escolha um estado ou clique em Buscar licitações para ver editais abertos.',
               'Localizando oportunidades abertas...': 'Buscando editais abertos...',
@@ -153,7 +153,6 @@ jobs:
               'Digite o município e veja as licitações abertas naquela cidade.': 'Digite a cidade para ver os editais abertos para participação.',
               'Escolha como o órgão está contratando e veja as oportunidades abertas.': 'Escolha a modalidade para ver os editais abertos para participação.',
               'Nenhuma modalidade disponível no catálogo agora.': 'Nenhum edital aberto foi encontrado por modalidade agora.',
-              '{total:,} licitação(ões)': '{total:,} editais abertos',
               'Combine apenas os filtros que fizerem sentido. Nenhum campo é obrigatório.': 'Use só os filtros que quiser. Você não precisa preencher todos.',
               'Palavra ou frase do objeto': 'O que você procura?',
               'Prazo a partir de': 'Participação a partir de',
@@ -172,10 +171,13 @@ jobs:
                   raise SystemExit(f'Texto não encontrado em essential_discovery.py: {old}')
               d = d.replace(old, new)
 
-          # Corrige a expressão do caption após a troca textual acima.
           d = d.replace(
+              'st.caption(f"{len(items)} licitação(ões) encontrada(s).")',
               'st.caption(f"{len(items):,} editais abertos para participação".replace(",", "."))',
-              'st.caption(f"{len(items):,} editais abertos para participação".replace(",", "."))',
+          )
+          d = d.replace(
+              'st.caption(f"{total:,} licitação(ões)".replace(",", "."))',
+              'st.caption(f"{total:,} editais abertos".replace(",", "."))',
           )
           d = d.replace(
               'if col.button(f"{state} · {total:,}".replace(",", "."), key=f"state_{state}", width="stretch"):',
@@ -184,7 +186,7 @@ jobs:
           discovery_path.write_text(d, encoding='utf-8')
 
           test_path = Path('tests/test_rc31_7_simple_ux.py')
-          test_path.write_text('''from pathlib import Path\nimport unittest\n\n\nROOT = Path(__file__).resolve().parents[1]\n\n\nclass SimpleUxContracts(unittest.TestCase):\n    def test_discovery_uses_plain_language_and_readable_state_buttons(self):\n        text = (ROOT / "src" / "essential_discovery.py").read_text(encoding="utf-8")\n        self.assertIn("editais abertos para participação", text)\n        self.assertIn("O que o governo quer comprar ou contratar", text)\n        self.assertIn("Onde participar", text)\n        self.assertIn('div[class*="st-key-state_"] button', text)\n        self.assertNotIn("sem score e sem exigir CNAE", text)\n\n    def test_sidebar_is_compact_and_selected_item_does_not_hide_text(self):\n        text = (ROOT / "app.py").read_text(encoding="utf-8")\n        self.assertIn("width:260px !important", text)\n        self.assertIn("min-height:2.18rem !important", text)\n        self.assertIn("background:#FFF8E7 !important", text)\n        self.assertIn("max-width:205px !important", text)\n\n\nif __name__ == "__main__":\n    unittest.main()\n''', encoding='utf-8')
+          test_path.write_text('''from pathlib import Path\nimport unittest\n\nROOT = Path(__file__).resolve().parents[1]\n\nclass SimpleUxContracts(unittest.TestCase):\n    def test_discovery_uses_plain_language_and_readable_state_buttons(self):\n        text = (ROOT / "src" / "essential_discovery.py").read_text(encoding="utf-8")\n        self.assertIn("editais abertos para participação", text)\n        self.assertIn("O que o governo quer comprar ou contratar", text)\n        self.assertIn("Onde participar", text)\n        self.assertIn('div[class*="st-key-state_"] button', text)\n        self.assertNotIn("sem score e sem exigir CNAE", text)\n\n    def test_sidebar_is_compact_and_selected_item_does_not_hide_text(self):\n        text = (ROOT / "app.py").read_text(encoding="utf-8")\n        self.assertIn("width:260px !important", text)\n        self.assertIn("min-height:2.18rem !important", text)\n        self.assertIn("background:#FFF8E7 !important", text)\n        self.assertIn("max-width:205px !important", text)\n\nif __name__ == "__main__":\n    unittest.main()\n''', encoding='utf-8')
           PY
 
       - name: Compile
