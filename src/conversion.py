@@ -57,10 +57,10 @@ class ConversionService:
             ))
 
     def _table_exists(self, conn, table):
-        return bool(conn.execute(
-            "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
-            (table,),
-        ).fetchone())
+        # PRAGMA table_info é atendido nativamente pelo SQLite e traduzido pelo
+        # PostgresCompatConnection para information_schema.columns. Assim evitamos
+        # consultar sqlite_master em produção PostgreSQL.
+        return bool(conn.execute(f"PRAGMA table_info({table})").fetchone())
 
     def _columns(self, conn, table):
         if not self._table_exists(conn, table):
