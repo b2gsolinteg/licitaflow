@@ -24,7 +24,7 @@ def _apply_styles() -> None:
         """
         <style>
         .stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"]{background:#EEF2F6 !important;}
-        [data-testid="stMain"] .block-container{max-width:1180px !important;padding-top:1.45rem !important;}
+        [data-testid="stMain"] .block-container{max-width:1180px !important;padding-top:1.25rem !important;}
         [data-testid="stMain"] h1,[data-testid="stMain"] h2,[data-testid="stMain"] h3,
         [data-testid="stMain"] p,[data-testid="stMain"] label p,[data-testid="stMain"] .stCaption p{color:#10243F;}
         [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]{background:#FFFFFF;border-color:#DDE4EC !important;box-shadow:0 8px 22px rgba(16,36,63,.06);}
@@ -40,9 +40,9 @@ def _apply_styles() -> None:
         .ln-info-value{color:#10243F;font-size:.9rem;line-height:1.28;font-weight:650}
         .ln-info-extra{color:#C66B12;font-size:.69rem;font-weight:800;margin-top:.35rem}
         .ln-object-label{font-size:.72rem;color:#9A6E12;font-weight:900;text-transform:uppercase;margin:.3rem 0 .18rem}
-        .ln-portal-box{background:#0D1D31;border:1px solid #2A405B;border-radius:11px;padding:.65rem .75rem;margin:.65rem 0}
-        .ln-portal-main{color:#F4F7FA;font-weight:800;font-size:.85rem}
-        .ln-portal-detail{color:#B5C1CF;font-size:.74rem;line-height:1.35;margin-top:.2rem}
+        .ln-portal-box{background:#F8FAFC;border:1px solid #D7E0EA;border-left:4px solid #C99A2E;border-radius:11px;padding:.65rem .75rem;margin:.65rem 0}
+        .ln-portal-main{color:#10243F;font-weight:850;font-size:.85rem}
+        .ln-portal-detail{color:#607086;font-size:.74rem;line-height:1.35;margin-top:.2rem}
         .ln-items-box{background:#F8FBFF;border:1px solid #DDE7F2;border-radius:12px;padding:.72rem .78rem;margin:.65rem 0}
         .ln-items-title{color:#17324F;font-weight:900;font-size:.88rem;margin-bottom:.4rem}
         .ln-item-row{display:grid;grid-template-columns:48px minmax(0,1fr) 130px 132px;gap:.5rem;align-items:start;
@@ -54,6 +54,44 @@ def _apply_styles() -> None:
         .ln-items-note{font-size:.72rem;color:#6D7F93;margin-top:.35rem}
         .ln-section-label{font-size:.72rem;color:#66788D;font-weight:850;letter-spacing:.05em;text-transform:uppercase;margin:.95rem 0 .35rem}
         .ln-state-count{font-size:.73rem;color:#607086}
+
+        /* Navegação mais compacta: mais opções visíveis sem rolar. */
+        @media (min-width:901px){
+            [data-testid="stSidebar"],
+            [data-testid="stSidebar"] > div:first-child{
+                width:260px !important;min-width:260px !important;max-width:260px !important;
+            }
+        }
+        [data-testid="stSidebar"] .stButton button{
+            min-height:2.18rem !important;padding:.22rem .52rem !important;border-radius:8px !important;
+            font-size:.84rem !important;font-weight:720 !important;
+        }
+        [data-testid="stSidebar"] .stButton button[kind="primary"]{
+            background:#FFF8E7 !important;border-color:#D6A52E !important;color:#10243F !important;
+            box-shadow:inset 3px 0 0 #C99A2E !important;
+        }
+        [data-testid="stSidebar"] .stButton button[kind="primary"] *{color:#10243F !important;}
+        [data-testid="stSidebar"] [data-testid="stCaptionContainer"]{margin-top:.20rem !important;margin-bottom:.05rem !important;}
+        [data-testid="stSidebar"] [data-testid="stImage"]{margin:.05rem 0 .28rem !important;}
+        [data-testid="stSidebar"] [data-testid="stImage"] img{
+            max-width:205px !important;width:205px !important;margin:0 auto !important;display:block !important;
+        }
+
+        /* Botões claros nas telas de descoberta. O azul anterior escondia o texto. */
+        [data-testid="stMain"] .stButton button[kind="secondary"]{
+            background:#FFFFFF !important;color:#10243F !important;border:1px solid #D7E0EA !important;
+            box-shadow:none !important;font-weight:720 !important;
+        }
+        [data-testid="stMain"] .stButton button[kind="secondary"] *{color:#10243F !important;}
+        [data-testid="stMain"] .stButton button[kind="secondary"]:hover{
+            background:#FFF8E7 !important;border-color:#D6A52E !important;
+        }
+        [data-testid="stMain"] div[class*="st-key-state_"] button{
+            min-height:2.85rem !important;font-size:.92rem !important;font-weight:820 !important;
+            background:#FFFFFF !important;color:#10243F !important;border:1px solid #CED8E4 !important;
+        }
+        [data-testid="stMain"] div[class*="st-key-state_"] button *{color:#10243F !important;}
+
         @media(max-width:900px){
             .ln-info-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
             .ln-item-row{grid-template-columns:38px minmax(0,1fr)}
@@ -202,7 +240,7 @@ def _save_to_list(db, company_id: str, catalog_id: str) -> None:
     opportunity_id = db.add_global_catalog_item_to_pipeline(company_id, catalog_id)
     if opportunity_id:
         db.update_stage(company_id, opportunity_id, "Nova oportunidade")
-    st.success("Salvo na Minha lista. Você pode decidir depois se quer começar a preparação.")
+    st.success("Edital salvo. Ele está na sua lista para você decidir depois.")
 
 
 def _render_items(opportunity: dict, pack: dict) -> None:
@@ -220,7 +258,7 @@ def _render_items(opportunity: dict, pack: dict) -> None:
     full_loaded = False
     if visible_limit > len(preview) and control:
         try:
-            with st.spinner("Buscando mais itens oficiais..."):
+            with st.spinner("Buscando mais itens..."):
                 items = _cached_full_items(control)
             full_loaded = True
         except PncpItemsError:
@@ -237,13 +275,13 @@ def _render_items(opportunity: dict, pack: dict) -> None:
     elif preview:
         count_label = f"{len(preview)}+ item(ns)"
     else:
-        count_label = "itens oficiais"
+        count_label = "itens da licitação"
 
     html = [f'<div class="ln-items-box"><div class="ln-items-title">📦 Itens da licitação · {escape(count_label)}</div>']
     if error and not preview:
-        html.append('<div class="ln-items-note">Itens estruturados temporariamente indisponíveis no PNCP.</div>')
+        html.append('<div class="ln-items-note">Os itens ainda não estão disponíveis no PNCP.</div>')
     elif not visible:
-        html.append('<div class="ln-items-note">O PNCP não publicou itens estruturados para esta contratação.</div>')
+        html.append('<div class="ln-items-note">O PNCP ainda não publicou a lista de itens desta licitação.</div>')
     else:
         for row in visible:
             number = escape(str(row.get("number") or "—"))
@@ -261,9 +299,9 @@ def _render_items(opportunity: dict, pack: dict) -> None:
                 '</div>'
             )
         if count_known and known_total > len(visible):
-            html.append(f'<div class="ln-items-note">+ {known_total - len(visible)} item(ns) ainda não exibido(s).</div>')
+            html.append(f'<div class="ln-items-note">+ {known_total - len(visible)} item(ns) para ver.</div>')
         elif has_more and not count_known:
-            html.append('<div class="ln-items-note">Há mais itens nesta contratação.</div>')
+            html.append('<div class="ln-items-note">Há mais itens nesta licitação.</div>')
     html.append("</div>")
     st.markdown("".join(html), unsafe_allow_html=True)
 
@@ -308,16 +346,16 @@ def _render_card(db, user: dict, item: dict, pack: dict) -> None:
             f'<div class="ln-info-box"><div class="ln-info-label">Cidade</div><div class="ln-info-value">{escape(city)} — {escape(state)}</div></div>'
             f'<div class="ln-info-box"><div class="ln-info-label">Órgão</div><div class="ln-info-value">{escape(agency)}</div></div>'
             f'<div class="ln-info-box"><div class="ln-info-label">Valor</div><div class="ln-info-value">{escape(value)}</div></div>'
-            f'<div class="ln-info-box"><div class="ln-info-label">Abertura / prazo</div><div class="ln-info-value">{escape(opening_text)}</div>{extra}</div>'
+            f'<div class="ln-info-box"><div class="ln-info-label">Data e prazo</div><div class="ln-info-value">{escape(opening_text)}</div>{extra}</div>'
             '</div>',
             unsafe_allow_html=True,
         )
-        st.markdown('<div class="ln-object-label">Objeto</div>', unsafe_allow_html=True)
+        st.markdown('<div class="ln-object-label">O que o governo quer comprar ou contratar</div>', unsafe_allow_html=True)
         st.write(obj)
         st.markdown(
             '<div class="ln-portal-box">'
-            f'<div class="ln-portal-main">🌐 Portal de disputa: {escape(portal)} · {escape(access["label"])}</div>'
-            f'<div class="ln-portal-detail">Fonte do dado: {escape(source_name)}. {escape(access["detail"])}</div>'
+            f'<div class="ln-portal-main">🌐 Onde participar: {escape(portal)} · {escape(access["label"])}</div>'
+            f'<div class="ln-portal-detail">{escape(access["detail"])} Fonte: {escape(source_name)}.</div>'
             '</div>',
             unsafe_allow_html=True,
         )
@@ -335,17 +373,17 @@ def _render_card(db, user: dict, item: dict, pack: dict) -> None:
             try:
                 _save_to_list(db, company_id, item["id"])
             except Exception as exc:
-                st.error(f"Não foi possível salvar esta oportunidade: {exc}")
+                st.error(f"Não foi possível salvar este edital: {exc}")
 
         if source_url.startswith(("http://", "https://")) and source_url != primary_url:
-            st.link_button("🌐 Ir ao portal de disputa", source_url, width="stretch")
+            st.link_button("🌐 Ir ao site da disputa", source_url, width="stretch")
 
 
 def _render_results(db, user: dict, items: list[dict], *, page_key: str, per_page: int = 6) -> None:
     if not items:
-        st.info("Nenhuma licitação encontrada com esses filtros. Altere apenas o que for necessário e pesquise novamente.")
+        st.info("Nenhum edital aberto foi encontrado. Tente retirar um filtro ou pesquisar outra palavra.")
         return
-    st.caption(f"{len(items)} licitação(ões) encontrada(s).")
+    st.caption(f"{len(items):,} editais abertos para participação".replace(",", "."))
     total_pages = max((len(items) + per_page - 1) // per_page, 1)
     current = min(max(int(st.session_state.get(page_key, 1)), 1), total_pages)
     start = (current - 1) * per_page
@@ -379,7 +417,7 @@ def search_page(db, user: dict, usage=None) -> None:
     current = st.session_state.get("essential_search_criteria") or {}
 
     st.markdown('<div class="ln-discovery-title">🔎 Buscar licitações</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">Digite o que procura e veja as oportunidades com os itens já abertos. Campo vazio amplia a busca.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-sub">Pesquise pelo que deseja vender. Se deixar em branco, mostramos editais de vários tipos.</div>', unsafe_allow_html=True)
 
     with st.form("essential_quick_search", clear_on_submit=False, enter_to_submit=False):
         keyword = st.text_input(
@@ -389,7 +427,7 @@ def search_page(db, user: dict, usage=None) -> None:
         )
         c1, c2 = st.columns(2)
         states = c1.multiselect(
-            "UF",
+            "Estado",
             list(BRAZIL_STATES),
             default=list(current.get("states") if "states" in current else defaults["states"]),
             placeholder="Brasil inteiro",
@@ -416,10 +454,10 @@ def search_page(db, user: dict, usage=None) -> None:
         minimum = parse_brl(minimum_text) if minimum_text.strip() else None
         maximum = parse_brl(maximum_text) if maximum_text.strip() else None
         if minimum_text.strip() and minimum is None:
-            st.error("O valor mínimo não pôde ser interpretado.")
+            st.error("Confira o valor mínimo digitado.")
             return
         if maximum_text.strip() and maximum is None:
-            st.error("O valor máximo não pôde ser interpretado.")
+            st.error("Confira o valor máximo digitado.")
             return
         current = _criteria(
             keyword=keyword.strip(),
@@ -444,29 +482,30 @@ def search_page(db, user: dict, usage=None) -> None:
         )
 
     if not current:
-        st.info("Comece por uma palavra, um estado ou simplesmente clique em Buscar licitações para explorar tudo que está aberto.")
+        st.info("Digite uma palavra, escolha um estado ou clique em Buscar licitações para ver editais abertos.")
         return
 
-    with st.spinner("Localizando oportunidades abertas..."):
+    with st.spinner("Buscando editais abertos..."):
         items = _query_catalog(db, current)
-    st.markdown("### Oportunidades")
+    st.markdown("### Editais abertos para participação")
     _render_results(db, user, items, page_key="essential_search_page", per_page=6)
 
 
 def state_page(db, user: dict) -> None:
     _apply_styles()
     st.markdown('<div class="ln-discovery-title">🗺️ Por Estado</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">Escolha uma UF e veja diretamente as licitações que ainda estão abertas.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-sub">Escolha um estado para ver os editais abertos para participação.</div>', unsafe_allow_html=True)
     counts = db.global_catalog_group_counts("state", closing_from=date.today().isoformat())
     if not counts:
-        st.info("Ainda não há estados disponíveis no catálogo.")
+        st.info("Ainda não há editais abertos por estado.")
         return
     for start in range(0, len(counts), 4):
         cols = st.columns(4)
         for col, row in zip(cols, counts[start:start + 4]):
             state = str(row.get("label") or "").upper()
             total = int(row.get("total") or 0)
-            if col.button(f"{state} · {total:,}".replace(",", "."), key=f"state_{state}", width="stretch"):
+            label = f"{state} · {total:,} editais".replace(",", ".")
+            if col.button(label, key=f"state_{state}", width="stretch"):
                 st.session_state["essential_search_criteria"] = _criteria(states=[state])
                 st.session_state["essential_search_page"] = 1
                 st.session_state["_navigation_request"] = "🔎 Buscar licitações"
@@ -476,16 +515,16 @@ def state_page(db, user: dict) -> None:
 def city_page(db, user: dict) -> None:
     _apply_styles()
     st.markdown('<div class="ln-discovery-title">📍 Por Cidade</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">Digite o município e veja as licitações abertas naquela cidade.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-sub">Digite a cidade para ver os editais abertos para participação.</div>', unsafe_allow_html=True)
     with st.form("essential_city_search", clear_on_submit=False, enter_to_submit=False):
         city = st.text_input("Nome da cidade", placeholder="Ex.: Londrina")
-        state = st.selectbox("UF (opcional)", ["Todas", *BRAZIL_STATES])
+        state = st.selectbox("Estado (opcional)", ["Todos", *BRAZIL_STATES])
         if st.form_submit_button("Buscar licitações", type="primary", width="stretch"):
             if not city.strip():
                 st.warning("Digite o nome da cidade.")
             else:
                 st.session_state["essential_search_criteria"] = _criteria(
-                    city=city.strip(), states=[] if state == "Todas" else [state]
+                    city=city.strip(), states=[] if state == "Todos" else [state]
                 )
                 st.session_state["essential_search_page"] = 1
                 st.session_state["_navigation_request"] = "🔎 Buscar licitações"
@@ -495,10 +534,10 @@ def city_page(db, user: dict) -> None:
 def modality_page(db, user: dict) -> None:
     _apply_styles()
     st.markdown('<div class="ln-discovery-title">☰ Por Modalidade</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">Escolha como o órgão está contratando e veja as oportunidades abertas.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-sub">Escolha a modalidade para ver os editais abertos para participação.</div>', unsafe_allow_html=True)
     counts = db.global_catalog_group_counts("modality", closing_from=date.today().isoformat())
     if not counts:
-        st.info("Nenhuma modalidade disponível no catálogo agora.")
+        st.info("Nenhum edital aberto foi encontrado por modalidade agora.")
         return
     for start in range(0, len(counts), 3):
         cols = st.columns(3)
@@ -507,8 +546,8 @@ def modality_page(db, user: dict) -> None:
             total = int(row.get("total") or 0)
             with col.container(border=True):
                 st.markdown(f"**{label}**")
-                st.caption(f"{total:,} licitação(ões)".replace(",", "."))
-                if st.button("Ver licitações", key=f"modality_{label}", width="stretch"):
+                st.caption(f"{total:,} editais abertos".replace(",", "."))
+                if st.button("Ver editais", key=f"modality_{label}", width="stretch"):
                     st.session_state["essential_search_criteria"] = _criteria(modalities=[label])
                     st.session_state["essential_search_page"] = 1
                     st.session_state["_navigation_request"] = "🔎 Buscar licitações"
@@ -518,26 +557,26 @@ def modality_page(db, user: dict) -> None:
 def advanced_search_page(db, user: dict) -> None:
     _apply_styles()
     st.markdown('<div class="ln-discovery-title">⚙️ Filtro avançado</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">Combine apenas os filtros que fizerem sentido. Nenhum campo é obrigatório.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-sub">Use só os filtros que quiser. Você não precisa preencher todos.</div>', unsafe_allow_html=True)
     with st.form("essential_advanced_search", clear_on_submit=False, enter_to_submit=False):
         states = st.multiselect("Estados", list(BRAZIL_STATES), placeholder="Todos")
         city = st.text_input("Cidade", placeholder="Opcional")
         modalities = st.multiselect("Modalidades", list(MODALITIES.keys()), placeholder="Todas")
-        keyword = st.text_input("Palavra ou frase do objeto", placeholder="Ex.: material de limpeza")
+        keyword = st.text_input("O que você procura?", placeholder="Ex.: material de limpeza")
         v1, v2 = st.columns(2)
         minimum_text = v1.text_input("Valor mínimo", placeholder="Sem mínimo")
         maximum_text = v2.text_input("Valor máximo", placeholder="Sem máximo")
         d1, d2 = st.columns(2)
-        start_date = d1.date_input("Prazo a partir de", value=date.today())
+        start_date = d1.date_input("Participação a partir de", value=date.today())
         no_end = d2.checkbox("Sem data final", value=True)
-        end_date = d2.date_input("Prazo até", value=date.today(), disabled=no_end)
+        end_date = d2.date_input("Participação até", value=date.today(), disabled=no_end)
         if st.form_submit_button("Buscar licitações", type="primary", width="stretch"):
             minimum = parse_brl(minimum_text) if minimum_text.strip() else None
             maximum = parse_brl(maximum_text) if maximum_text.strip() else None
             if minimum_text.strip() and minimum is None:
-                st.error("O valor mínimo não pôde ser interpretado.")
+                st.error("Confira o valor mínimo digitado.")
             elif maximum_text.strip() and maximum is None:
-                st.error("O valor máximo não pôde ser interpretado.")
+                st.error("Confira o valor máximo digitado.")
             else:
                 st.session_state["essential_search_criteria"] = _criteria(
                     keyword=keyword.strip(), city=city.strip(), states=states, modalities=modalities,
@@ -553,7 +592,7 @@ def advanced_search_page(db, user: dict) -> None:
 def top50_page(db, user: dict) -> None:
     _apply_styles()
     st.markdown('<div class="ln-discovery-title">🏆 Top 50</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">50 oportunidades recentes com prazo aberto para você explorar sem precisar configurar um perfil.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-sub">50 editais abertos para você explorar agora.</div>', unsafe_allow_html=True)
     items = db.list_global_catalog(
         closing_from=date.today().isoformat(), limit=50, order_by="recent"
     )
@@ -564,13 +603,13 @@ def my_list_page(db, user: dict) -> None:
     _apply_styles()
     company_id = user["company_id"]
     st.markdown('<div class="ln-discovery-title">❤️ Minha lista</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">Aqui ficam as oportunidades que chamaram sua atenção. Só leve para preparação quando decidir estudar de verdade.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-sub">Aqui ficam os editais que você salvou. Quando quiser participar, comece a preparação.</div>', unsafe_allow_html=True)
     rows = [
         row for row in db.pipeline_summaries(company_id, "")
         if str(row.get("stage") or "") == "Nova oportunidade"
     ]
     if not rows:
-        st.info("Sua lista está vazia. Salve oportunidades durante a pesquisa e volte aqui quando quiser decidir.")
+        st.info("Sua lista está vazia. Salve um edital durante a pesquisa para encontrá-lo aqui depois.")
         return
     for row in rows:
         source_name, portal = opportunity_source_and_portal(
@@ -587,7 +626,7 @@ def my_list_page(db, user: dict) -> None:
                 f"{row.get('modality') or 'Modalidade não informada'} · {value} · "
                 f"{_datetime_text(row.get('closing_at'))}"
             )
-            st.caption(f"Portal: {portal} · {access['label']} · Fonte: {source_name}")
+            st.caption(f"Onde participar: {portal} · {access['label']} · Fonte: {source_name}")
             official = pncp_official_url(row.get("pncp_control_number"))
             source_url = str(row.get("source_url") or "")
             target = official or (source_url if source_url.startswith(("http://", "https://")) else "")
@@ -611,7 +650,7 @@ def preferences_page(db, user: dict) -> None:
     company_id = user["company_id"]
     defaults = _profile_defaults(db, company_id)
     st.markdown('<div class="ln-discovery-title">🔔 Preferências</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">Opcional: salve alguns interesses para o Radar. Você pode usar todo o LicitaNexo sem preencher esta tela.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-sub">Se quiser, salve o que costuma procurar. Isso ajuda o Radar, mas não é obrigatório.</div>', unsafe_allow_html=True)
     with st.form("essential_preferences_simple", clear_on_submit=False, enter_to_submit=False):
         keyword = st.text_input(
             "O que costuma procurar?",
@@ -628,16 +667,16 @@ def preferences_page(db, user: dict) -> None:
                 search_modalities="|".join(modalities),
                 search_order="Mais recentes",
             )
-            st.success("Preferências salvas. Elas servem apenas como atalho para o Radar.")
+            st.success("Preferências salvas.")
 
 
 def radar_page(db, user: dict) -> None:
     _apply_styles()
     defaults = _profile_defaults(db, user["company_id"])
     st.markdown('<div class="ln-discovery-title">📡 Radar de licitações</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">Novas oportunidades relacionadas ao que você escolheu acompanhar — sem score e sem exigir CNAE.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-sub">Veja editais novos relacionados ao que você escolheu acompanhar.</div>', unsafe_allow_html=True)
     if not (defaults["keyword"].strip() or defaults["states"] or defaults["modalities"]):
-        st.info("Você ainda não salvou preferências. Isso é opcional; use Buscar licitações normalmente ou configure o Radar quando quiser.")
+        st.info("Você ainda não escolheu o que quer acompanhar. Continue usando a busca normalmente ou configure o Radar quando quiser.")
         if st.button("Configurar preferências", type="primary", width="stretch"):
             st.session_state["_navigation_request"] = "🔔 Preferências"
             st.rerun()
@@ -647,5 +686,5 @@ def radar_page(db, user: dict) -> None:
     )
     items = _query_catalog(db, criteria, limit=500)
     if defaults["keyword"]:
-        st.caption(f"Encontrado porque você acompanha: {defaults['keyword']}")
+        st.caption(f"Você acompanha: {defaults['keyword']}")
     _render_results(db, user, items, page_key="essential_radar_page", per_page=6)
