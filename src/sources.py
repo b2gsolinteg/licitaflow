@@ -33,47 +33,47 @@ PORTAL_ALIASES = (
 PORTAL_ACCESS = {
     "Compras.gov": {
         "status": "free",
-        "label": "🟢 Gratuito",
+        "label": "Gratuito",
         "detail": "Portal público. O acesso ao portal é gratuito; cadastro gov.br/SICAF pode ser necessário para participar.",
     },
     "BEC-SP": {
         "status": "free",
-        "label": "🟢 Gratuito",
+        "label": "Gratuito",
         "detail": "Portal público. Pode exigir cadastro/habilitação do fornecedor, sem tratá-lo como assinatura comercial do portal.",
     },
     "BLL Compras": {
         "status": "may_charge",
-        "label": "🟡 Pode exigir pagamento",
+        "label": "Pode ser pago",
         "detail": "Portal privado. Confirme cadastro, plano, taxa ou condição comercial vigente antes de participar.",
     },
     "BNC Compras": {
         "status": "may_charge",
-        "label": "🟡 Pode exigir pagamento",
+        "label": "Pode ser pago",
         "detail": "Portal privado. Confirme cadastro, plano, taxa ou condição comercial vigente antes de participar.",
     },
     "BBMNET": {
         "status": "may_charge",
-        "label": "🟡 Pode exigir pagamento",
+        "label": "Pode ser pago",
         "detail": "Portal privado. Confirme cadastro, plano, taxa ou condição comercial vigente antes de participar.",
     },
     "LicitaNET": {
         "status": "may_charge",
-        "label": "🟡 Pode exigir pagamento",
+        "label": "Pode ser pago",
         "detail": "Portal privado. Confirme cadastro, plano, taxa ou condição comercial vigente antes de participar.",
     },
     "M2A Compras": {
         "status": "may_charge",
-        "label": "🟡 Pode exigir pagamento",
+        "label": "Pode ser pago",
         "detail": "Portal privado. Confirme cadastro, plano, taxa ou condição comercial vigente antes de participar.",
     },
     "Portal de Compras Públicas": {
         "status": "may_charge",
-        "label": "🟡 Pode exigir pagamento",
+        "label": "Pode ser pago",
         "detail": "Portal privado. Confirme cadastro, plano, taxa ou condição comercial vigente antes de participar.",
     },
     "Licitações-e / Banco do Brasil": {
         "status": "check",
-        "label": "🟠 Verificar condições",
+        "label": "Consultar condições",
         "detail": "As condições de credenciamento e uso podem variar. Confirme no portal antes de participar.",
     },
 }
@@ -108,12 +108,12 @@ def portal_access_info(portal_name):
     if portal in {"", "Não identificado", "Não informado", "Outro portal", "PNCP"}:
         return {
             "status": "unknown",
-            "label": "⚪ Custo não identificado",
-            "detail": "O LicitaNexo não identificou com segurança a condição de acesso. Confira no portal antes da participação.",
+            "label": "Não identificado",
+            "detail": "Consultar edital.",
         }
     return PORTAL_ACCESS.get(portal, {
         "status": "check",
-        "label": "🟠 Verificar condições",
+        "label": "Consultar condições",
         "detail": "Confirme cadastro, eventual taxa e condições de acesso diretamente no portal antes de participar.",
     })
 

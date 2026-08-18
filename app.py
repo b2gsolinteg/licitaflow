@@ -391,231 +391,28 @@ def _document_alerts(company_id):
 def apply_brand():
     st.markdown("""
         <style>
-        .stApp {background:linear-gradient(145deg,#07111f 0%,#0b1627 55%,#101b2c 100%);}
-        [data-testid="stSidebar"] {background:#FFFFFF;border-right:1px solid #E3E8EF;}
-        header[data-testid="stHeader"] {background:transparent !important;height:0 !important;}
-        [data-testid="stToolbar"], [data-testid="stDecoration"], #MainMenu {display:none !important;}
-        [data-testid="stSidebar"] * {color:#172033 !important;}
-        [data-testid="stSidebar"] [data-testid="stCaptionContainer"] * {color:#667085 !important;}
-        [data-testid="stSidebar"] hr {border-color:#E3E8EF !important;}
-        [data-testid="stSidebar"] .stButton button {background:#C99A2E !important;color:#172033 !important;border:1px solid #C99A2E !important;font-weight:800 !important;}
-        [data-testid="stSidebar"] .stButton button * {color:#172033 !important;}
-        [data-testid="stSidebar"] div[role="radiogroup"] {
-            gap:.10rem !important;
-        }
-        [data-testid="stSidebar"] div[role="radiogroup"] label {
-            min-height:1.72rem !important;
-            padding:.10rem .20rem !important;
-            border-radius:7px !important;
-        }
-        [data-testid="stSidebar"] div[role="radiogroup"] label p {
-            font-size:.88rem !important;
-            line-height:1.10rem !important;
-        }
-        .brand-mark {font-size:2.25rem;font-weight:800;color:#F2F5F9;line-height:1}
-        .brand-mark span {color:#C99A2E}
-        .brand-tagline {color:#A9B6C8;margin-top:.45rem;margin-bottom:1.4rem}
-        .nexo-card {border:1px solid #26354A;border-left:5px solid #C99A2E;
-                   border-radius:14px;padding:1rem 1.2rem;background:#101C2D;margin:.6rem 0}
-        .success-language {color:#5DD39E;font-weight:600}
-        div[data-testid="stMetric"] {background:#101C2D;border:1px solid #26354A;
-            border-radius:14px;padding:16px;box-shadow:0 10px 24px rgba(0,0,0,.14)}
-        div[data-testid="stVerticalBlockBorderWrapper"] {border-color:#26354A;border-radius:14px;}
-        .stButton>button[kind="primary"], .stDownloadButton>button {border-radius:10px;}
-        /* Essential: menos área vazia e comportamento melhor em telas pequenas. */
-        .block-container {padding-top:1.15rem;padding-bottom:2rem;max-width:1240px;}
-        @media (max-width: 768px) {
-            .block-container {padding-top:.55rem;padding-left:.7rem;padding-right:.7rem;}
-            [data-testid="stImage"] img {max-width:100% !important;height:auto !important;}
-            .stTabs [data-baseweb="tab-list"] {gap:.05rem;overflow-x:auto;}
-            .stTabs [data-baseweb="tab"] {padding-left:.4rem;padding-right:.4rem;white-space:nowrap;}
-            .stButton button, .stDownloadButton button {min-height:2.65rem;}
-        }
-        
-        /* ====================================================
-           LICITANEXO - PATCH MENU LATERAL
-           ==================================================== */
-
-        [data-testid="stSidebar"] {
-            background:#FFFFFF !important;
-            border-right:1px solid #E3E8EF !important;
-        }
-
-        /*
-         * Mant?m dispon?vel o bot?o que reabre a sidebar
-         * quando ela estiver recolhida.
-         */
-        [data-testid="stSidebarCollapsedControl"] {
-            display:flex !important;
-            visibility:visible !important;
-            opacity:1 !important;
-            z-index:999999 !important;
-        }
-
-        /*
-         * Permite rolar o menu sem reduzir o zoom do navegador.
-         */
-        [data-testid="stSidebar"] > div:first-child {
-            overflow-y:auto !important;
-            overflow-x:hidden !important;
-            max-height:100vh !important;
-        }
-
-        /*
-         * Tamanho confort?vel para desktop.
-         */
-        @media (min-width:901px) {
-            [data-testid="stSidebar"] {
-                width:310px !important;
-                min-width:310px !important;
-                max-width:310px !important;
-            }
-
-            [data-testid="stSidebar"] > div:first-child {
-                width:310px !important;
-                max-width:310px !important;
-            }
-        }
-
-        /*
-         * Menu administrativo compacto, mas leg?vel.
-         */
-        /* MENU LATERAL TOTALMENTE PREENCHIDO: cada opção usa 100% da largura útil. */
-        [data-testid="stSidebar"],
-        [data-testid="stSidebar"] > div:first-child {
-            min-height:100vh !important;
-            height:100vh !important;
-        }
-
-        [data-testid="stSidebar"] [data-testid="stRadio"],
-        [data-testid="stSidebar"] div[role="radiogroup"] {
-            width:100% !important;
-        }
-
-        [data-testid="stSidebar"] div[role="radiogroup"] {
-            gap:.18rem !important;
-        }
-
-        [data-testid="stSidebar"] div[role="radiogroup"] label {
-            width:100% !important;
-            box-sizing:border-box !important;
-            min-height:2.62rem !important;
-            padding:.42rem .58rem !important;
-            border-radius:9px !important;
-            border:1px solid #E5EAF0 !important;
-            background:#F8FAFC !important;
-            transition:background .12s ease,border-color .12s ease,box-shadow .12s ease !important;
-        }
-
-        [data-testid="stSidebar"] div[role="radiogroup"] label:hover {
-            background:#F2F5F8 !important;
-            border-color:#D5DDE7 !important;
-        }
-
-        [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
-            background:#10243F !important;
-            border-color:#C99A2E !important;
-            box-shadow:inset 4px 0 0 #C99A2E !important;
-        }
-
-        [data-testid="stSidebar"] div[role="radiogroup"] label p {
-            font-size:.94rem !important;
-            line-height:1.22rem !important;
-            width:100% !important;
-        }
-
-        [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p {
-            color:#FFFFFF !important;
-            font-weight:800 !important;
-        }
-
-        /*
-         * Bot?o Sair.
-         */
-        [data-testid="stSidebar"] .stButton button {
-            background:#C99A2E !important;
-            color:#172033 !important;
-            border:1px solid #C99A2E !important;
-            font-weight:800 !important;
-        }
-
-        [data-testid="stSidebar"] .stButton button * {
-            color:#172033 !important;
-        }
-
-        /*
-         * Tablet e celular.
-         */
-        @media (max-width:900px) {
-            [data-testid="stSidebar"] {
-                max-width:88vw !important;
-            }
-        }
-
-        /* Radar rápido: itens oficiais já visíveis no resultado, sem abrir outra tela. */
-        .radar-items-box {
-            margin:.72rem 0 .62rem;
-            padding:.68rem .72rem;
-            background:#F8FBFF;
-            border:1px solid #DDE7F2;
-            border-radius:11px;
-        }
-        .radar-items-title {
-            color:#17324F;
-            font-weight:850;
-            font-size:.84rem;
-            margin-bottom:.28rem;
-        }
-        .radar-item-row {
-            display:grid;
-            grid-template-columns:minmax(0,1fr) 88px 108px;
-            gap:.45rem;
-            align-items:start;
-            padding:.34rem 0;
-            border-top:1px solid #E7EDF5;
-        }
-        .radar-item-row:first-of-type {border-top:0;}
-        .radar-item-name {
-            color:#2B4057;
-            font-size:.78rem;
-            line-height:1.28;
-            overflow-wrap:anywhere;
-        }
-        .radar-item-qty,.radar-item-price {
-            color:#607086;
-            font-size:.72rem;
-            line-height:1.28;
-            text-align:right;
-        }
-        .radar-item-price {color:#17324F;font-weight:800;}
-        .radar-items-more {color:#738196;font-size:.71rem;margin-top:.32rem;}
-        @media(max-width:760px) {
-            .radar-item-row {grid-template-columns:1fr;gap:.1rem;}
-            .radar-item-qty,.radar-item-price {text-align:left;}
-        }
-
-
-
-        /* RC31.6 · navegação operacional inspirada em apps de busca, com identidade LicitaNexo. */
-        [data-testid="stSidebar"] .stButton button {
-            width:100% !important; min-height:2.72rem !important; justify-content:flex-start !important;
-            background:#FFFFFF !important; color:#172033 !important; border:1px solid #E2E8F0 !important;
-            border-radius:10px !important; box-shadow:none !important; font-weight:750 !important;
-        }
-        [data-testid="stSidebar"] .stButton button * {color:#172033 !important;}
-        [data-testid="stSidebar"] .stButton button[kind="primary"] {
-            background:#10243F !important; border-color:#10243F !important; color:#FFFFFF !important;
-            box-shadow:inset 4px 0 0 #C99A2E !important;
-        }
-        [data-testid="stSidebar"] .stButton button[kind="primary"] * {color:#FFFFFF !important;}
-        [data-testid="stSidebar"] .st-key-sidebar_logout button {
-            justify-content:center !important; background:#F2F5F8 !important; color:#516176 !important;
-            border-color:#DDE4EC !important; box-shadow:none !important;
-        }
-        [data-testid="stSidebar"] .st-key-sidebar_logout button * {color:#516176 !important;}
-        [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {margin-top:.45rem !important;}
-
-</style>
+        .stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"]{background:#FFFFFF !important;color:#293746 !important;}
+        header[data-testid="stHeader"]{background:transparent !important;height:0 !important;}
+        [data-testid="stToolbar"],[data-testid="stDecoration"],#MainMenu{display:none !important;}
+        [data-testid="stAppViewContainer"] *{font-weight:400 !important;}
+        [data-testid="stSidebar"]{background:#FFFFFF !important;border-right:1px solid #E3E8ED !important;}
+        [data-testid="stSidebar"] *{color:#293746 !important;}
+        [data-testid="stSidebar"] > div:first-child{overflow-y:auto !important;overflow-x:hidden !important;max-height:100vh !important;}
+        @media(min-width:901px){[data-testid="stSidebar"],[data-testid="stSidebar"] > div:first-child{width:250px !important;min-width:250px !important;max-width:250px !important;}}
+        [data-testid="stSidebar"] .stButton button{width:100% !important;min-height:2.15rem !important;justify-content:flex-start !important;background:#FFFFFF !important;color:#293746 !important;border:1px solid #DCE3E8 !important;border-radius:8px !important;box-shadow:none !important;padding:.20rem .48rem !important;}
+        [data-testid="stSidebar"] .stButton button[kind="primary"]{background:#EDF3F4 !important;color:#293746 !important;border-color:#B9CDD0 !important;box-shadow:none !important;}
+        [data-testid="stSidebar"] .st-key-sidebar_logout button{justify-content:center !important;background:#F4F7F9 !important;}
+        [data-testid="stSidebar"] [data-testid="stCaptionContainer"]{margin-top:.18rem !important;margin-bottom:.04rem !important;}
+        [data-testid="stSidebar"] [data-testid="stImage"] img{max-width:190px !important;width:190px !important;margin:0 auto !important;display:block !important;}
+        .block-container{padding-top:1.1rem;padding-bottom:2rem;max-width:1240px;}
+        div[data-testid="stVerticalBlockBorderWrapper"],div[data-testid="stMetric"]{background:#FFFFFF !important;border-color:#DCE3E8 !important;box-shadow:none !important;}
+        [data-baseweb="input"],[data-baseweb="base-input"],[data-baseweb="select"] > div,textarea{background:#FFFFFF !important;color:#293746 !important;border-color:#CCD6DD !important;box-shadow:none !important;}
+        input,textarea{background:#FFFFFF !important;color:#293746 !important;-webkit-text-fill-color:#293746 !important;}
+        .stButton>button,.stDownloadButton>button{background:#FFFFFF !important;color:#293746 !important;border:1px solid #CCD6DD !important;box-shadow:none !important;}
+        .stButton>button[kind="primary"],.stDownloadButton>button[kind="primary"]{background:#EAF2F3 !important;color:#293746 !important;border-color:#ADC6C9 !important;}
+        .brand-mark{font-size:2.1rem;color:#293746;line-height:1}.brand-mark span{color:#5F858A}.brand-tagline{color:#667786;margin-top:.45rem;margin-bottom:1.4rem}
+        @media(max-width:768px){.block-container{padding-top:.55rem;padding-left:.7rem;padding-right:.7rem}.stButton button,.stDownloadButton button{min-height:2.55rem;}}
+        </style>
     """, unsafe_allow_html=True)
 
 
@@ -642,265 +439,51 @@ def login_page():
     """Tela pública de entrada — RC19.8: composição visual final aprovada."""
     st.markdown(
         """<style>
-        html, body, [data-testid="stAppViewContainer"], .stApp {
-            margin:0 !important;
-            padding:0 !important;
-            background:#031329 !important;
-            min-height:100vh !important;
-            overflow:hidden !important;
-        }
-        header[data-testid="stHeader"],
-        [data-testid="stToolbar"],
-        [data-testid="stDecoration"],
-        #MainMenu, footer {
-            display:none !important;
-            height:0 !important;
-        }
-        .block-container {
-            max-width:none !important;
-            width:100vw !important;
-            margin:0 !important;
-            padding:0 !important;
-        }
-        div[data-testid="stHorizontalBlock"] {
-            gap:0 !important;
-            min-height:100vh !important;
-            align-items:stretch !important;
-        }
-        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1) {
-            flex:0 0 58.5vw !important;
-            width:58.5vw !important;
-            min-width:58.5vw !important;
-            max-width:58.5vw !important;
-            min-height:100vh !important;
-            background:#031329 !important;
-            overflow:hidden !important;
-            padding:0 !important;
-            position:relative !important;
-        }
-        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(2) {
-            flex:0 0 41.5vw !important;
-            width:41.5vw !important;
-            min-width:41.5vw !important;
-            max-width:41.5vw !important;
-            min-height:100vh !important;
-            background:#031329 !important;
-            padding:0 !important;
-            overflow:hidden !important;
-            position:relative !important;
-        }
-        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1)
-        [data-testid="stVerticalBlock"],
-        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1)
-        [data-testid="stElementContainer"],
-        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1)
-        [data-testid="stImage"] {
-            width:100% !important;
-            max-width:none !important;
-            margin:0 !important;
-            padding:0 !important;
-        }
-        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1)
-        [data-testid="stImage"] {height:100vh !important;overflow:hidden !important;}
-        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1)
-        [data-testid="stImage"] img {
-            width:100% !important;
-            max-width:none !important;
-            height:100vh !important;
-            object-fit:cover !important;
-            object-position:center center !important;
-            display:block !important;
-        }
-        .ln-price {
-            position:absolute;top:2.1rem;right:2.5rem;z-index:5;
-            text-align:right;line-height:1.05;
-        }
-        .ln-price span {display:block;font-size:.80rem;color:#E4E9F0;margin-bottom:.18rem;}
-        .ln-price strong {font-size:2.05rem;color:#E0A72A;letter-spacing:-.04em;}
-        .ln-price small {font-size:.94rem;color:#E0A72A;}
-
-        /* Card de autenticação com identidade CSS estável.
-           O key do st.container gera .st-key-auth_card no Streamlit >= 1.39. */
-        .st-key-auth_card {
-            width:min(calc(41.5vw - 3rem),650px) !important;
-            margin:8.0rem 0 0 1.15rem !important;
-            padding:1.15rem 1.45rem 1.28rem !important;
-            background:#FFFFFF !important;
-            border:1px solid #E5E8ED !important;
-            border-radius:19px !important;
-            box-shadow:0 24px 58px rgba(0,0,0,.24) !important;
-            position:relative !important;
-            z-index:3 !important;
-            overflow:hidden !important;
-            box-sizing:border-box !important;
-        }
-        .st-key-auth_card > div,
-        .st-key-auth_card [data-testid="stVerticalBlock"] {
-            background:transparent !important;
-        }
-        .ln-auth-nav {
-            display:grid !important;
-            grid-template-columns:repeat(4,minmax(0,1fr)) !important;
-            width:100% !important;
-            gap:0 !important;
-            border:1px solid #E4E8EE !important;
-            border-radius:10px 10px 0 0 !important;
-            overflow:hidden !important;
-            margin:0 0 1.15rem !important;
-            background:#FBFCFE !important;
-            box-sizing:border-box !important;
-        }
-        .ln-auth-nav a {
-            display:flex !important;
-            align-items:center !important;
-            justify-content:center !important;
-            width:100% !important;
-            min-width:0 !important;
-            min-height:3rem !important;
-            box-sizing:border-box !important;
-            padding:.45rem .08rem !important;
-            color:#20344D !important;
-            font-size:.79rem !important;
-            line-height:1.12 !important;
-            text-align:center !important;
-            white-space:nowrap !important;
-            text-decoration:none !important;
-            border-right:1px solid #E4E8EE !important;
-            border-bottom:3px solid transparent !important;
-            background:#FFFFFF !important;
-        }
-        .ln-auth-nav a:last-child {border-right:0 !important;}
-        .ln-auth-nav a.active {
-            color:#10243F !important;
-            font-weight:850 !important;
-            border-bottom-color:#D39B1F !important;
-            background:#FFFCF6 !important;
-        }
-
-        /* Força tema claro apenas dentro do card, independentemente do tema global. */
-        .st-key-auth_card label,
-        .st-key-auth_card label p,
-        .st-key-auth_card p,
-        .st-key-auth_card span {
-            color:#172A42 !important;
-        }
-        .st-key-auth_card [data-baseweb="input"],
-        .st-key-auth_card [data-baseweb="base-input"],
-        .st-key-auth_card [data-testid="stTextInput"] > div > div {
-            background:#FFFFFF !important;
-            border-color:#B8C2CF !important;
-            color:#15283F !important;
-            border-radius:10px !important;
-        }
-        .st-key-auth_card input {
-            background:#FFFFFF !important;
-            color:#15283F !important;
-            min-height:3.15rem !important;
-            caret-color:#15283F !important;
-            -webkit-text-fill-color:#15283F !important;
-        }
-        .st-key-auth_card input::placeholder {
-            color:#93A0B0 !important;
-            -webkit-text-fill-color:#93A0B0 !important;
-            opacity:1 !important;
-        }
-        .st-key-auth_card [data-testid="stCheckbox"] label p {
-            color:#24364E !important;
-            font-size:.82rem !important;
-        }
-        .st-key-auth_card [data-testid="stForm"] {
-            background:#FFFFFF !important;
-            border:0 !important;
-            padding:0 !important;
-        }
-        .st-key-auth_card .stFormSubmitButton button {
-            min-height:3.35rem !important;
-            border-radius:10px !important;
-            background:linear-gradient(90deg,#C88D13,#DEA92B) !important;
-            color:#07182D !important;
-            border:none !important;
-            font-weight:800 !important;
-            font-size:.96rem !important;
-            box-shadow:0 9px 24px rgba(207,151,25,.20) !important;
-        }
-
-
-        .ln-forgot {
-            text-align:right;margin-top:-2.1rem;margin-bottom:1.15rem;padding-right:.1rem;
-            font-size:.78rem;color:#C8870C;position:relative;z-index:4;
-        }
-        .ln-forgot a {color:#C8870C !important;text-decoration:none;font-weight:700;}
-        .ln-forgot a:hover {text-decoration:underline;}
-        .ln-login-footer {
-            width:min(calc(41.5vw - 3rem),650px);margin:1.05rem 0 0 1.15rem;
-            color:#E1E7EE;text-align:center;font-size:.84rem;line-height:1.55;
-        }
-        .ln-login-footer strong {color:#E5B13A;}
-        .ln-trial-seal {
-            width:100%; margin:.1rem auto .85rem; text-align:center;
-            display:flex; flex-direction:column; align-items:center; justify-content:center;
-            background:transparent; border:0; box-shadow:none; padding:0;
-        }
-        .ln-trial-seal .seal-badge {
-            position:relative; width:5.4rem; height:5.4rem; display:flex;
-            flex-direction:column; align-items:center; justify-content:center;
-            border-radius:50%; color:#fff; background:#071B35;
-            border:.38rem solid #D99C17; box-shadow:0 0 0 .18rem #8F650E, 0 8px 18px rgba(0,0,0,.24);
-            font-weight:900; line-height:1; margin-bottom:.62rem;
-        }
-        .ln-trial-seal .seal-badge::before,
-        .ln-trial-seal .seal-badge::after {
-            content:""; position:absolute; bottom:-1.12rem; width:1.65rem; height:2rem;
-            background:#D99C17; z-index:-1;
-        }
-        .ln-trial-seal .seal-badge::before {left:.55rem; transform:rotate(18deg); clip-path:polygon(0 0,100% 0,70% 100%,35% 72%,0 100%);}
-        .ln-trial-seal .seal-badge::after {right:.55rem; transform:rotate(-18deg); clip-path:polygon(0 0,100% 0,100% 100%,65% 72%,30% 100%);}
-        .ln-trial-seal .seal-stars {font-size:.58rem; color:#E7B43C; letter-spacing:.12rem; margin-bottom:.18rem;}
-        .ln-trial-seal .seal-days {font-size:1.45rem; letter-spacing:-.03em;}
-        .ln-trial-seal .seal-free {
-            margin-top:.18rem; padding:.18rem .62rem; background:#E0A72A; color:#07182D;
-            font-size:.72rem; letter-spacing:.04em; border-radius:2px;
-        }
-        .ln-trial-seal .seal-copy {color:#F1F4F8;font-size:.92rem;line-height:1.38;text-align:center;}
-        .ln-trial-seal .seal-copy strong {color:#E8AF28;font-size:.98rem;}
-        .ln-login-footer .dev {margin-top:.15rem;padding-top:.65rem;border-top:1px solid rgba(255,255,255,.18);}
-
-        @media (max-width:1180px) {
-            div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1) {
-                flex-basis:55vw !important;width:55vw !important;min-width:55vw !important;max-width:55vw !important;
-            }
-            div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(2) {
-                flex-basis:45vw !important;width:45vw !important;min-width:45vw !important;max-width:45vw !important;
-            }
-            .st-key-auth_card, .ln-login-footer {
-                width:min(calc(45vw - 2.1rem),620px) !important;margin-left:.85rem !important;
-            }
-            .ln-price {right:1.4rem;}
-        }
-        @media (max-width:800px) {
-            html, body, [data-testid="stAppViewContainer"], .stApp {overflow:auto !important;}
-            div[data-testid="stHorizontalBlock"] {display:block !important;}
-            div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1) {display:none !important;}
-            div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(2) {
-                width:100vw !important;min-width:100vw !important;max-width:100vw !important;
-                min-height:100vh !important;padding:1.2rem !important;
-            }
-            .ln-price {position:relative;top:auto;right:auto;width:100%;text-align:center;margin:.35rem 0 1rem;}
-            .st-key-auth_card, .ln-login-footer {
-                width:min(100%,560px) !important;margin:0 auto !important;
-            }
-            .ln-login-footer {margin-top:.9rem !important;}
-            .ln-auth-nav a {font-size:.72rem !important;}
-        }
+        html, body, [data-testid="stAppViewContainer"], .stApp {margin:0 !important;padding:0 !important;background:#FFFFFF !important;min-height:100vh !important;color:#293746 !important;overflow:auto !important;}
+        header[data-testid="stHeader"],[data-testid="stToolbar"],[data-testid="stDecoration"],#MainMenu,footer{display:none !important;height:0 !important;}
+        .block-container{max-width:1120px !important;width:100% !important;margin:0 auto !important;padding:4rem 2rem !important;}
+        [data-testid="stAppViewContainer"] *{font-weight:400 !important;}
+        div[data-testid="stHorizontalBlock"]{gap:3rem !important;align-items:center !important;}
+        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]{background:#FFFFFF !important;padding:0 !important;}
+        .ln-login-intro{color:#293746;font-size:1.9rem;line-height:1.22;margin:.8rem 0 .65rem;}
+        .ln-login-copy{color:#667786;font-size:1rem;line-height:1.55;max-width:32rem;}
+        .ln-price{text-align:left;line-height:1.15;margin:0 0 1rem;}
+        .ln-price span{display:inline;color:#667786;font-size:.82rem;margin-right:.35rem;}
+        .ln-price strong,.ln-price small{color:#486F74;font-size:1rem;font-weight:400 !important;}
+        .st-key-auth_card{width:100% !important;max-width:560px !important;margin:0 auto !important;padding:1.25rem 1.35rem 1.35rem !important;background:#FFFFFF !important;border:1px solid #DCE3E8 !important;border-radius:14px !important;box-shadow:none !important;}
+        .st-key-auth_card > div,.st-key-auth_card [data-testid="stVerticalBlock"]{background:transparent !important;}
+        .ln-auth-nav{display:grid !important;grid-template-columns:repeat(4,minmax(0,1fr)) !important;width:100% !important;gap:.25rem !important;margin:0 0 1rem !important;}
+        .ln-auth-nav a{display:flex !important;align-items:center !important;justify-content:center !important;min-height:2.7rem !important;padding:.35rem .1rem !important;color:#526371 !important;font-size:.76rem !important;text-align:center !important;text-decoration:none !important;border:1px solid #DCE3E8 !important;border-radius:8px !important;background:#FFFFFF !important;}
+        .ln-auth-nav a.active{color:#293746 !important;border-color:#AFC5C8 !important;background:#EDF3F4 !important;}
+        .st-key-auth_card label,.st-key-auth_card label p,.st-key-auth_card p,.st-key-auth_card span{color:#293746 !important;}
+        .st-key-auth_card [data-baseweb="input"],.st-key-auth_card [data-baseweb="base-input"],.st-key-auth_card [data-testid="stTextInput"] > div > div{background:#FFFFFF !important;border-color:#C8D3DB !important;color:#293746 !important;border-radius:9px !important;}
+        .st-key-auth_card input{background:#FFFFFF !important;color:#293746 !important;min-height:3rem !important;caret-color:#293746 !important;-webkit-text-fill-color:#293746 !important;}
+        .st-key-auth_card input::placeholder{color:#8A98A5 !important;-webkit-text-fill-color:#8A98A5 !important;opacity:1 !important;}
+        .st-key-auth_card [data-testid="stForm"]{background:#FFFFFF !important;border:0 !important;padding:0 !important;}
+        .st-key-auth_card .stFormSubmitButton button{min-height:3rem !important;border-radius:9px !important;background:#EAF2F3 !important;color:#293746 !important;border:1px solid #ADC6C9 !important;box-shadow:none !important;font-size:.94rem !important;}
+        .ln-forgot{text-align:right;margin-top:-2rem;margin-bottom:1rem;padding-right:.1rem;font-size:.78rem;color:#486F74;position:relative;z-index:4;}
+        .ln-forgot a{color:#486F74 !important;text-decoration:none !important;}
+        .ln-login-footer{width:100%;max-width:560px;margin:1rem auto 0;color:#667786;text-align:center;font-size:.82rem;line-height:1.5;}
+        .ln-login-footer strong{color:#486F74 !important;font-weight:400 !important;}
+        .ln-trial-seal{width:100%;margin:.1rem auto .75rem;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;background:transparent;border:0;box-shadow:none;padding:0;}
+        .ln-trial-seal .seal-badge{width:auto;height:auto;display:block;border-radius:8px;color:#526371;background:#F4F7F9;border:1px solid #DCE3E8;box-shadow:none;font-weight:400 !important;line-height:1.3;margin-bottom:.5rem;padding:.45rem .7rem;}
+        .ln-trial-seal .seal-badge::before,.ln-trial-seal .seal-badge::after,.ln-trial-seal .seal-stars{display:none !important;}
+        .ln-trial-seal .seal-days,.ln-trial-seal .seal-free{display:inline;font-size:.9rem;letter-spacing:0;color:#526371;background:transparent;padding:0;margin:0 .1rem;border-radius:0;}
+        .ln-trial-seal .seal-copy{color:#667786;font-size:.88rem;line-height:1.4;text-align:center;}
+        .ln-trial-seal .seal-copy strong{color:#486F74;font-size:.88rem;font-weight:400 !important;}
+        .ln-login-footer .dev{margin-top:.15rem;padding-top:.6rem;border-top:1px solid #E3E8ED;}
+        @media(max-width:800px){.block-container{padding:1.5rem 1rem !important;}div[data-testid="stHorizontalBlock"]{display:block !important;}.ln-login-intro,.ln-login-copy{text-align:center;margin-left:auto;margin-right:auto;}.ln-price{text-align:center;margin-top:1rem;}.st-key-auth_card,.ln-login-footer{max-width:560px !important;margin-left:auto !important;margin-right:auto !important;}.ln-auth-nav{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}}
         </style>""",
         unsafe_allow_html=True,
     )
 
-    left, right = st.columns([58.5, 41.5], gap=None)
+    left, right = st.columns([1, 1], gap="large")
 
     with left:
-        hero_path = PROJECT_ROOT / "assets" / "login-hero-definitivo.png"
-        st.image(str(hero_path), width="stretch")
+        if LOGO_PATH.exists():
+            st.image(str(LOGO_PATH), width=300)
+        st.markdown('<div class="ln-login-intro">Licitações sem complicação.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="ln-login-copy">Encontre editais, veja o que o governo quer comprar e organize os certames que você decidiu participar.</div>', unsafe_allow_html=True)
 
     with right:
         st.markdown(
@@ -3101,6 +2684,18 @@ def calendar_page(user):
         </style>""",
         unsafe_allow_html=True,
     )
+    st.markdown(
+        """<style>
+        .calendar-title,.agenda-head h3,.notes-panel-title{color:#293746 !important;font-weight:400 !important;}
+        .calendar-subtitle,.agenda-head span,.notes-panel-sub{color:#667786 !important;}
+        .month-card,.agenda-card,.date-badge{background:#FFFFFF !important;border-color:#DCE3E8 !important;box-shadow:none !important;color:#293746 !important;}
+        .month-name,.month-count,.weekdays,.day,.agenda-agency,.agenda-object,.agenda-meta,.date-badge strong,.date-badge small{color:#293746 !important;font-weight:400 !important;}
+        .month-count{background:#F4F7F9 !important;border-color:#DCE3E8 !important;}
+        .day.event{background:#EAF2F3 !important;color:#293746 !important;box-shadow:none !important;}
+        .day.today{outline:1px solid #9FB4BA !important;}
+        </style>""",
+        unsafe_allow_html=True,
+    )
     st.markdown('<div class="calendar-title">Calendário de certames</div>', unsafe_allow_html=True)
     st.markdown('<div class="calendar-subtitle">Veja rapidamente o que vem pela frente e mantenha seus lembretes em um só lugar.</div>', unsafe_allow_html=True)
 
@@ -3176,7 +2771,7 @@ def calendar_page(user):
             if len(calendar_rows) > 6:
                 st.caption(f"+ {len(calendar_rows) - 6} certame(s) futuro(s) registrados.")
         else:
-            st.info("Nenhum certame agendado. Em Meus Editais, informe a data do certame para que ele apareça aqui.")
+            st.info("Nenhum certame agendado. Na Minha lista, escolha Vou participar e informe o dia e a hora do certame.")
 
     st.markdown('<div class="notes-panel-title">Anotações rápidas</div>', unsafe_allow_html=True)
     st.markdown('<div class="notes-panel-sub">Registre lembretes de operação sem transformar o LicitaNexo em um sistema pesado de tarefas.</div>', unsafe_allow_html=True)
@@ -3241,7 +2836,7 @@ def main():
             st.image(str(LOGO_PATH), width="stretch")
         else:
             st.markdown("## 🛡️ LicitaNexo")
-        st.markdown(f'<div style="color:#10243F;font-weight:850">LicitaNexo · {APP_VERSION}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="color:#293746">LicitaNexo · {APP_VERSION}</div>', unsafe_allow_html=True)
         st.markdown('<div style="color:#718096;font-size:.80rem;margin-bottom:.7rem">B2G SaaS · Business to Growth</div>', unsafe_allow_html=True)
         st.markdown(
             f'<div style="background:#F7F9FC;border:1px solid #E3E8EF;border-radius:12px;padding:.65rem .72rem;margin-bottom:.75rem">'
@@ -3267,10 +2862,7 @@ def main():
                 "🔎 Buscar licitações", "🗺️ Por Estado", "📍 Por Cidade",
                 "☰ Por Modalidade", "⚙️ Filtro avançado", "🏆 Top 50",
             ]
-            work_pages = [
-                "❤️ Minha lista", "📋 Meus Editais", "📄 Analisar Edital",
-                "🏢 Minha Empresa", "📅 Calendário",
-            ]
+            work_pages = ["❤️ Minha lista", "📅 Calendário"]
             account_pages = ["🔔 Preferências", "📡 Radar de licitações", "💬 Suporte", "👤 Minha Conta"]
             pages = [*explore_pages, *work_pages, *account_pages]
             if not allowed:
@@ -3303,14 +2895,8 @@ def main():
             _nav_group("MINHA ÁREA", work_pages, "work")
             _nav_group("CONTA", account_pages, "account")
 
-            guide_page = {
-                "🔎 Buscar licitações": "🔎 Buscar Editais",
-                "📋 Meus Editais": "⭐ Meus Editais",
-            }.get(page, page)
-            if guide_page in {
-                "📅 Calendário", "🔎 Buscar Editais", "⭐ Meus Editais",
-                "📄 Analisar Edital", "🏢 Minha Empresa", "💬 Suporte", "👤 Minha Conta",
-            }:
+            guide_page = {"🔎 Buscar licitações": "🔎 Buscar Editais"}.get(page, page)
+            if guide_page in {"📅 Calendário", "🔎 Buscar Editais", "💬 Suporte", "👤 Minha Conta"}:
                 render_sidebar_guides(guide_page)
 
         if st.button("↪ Sair", key="sidebar_logout", width="stretch"):
@@ -3333,12 +2919,6 @@ def main():
         essential_top50_page(db, user)
     elif page == "❤️ Minha lista":
         essential_my_list_page(db, user)
-    elif page == "📋 Meus Editais":
-        pipeline_page(db, user)
-    elif page == "📄 Analisar Edital":
-        analysis_page(db, user, usage)
-    elif page == "🏢 Minha Empresa":
-        company_page(db, user)
     elif page == "📅 Calendário":
         calendar_page(user)
     elif page == "🔔 Preferências":

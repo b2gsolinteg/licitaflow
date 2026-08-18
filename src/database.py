@@ -1766,7 +1766,8 @@ class Database:
             FROM opportunities o
             JOIN opportunity_details d
               ON d.opportunity_id=o.id AND d.company_id=o.company_id
-            WHERE o.company_id=? AND d.certame_at IS NOT NULL AND d.certame_at<>''
+            WHERE o.company_id=? AND d.decision='Participar'
+              AND d.certame_at IS NOT NULL AND d.certame_at<>''
         """
         params = [company_id]
         if from_date:
@@ -2283,9 +2284,17 @@ class Database:
 
     def list_global_catalog(self, search="", states=None, cities=None, modalities=None, srp=None, minimum=None,
                             maximum=None, closing_from=None, closing_to=None, limit=5000,
-                            order_by="recent"): 
+                            order_by="recent", portal_terms=None): 
         sql = "SELECT * FROM global_pncp_catalog WHERE 1=1"
         params = []
+        portal_terms = [str(term or "").strip().lower() for term in (portal_terms or []) if str(term or "").strip()]
+        if portal_terms:
+            portal_clauses = []
+            for term in portal_terms:
+                portal_clauses.append("(lower(source_name) LIKE ? OR lower(source_url) LIKE ?)")
+                like = f"%{term}%"
+                params.extend([like, like])
+            sql += " AND (" + " OR ".join(portal_clauses) + ")"
         if search.strip():
             # A caixa de busca aceita várias intenções separadas por vírgula/; ou quebra de linha.
             # Ex.: "medicamentos, uniformes, luvas" significa medicamentos OU uniformes OU luvas.
