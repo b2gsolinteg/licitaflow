@@ -82,10 +82,10 @@ class Rc315FastUxContracts(unittest.TestCase):
 
     def test_sidebar_navigation_fills_available_width(self):
         source = ROOT.joinpath("app.py").read_text(encoding="utf-8")
-        self.assertIn("MENU LATERAL TOTALMENTE PREENCHIDO", source)
-        self.assertIn('label:has(input:checked)', source)
-        self.assertIn("width:100% !important", source)
-        self.assertIn("min-height:100vh !important", source)
+        self.assertIn('width:100% !important', source)
+        self.assertIn('justify-content:flex-start !important', source)
+        self.assertIn('background:#FFFFFF !important', source)
+        self.assertIn('min-height:100vh !important', source)
 
     def test_version_remains_in_rc31_line(self):
         source = ROOT.joinpath("src", "config.py").read_text(encoding="utf-8")
