@@ -38,3 +38,10 @@ COMMERCIAL_PLAN = "ESSENTIAL"
 BILLING_PROVIDER = "mercadopago"
 
 # RC23 · Consumo e IA
+DEFAULT_ESSENTIAL_ANALYSIS_LIMIT = 15
+
+# RC25 · Segurança + Compliance
+SECURITY_SESSION_IDLE_MINUTES = 60
+SECURITY_SESSION_ABSOLUTE_HOURS = 8
+
+# RC31.5 · UX: Radar rápido com resumo de itens e navegação lateral preenchida.
