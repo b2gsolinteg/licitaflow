@@ -439,265 +439,51 @@ def login_page():
     """Tela pública de entrada — RC19.8: composição visual final aprovada."""
     st.markdown(
         """<style>
-        html, body, [data-testid="stAppViewContainer"], .stApp {
-            margin:0 !important;
-            padding:0 !important;
-            background:#031329 !important;
-            min-height:100vh !important;
-            overflow:hidden !important;
-        }
-        header[data-testid="stHeader"],
-        [data-testid="stToolbar"],
-        [data-testid="stDecoration"],
-        #MainMenu, footer {
-            display:none !important;
-            height:0 !important;
-        }
-        .block-container {
-            max-width:none !important;
-            width:100vw !important;
-            margin:0 !important;
-            padding:0 !important;
-        }
-        div[data-testid="stHorizontalBlock"] {
-            gap:0 !important;
-            min-height:100vh !important;
-            align-items:stretch !important;
-        }
-        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1) {
-            flex:0 0 58.5vw !important;
-            width:58.5vw !important;
-            min-width:58.5vw !important;
-            max-width:58.5vw !important;
-            min-height:100vh !important;
-            background:#031329 !important;
-            overflow:hidden !important;
-            padding:0 !important;
-            position:relative !important;
-        }
-        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(2) {
-            flex:0 0 41.5vw !important;
-            width:41.5vw !important;
-            min-width:41.5vw !important;
-            max-width:41.5vw !important;
-            min-height:100vh !important;
-            background:#031329 !important;
-            padding:0 !important;
-            overflow:hidden !important;
-            position:relative !important;
-        }
-        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1)
-        [data-testid="stVerticalBlock"],
-        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1)
-        [data-testid="stElementContainer"],
-        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1)
-        [data-testid="stImage"] {
-            width:100% !important;
-            max-width:none !important;
-            margin:0 !important;
-            padding:0 !important;
-        }
-        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1)
-        [data-testid="stImage"] {height:100vh !important;overflow:hidden !important;}
-        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1)
-        [data-testid="stImage"] img {
-            width:100% !important;
-            max-width:none !important;
-            height:100vh !important;
-            object-fit:cover !important;
-            object-position:center center !important;
-            display:block !important;
-        }
-        .ln-price {
-            position:absolute;top:2.1rem;right:2.5rem;z-index:5;
-            text-align:right;line-height:1.05;
-        }
-        .ln-price span {display:block;font-size:.80rem;color:#E4E9F0;margin-bottom:.18rem;}
-        .ln-price strong {font-size:2.05rem;color:#E0A72A;letter-spacing:-.04em;}
-        .ln-price small {font-size:.94rem;color:#E0A72A;}
-
-        /* Card de autenticação com identidade CSS estável.
-           O key do st.container gera .st-key-auth_card no Streamlit >= 1.39. */
-        .st-key-auth_card {
-            width:min(calc(41.5vw - 3rem),650px) !important;
-            margin:8.0rem 0 0 1.15rem !important;
-            padding:1.15rem 1.45rem 1.28rem !important;
-            background:#FFFFFF !important;
-            border:1px solid #E5E8ED !important;
-            border-radius:19px !important;
-            box-shadow:0 24px 58px rgba(0,0,0,.24) !important;
-            position:relative !important;
-            z-index:3 !important;
-            overflow:hidden !important;
-            box-sizing:border-box !important;
-        }
-        .st-key-auth_card > div,
-        .st-key-auth_card [data-testid="stVerticalBlock"] {
-            background:transparent !important;
-        }
-        .ln-auth-nav {
-            display:grid !important;
-            grid-template-columns:repeat(4,minmax(0,1fr)) !important;
-            width:100% !important;
-            gap:0 !important;
-            border:1px solid #E4E8EE !important;
-            border-radius:10px 10px 0 0 !important;
-            overflow:hidden !important;
-            margin:0 0 1.15rem !important;
-            background:#FBFCFE !important;
-            box-sizing:border-box !important;
-        }
-        .ln-auth-nav a {
-            display:flex !important;
-            align-items:center !important;
-            justify-content:center !important;
-            width:100% !important;
-            min-width:0 !important;
-            min-height:3rem !important;
-            box-sizing:border-box !important;
-            padding:.45rem .08rem !important;
-            color:#20344D !important;
-            font-size:.79rem !important;
-            line-height:1.12 !important;
-            text-align:center !important;
-            white-space:nowrap !important;
-            text-decoration:none !important;
-            border-right:1px solid #E4E8EE !important;
-            border-bottom:3px solid transparent !important;
-            background:#FFFFFF !important;
-        }
-        .ln-auth-nav a:last-child {border-right:0 !important;}
-        .ln-auth-nav a.active {
-            color:#10243F !important;
-            font-weight:850 !important;
-            border-bottom-color:#D39B1F !important;
-            background:#FFFCF6 !important;
-        }
-
-        /* Força tema claro apenas dentro do card, independentemente do tema global. */
-        .st-key-auth_card label,
-        .st-key-auth_card label p,
-        .st-key-auth_card p,
-        .st-key-auth_card span {
-            color:#172A42 !important;
-        }
-        .st-key-auth_card [data-baseweb="input"],
-        .st-key-auth_card [data-baseweb="base-input"],
-        .st-key-auth_card [data-testid="stTextInput"] > div > div {
-            background:#FFFFFF !important;
-            border-color:#B8C2CF !important;
-            color:#15283F !important;
-            border-radius:10px !important;
-        }
-        .st-key-auth_card input {
-            background:#FFFFFF !important;
-            color:#15283F !important;
-            min-height:3.15rem !important;
-            caret-color:#15283F !important;
-            -webkit-text-fill-color:#15283F !important;
-        }
-        .st-key-auth_card input::placeholder {
-            color:#93A0B0 !important;
-            -webkit-text-fill-color:#93A0B0 !important;
-            opacity:1 !important;
-        }
-        .st-key-auth_card [data-testid="stCheckbox"] label p {
-            color:#24364E !important;
-            font-size:.82rem !important;
-        }
-        .st-key-auth_card [data-testid="stForm"] {
-            background:#FFFFFF !important;
-            border:0 !important;
-            padding:0 !important;
-        }
-        .st-key-auth_card .stFormSubmitButton button {
-            min-height:3.35rem !important;
-            border-radius:10px !important;
-            background:linear-gradient(90deg,#C88D13,#DEA92B) !important;
-            color:#07182D !important;
-            border:none !important;
-            font-weight:800 !important;
-            font-size:.96rem !important;
-            box-shadow:0 9px 24px rgba(207,151,25,.20) !important;
-        }
-
-
-        .ln-forgot {
-            text-align:right;margin-top:-2.1rem;margin-bottom:1.15rem;padding-right:.1rem;
-            font-size:.78rem;color:#C8870C;position:relative;z-index:4;
-        }
-        .ln-forgot a {color:#C8870C !important;text-decoration:none;font-weight:700;}
-        .ln-forgot a:hover {text-decoration:underline;}
-        .ln-login-footer {
-            width:min(calc(41.5vw - 3rem),650px);margin:1.05rem 0 0 1.15rem;
-            color:#E1E7EE;text-align:center;font-size:.84rem;line-height:1.55;
-        }
-        .ln-login-footer strong {color:#E5B13A;}
-        .ln-trial-seal {
-            width:100%; margin:.1rem auto .85rem; text-align:center;
-            display:flex; flex-direction:column; align-items:center; justify-content:center;
-            background:transparent; border:0; box-shadow:none; padding:0;
-        }
-        .ln-trial-seal .seal-badge {
-            position:relative; width:5.4rem; height:5.4rem; display:flex;
-            flex-direction:column; align-items:center; justify-content:center;
-            border-radius:50%; color:#fff; background:#071B35;
-            border:.38rem solid #D99C17; box-shadow:0 0 0 .18rem #8F650E, 0 8px 18px rgba(0,0,0,.24);
-            font-weight:900; line-height:1; margin-bottom:.62rem;
-        }
-        .ln-trial-seal .seal-badge::before,
-        .ln-trial-seal .seal-badge::after {
-            content:""; position:absolute; bottom:-1.12rem; width:1.65rem; height:2rem;
-            background:#D99C17; z-index:-1;
-        }
-        .ln-trial-seal .seal-badge::before {left:.55rem; transform:rotate(18deg); clip-path:polygon(0 0,100% 0,70% 100%,35% 72%,0 100%);}
-        .ln-trial-seal .seal-badge::after {right:.55rem; transform:rotate(-18deg); clip-path:polygon(0 0,100% 0,100% 100%,65% 72%,30% 100%);}
-        .ln-trial-seal .seal-stars {font-size:.58rem; color:#E7B43C; letter-spacing:.12rem; margin-bottom:.18rem;}
-        .ln-trial-seal .seal-days {font-size:1.45rem; letter-spacing:-.03em;}
-        .ln-trial-seal .seal-free {
-            margin-top:.18rem; padding:.18rem .62rem; background:#E0A72A; color:#07182D;
-            font-size:.72rem; letter-spacing:.04em; border-radius:2px;
-        }
-        .ln-trial-seal .seal-copy {color:#F1F4F8;font-size:.92rem;line-height:1.38;text-align:center;}
-        .ln-trial-seal .seal-copy strong {color:#E8AF28;font-size:.98rem;}
-        .ln-login-footer .dev {margin-top:.15rem;padding-top:.65rem;border-top:1px solid rgba(255,255,255,.18);}
-
-        @media (max-width:1180px) {
-            div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1) {
-                flex-basis:55vw !important;width:55vw !important;min-width:55vw !important;max-width:55vw !important;
-            }
-            div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(2) {
-                flex-basis:45vw !important;width:45vw !important;min-width:45vw !important;max-width:45vw !important;
-            }
-            .st-key-auth_card, .ln-login-footer {
-                width:min(calc(45vw - 2.1rem),620px) !important;margin-left:.85rem !important;
-            }
-            .ln-price {right:1.4rem;}
-        }
-        @media (max-width:800px) {
-            html, body, [data-testid="stAppViewContainer"], .stApp {overflow:auto !important;}
-            div[data-testid="stHorizontalBlock"] {display:block !important;}
-            div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1) {display:none !important;}
-            div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(2) {
-                width:100vw !important;min-width:100vw !important;max-width:100vw !important;
-                min-height:100vh !important;padding:1.2rem !important;
-            }
-            .ln-price {position:relative;top:auto;right:auto;width:100%;text-align:center;margin:.35rem 0 1rem;}
-            .st-key-auth_card, .ln-login-footer {
-                width:min(100%,560px) !important;margin:0 auto !important;
-            }
-            .ln-login-footer {margin-top:.9rem !important;}
-            .ln-auth-nav a {font-size:.72rem !important;}
-        }
+        html, body, [data-testid="stAppViewContainer"], .stApp {margin:0 !important;padding:0 !important;background:#FFFFFF !important;min-height:100vh !important;color:#293746 !important;overflow:auto !important;}
+        header[data-testid="stHeader"],[data-testid="stToolbar"],[data-testid="stDecoration"],#MainMenu,footer{display:none !important;height:0 !important;}
+        .block-container{max-width:1120px !important;width:100% !important;margin:0 auto !important;padding:4rem 2rem !important;}
+        [data-testid="stAppViewContainer"] *{font-weight:400 !important;}
+        div[data-testid="stHorizontalBlock"]{gap:3rem !important;align-items:center !important;}
+        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]{background:#FFFFFF !important;padding:0 !important;}
+        .ln-login-intro{color:#293746;font-size:1.9rem;line-height:1.22;margin:.8rem 0 .65rem;}
+        .ln-login-copy{color:#667786;font-size:1rem;line-height:1.55;max-width:32rem;}
+        .ln-price{text-align:left;line-height:1.15;margin:0 0 1rem;}
+        .ln-price span{display:inline;color:#667786;font-size:.82rem;margin-right:.35rem;}
+        .ln-price strong,.ln-price small{color:#486F74;font-size:1rem;font-weight:400 !important;}
+        .st-key-auth_card{width:100% !important;max-width:560px !important;margin:0 auto !important;padding:1.25rem 1.35rem 1.35rem !important;background:#FFFFFF !important;border:1px solid #DCE3E8 !important;border-radius:14px !important;box-shadow:none !important;}
+        .st-key-auth_card > div,.st-key-auth_card [data-testid="stVerticalBlock"]{background:transparent !important;}
+        .ln-auth-nav{display:grid !important;grid-template-columns:repeat(4,minmax(0,1fr)) !important;width:100% !important;gap:.25rem !important;margin:0 0 1rem !important;}
+        .ln-auth-nav a{display:flex !important;align-items:center !important;justify-content:center !important;min-height:2.7rem !important;padding:.35rem .1rem !important;color:#526371 !important;font-size:.76rem !important;text-align:center !important;text-decoration:none !important;border:1px solid #DCE3E8 !important;border-radius:8px !important;background:#FFFFFF !important;}
+        .ln-auth-nav a.active{color:#293746 !important;border-color:#AFC5C8 !important;background:#EDF3F4 !important;}
+        .st-key-auth_card label,.st-key-auth_card label p,.st-key-auth_card p,.st-key-auth_card span{color:#293746 !important;}
+        .st-key-auth_card [data-baseweb="input"],.st-key-auth_card [data-baseweb="base-input"],.st-key-auth_card [data-testid="stTextInput"] > div > div{background:#FFFFFF !important;border-color:#C8D3DB !important;color:#293746 !important;border-radius:9px !important;}
+        .st-key-auth_card input{background:#FFFFFF !important;color:#293746 !important;min-height:3rem !important;caret-color:#293746 !important;-webkit-text-fill-color:#293746 !important;}
+        .st-key-auth_card input::placeholder{color:#8A98A5 !important;-webkit-text-fill-color:#8A98A5 !important;opacity:1 !important;}
+        .st-key-auth_card [data-testid="stForm"]{background:#FFFFFF !important;border:0 !important;padding:0 !important;}
+        .st-key-auth_card .stFormSubmitButton button{min-height:3rem !important;border-radius:9px !important;background:#EAF2F3 !important;color:#293746 !important;border:1px solid #ADC6C9 !important;box-shadow:none !important;font-size:.94rem !important;}
+        .ln-forgot{text-align:right;margin-top:-2rem;margin-bottom:1rem;padding-right:.1rem;font-size:.78rem;color:#486F74;position:relative;z-index:4;}
+        .ln-forgot a{color:#486F74 !important;text-decoration:none !important;}
+        .ln-login-footer{width:100%;max-width:560px;margin:1rem auto 0;color:#667786;text-align:center;font-size:.82rem;line-height:1.5;}
+        .ln-login-footer strong{color:#486F74 !important;font-weight:400 !important;}
+        .ln-trial-seal{width:100%;margin:.1rem auto .75rem;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;background:transparent;border:0;box-shadow:none;padding:0;}
+        .ln-trial-seal .seal-badge{width:auto;height:auto;display:block;border-radius:8px;color:#526371;background:#F4F7F9;border:1px solid #DCE3E8;box-shadow:none;font-weight:400 !important;line-height:1.3;margin-bottom:.5rem;padding:.45rem .7rem;}
+        .ln-trial-seal .seal-badge::before,.ln-trial-seal .seal-badge::after,.ln-trial-seal .seal-stars{display:none !important;}
+        .ln-trial-seal .seal-days,.ln-trial-seal .seal-free{display:inline;font-size:.9rem;letter-spacing:0;color:#526371;background:transparent;padding:0;margin:0 .1rem;border-radius:0;}
+        .ln-trial-seal .seal-copy{color:#667786;font-size:.88rem;line-height:1.4;text-align:center;}
+        .ln-trial-seal .seal-copy strong{color:#486F74;font-size:.88rem;font-weight:400 !important;}
+        .ln-login-footer .dev{margin-top:.15rem;padding-top:.6rem;border-top:1px solid #E3E8ED;}
+        @media(max-width:800px){.block-container{padding:1.5rem 1rem !important;}div[data-testid="stHorizontalBlock"]{display:block !important;}.ln-login-intro,.ln-login-copy{text-align:center;margin-left:auto;margin-right:auto;}.ln-price{text-align:center;margin-top:1rem;}.st-key-auth_card,.ln-login-footer{max-width:560px !important;margin-left:auto !important;margin-right:auto !important;}.ln-auth-nav{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}}
         </style>""",
         unsafe_allow_html=True,
     )
 
-    left, right = st.columns([58.5, 41.5], gap=None)
+    left, right = st.columns([1, 1], gap="large")
 
     with left:
-        hero_path = PROJECT_ROOT / "assets" / "login-hero-definitivo.png"
-        st.image(str(hero_path), width="stretch")
+        if LOGO_PATH.exists():
+            st.image(str(LOGO_PATH), width=300)
+        st.markdown('<div class="ln-login-intro">Licitações sem complicação.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="ln-login-copy">Encontre editais, veja o que o governo quer comprar e organize os certames que você decidiu participar.</div>', unsafe_allow_html=True)
 
     with right:
         st.markdown(

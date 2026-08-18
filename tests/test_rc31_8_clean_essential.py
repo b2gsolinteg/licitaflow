@@ -16,6 +16,16 @@ class CleanEssentialContracts(unittest.TestCase):
         self.assertNotIn("#C99A2E", theme)
         self.assertNotIn("#081321", theme)
 
+    def test_public_login_is_also_light_and_neutral(self):
+        app = (ROOT / "app.py").read_text(encoding="utf-8")
+        start = app.index("def login_page():")
+        end = app.index("def legal_acceptance_page", start)
+        login = app[start:end]
+        self.assertNotIn("#031329", login)
+        self.assertNotIn("#D99C17", login)
+        self.assertNotIn("linear-gradient(90deg,#C88D13,#DEA92B)", login)
+        self.assertIn("Licitações sem complicação.", login)
+
     def test_beginner_navigation_hides_future_modules(self):
         app = (ROOT / "app.py").read_text(encoding="utf-8")
         self.assertIn('work_pages = ["❤️ Minha lista", "📅 Calendário"]', app)
