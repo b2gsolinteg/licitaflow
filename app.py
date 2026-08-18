@@ -33,6 +33,8 @@ from src.exports import catalog_excel, catalog_pdf
 from src.intelligence_ui import analysis_page
 from src.legal import PRIVACY_TEXT, TERMS_TEXT
 from src.pncp import MODALITIES, PncpClient
+from src.pncp_items import PncpItemsError, fetch_contract_items
+from src.radar_items import fetch_radar_item_summaries
 from src.pipeline_ui import pipeline_page
 from src.company_ui import company_page
 from src.company_intelligence import profile_search_ready, rank_opportunities
@@ -75,6 +77,21 @@ def _cached_control_room_stats():
 @st.cache_data(ttl=10, show_spinner=False)
 def _cached_pending_access_requests():
     return db.count_access_requests()
+
+
+@st.cache_data(ttl=900, show_spinner=False)
+def _cached_radar_item_summaries(control_numbers):
+    return fetch_radar_item_summaries(
+        tuple(control_numbers or ()), max_workers=6, preview_items=4
+    )
+
+
+@st.cache_data(ttl=1800, show_spinner=False)
+def _cached_full_contract_items(control_number):
+    control_number = str(control_number or "").strip()
+    if not control_number:
+        return []
+    return fetch_contract_items(control_number, timeout=12, page_size=200)
 
 
 @st.cache_data(ttl=30, show_spinner=False)
@@ -450,19 +467,53 @@ def apply_brand():
         /*
          * Menu administrativo compacto, mas leg?vel.
          */
+        /* MENU LATERAL TOTALMENTE PREENCHIDO: cada opção usa 100% da largura útil. */
+        [data-testid="stSidebar"],
+        [data-testid="stSidebar"] > div:first-child {
+            min-height:100vh !important;
+            height:100vh !important;
+        }
+
+        [data-testid="stSidebar"] [data-testid="stRadio"],
         [data-testid="stSidebar"] div[role="radiogroup"] {
-            gap:.12rem !important;
+            width:100% !important;
+        }
+
+        [data-testid="stSidebar"] div[role="radiogroup"] {
+            gap:.18rem !important;
         }
 
         [data-testid="stSidebar"] div[role="radiogroup"] label {
-            min-height:2.05rem !important;
-            padding:.18rem .32rem !important;
-            border-radius:7px !important;
+            width:100% !important;
+            box-sizing:border-box !important;
+            min-height:2.62rem !important;
+            padding:.42rem .58rem !important;
+            border-radius:9px !important;
+            border:1px solid #E5EAF0 !important;
+            background:#F8FAFC !important;
+            transition:background .12s ease,border-color .12s ease,box-shadow .12s ease !important;
+        }
+
+        [data-testid="stSidebar"] div[role="radiogroup"] label:hover {
+            background:#F2F5F8 !important;
+            border-color:#D5DDE7 !important;
+        }
+
+        [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
+            background:#10243F !important;
+            border-color:#C99A2E !important;
+            box-shadow:inset 4px 0 0 #C99A2E !important;
         }
 
         [data-testid="stSidebar"] div[role="radiogroup"] label p {
             font-size:.94rem !important;
-            line-height:1.20rem !important;
+            line-height:1.22rem !important;
+            width:100% !important;
+        }
+
+        [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p {
+            color:#FFFFFF !important;
+            font-weight:800 !important;
         }
 
         /*
@@ -486,6 +537,48 @@ def apply_brand():
             [data-testid="stSidebar"] {
                 max-width:88vw !important;
             }
+        }
+
+        /* Radar rápido: itens oficiais já visíveis no resultado, sem abrir outra tela. */
+        .radar-items-box {
+            margin:.72rem 0 .62rem;
+            padding:.68rem .72rem;
+            background:#F8FBFF;
+            border:1px solid #DDE7F2;
+            border-radius:11px;
+        }
+        .radar-items-title {
+            color:#17324F;
+            font-weight:850;
+            font-size:.84rem;
+            margin-bottom:.28rem;
+        }
+        .radar-item-row {
+            display:grid;
+            grid-template-columns:minmax(0,1fr) 88px 108px;
+            gap:.45rem;
+            align-items:start;
+            padding:.34rem 0;
+            border-top:1px solid #E7EDF5;
+        }
+        .radar-item-row:first-of-type {border-top:0;}
+        .radar-item-name {
+            color:#2B4057;
+            font-size:.78rem;
+            line-height:1.28;
+            overflow-wrap:anywhere;
+        }
+        .radar-item-qty,.radar-item-price {
+            color:#607086;
+            font-size:.72rem;
+            line-height:1.28;
+            text-align:right;
+        }
+        .radar-item-price {color:#17324F;font-weight:800;}
+        .radar-items-more {color:#738196;font-size:.71rem;margin-top:.32rem;}
+        @media(max-width:760px) {
+            .radar-item-row {grid-template-columns:1fr;gap:.1rem;}
+            .radar-item-qty,.radar-item-price {text-align:left;}
         }
 
 
@@ -2443,6 +2536,110 @@ def admin_page(user, admin_section="Visão geral"):
 
 
 
+
+def _radar_quantity_text(value) -> str:
+    try:
+        number = float(value or 0)
+    except (TypeError, ValueError):
+        return "—"
+    if number.is_integer():
+        return f"{int(number):,}".replace(",", ".")
+    return f"{number:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def _radar_item_price_text(row: dict) -> str:
+    if row.get("confidential"):
+        return "Preço sigiloso"
+    try:
+        price = float(row.get("unit_price") or 0)
+    except (TypeError, ValueError):
+        price = 0
+    return format_brl(price) if price > 0 else "Sem preço publicado"
+
+
+def _render_radar_item_summary(opportunity: dict, pack: dict) -> None:
+    """Mostra itens oficiais já abertos para a decisão acontecer no próprio Radar."""
+    control = str(opportunity.get("pncp_control_number") or "").strip()
+    preview = list(pack.get("items") or [])
+    total = int(pack.get("item_count") or len(preview))
+    count_known = bool(pack.get("count_known"))
+    has_more = bool(pack.get("has_more")) or total > len(preview)
+    error = str(pack.get("items_error") or "").strip()
+
+    if count_known:
+        count_label = f"{total} item(ns)"
+    elif preview:
+        count_label = f"{max(total, len(preview))}+ item(ns)"
+    else:
+        count_label = "itens oficiais"
+
+    lines = [
+        f'<div class="radar-items-box"><div class="radar-items-title">📦 Itens da licitação · {escape(count_label)}</div>'
+    ]
+    if error:
+        lines.append('<div class="radar-items-more">Itens temporariamente indisponíveis no PNCP. O restante do resultado continua acessível.</div>')
+    elif not preview:
+        lines.append('<div class="radar-items-more">O PNCP não publicou itens estruturados para esta contratação.</div>')
+    else:
+        for row in preview:
+            number = escape(str(row.get("number") or ""))
+            description = str(row.get("description") or "Item não descrito").strip()
+            if len(description) > 150:
+                description = description[:147].rstrip() + "..."
+            description = escape(description)
+            quantity = _radar_quantity_text(row.get("quantity"))
+            unit = escape(str(row.get("unit_measure") or "").strip())
+            qty_label = f"{quantity} {unit}".strip()
+            price_label = escape(_radar_item_price_text(row))
+            prefix = f"<b>{number}.</b> " if number else ""
+            lines.append(
+                f'<div class="radar-item-row"><div class="radar-item-name">{prefix}{description}</div>'
+                f'<div class="radar-item-qty">{escape(qty_label)}</div>'
+                f'<div class="radar-item-price">{price_label}</div></div>'
+            )
+        remaining = max(total - len(preview), 0) if count_known else 0
+        if remaining:
+            lines.append(f'<div class="radar-items-more">+ {remaining} outro(s) item(ns)</div>')
+        elif has_more and not count_known:
+            lines.append('<div class="radar-items-more">Há outros itens nesta contratação.</div>')
+    lines.append("</div>")
+    st.markdown("".join(lines), unsafe_allow_html=True)
+
+    if not control or not preview or not has_more:
+        return
+
+    state_key = f"radar_all_items_open_{opportunity.get('id') or control}"
+    opened = bool(st.session_state.get(state_key))
+    label = "Mostrar apenas o resumo" if opened else "Ver todos os itens"
+    if st.button(label, key=f"radar_all_items_button_{opportunity.get('id') or control}", width="stretch"):
+        st.session_state[state_key] = not opened
+        st.rerun()
+
+    if not opened:
+        return
+    try:
+        with st.spinner("Carregando a lista completa de itens do PNCP..."):
+            full_items = _cached_full_contract_items(control)
+    except PncpItemsError:
+        st.caption("Não foi possível abrir a lista completa agora. O resumo acima continua disponível.")
+        return
+    if not full_items:
+        st.caption("Nenhum item estruturado adicional foi publicado pelo PNCP.")
+        return
+
+    rows = []
+    for row in full_items[:120]:
+        rows.append({
+            "Item": row.get("number") or "",
+            "Descrição": row.get("description") or "",
+            "Quantidade": _radar_quantity_text(row.get("quantity")),
+            "Unidade": row.get("unit_measure") or "",
+            "Preço ref.": _radar_item_price_text(row),
+        })
+    st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch", height=min(360, 38 + 34 * len(rows)))
+    if len(full_items) > 120:
+        st.caption(f"Mostrando 120 de {len(full_items)} itens para manter a tela rápida.")
+
 def search_page(user):
     company_id = user["company_id"]
     profile = db.get_company_profile(company_id)
@@ -2640,11 +2837,13 @@ def search_page(user):
             "editais_licitanexo.pdf", "application/pdf", width="stretch",
         )
 
-    per_page = 20
+    per_page = 8
     total_pages = max((len(items) + per_page - 1) // per_page, 1)
     current_page = min(max(int(st.session_state.get("catalog_page", 1)), 1), total_pages)
     first = (current_page - 1) * per_page
     page_items = items[first:first + per_page]
+    visible_controls = tuple(str(row.get("pncp_control_number") or "").strip() for row in page_items)
+    item_preview_map = _cached_radar_item_summaries(visible_controls)
 
     for index in range(0, len(page_items), 2):
         columns = st.columns(2)
@@ -2675,6 +2874,14 @@ def search_page(user):
                         item.get("source_name"), item.get("source_channel"), item.get("source_url")
                     )
                     st.caption(f"**Fonte:** {source_name} · **Portal de disputa:** {portal_label}")
+                    control_number = str(item.get("pncp_control_number") or "").strip()
+                    _render_radar_item_summary(
+                        item,
+                        item_preview_map.get(control_number, {
+                            "items": [], "item_count": 0, "count_known": False,
+                            "has_more": False, "items_error": "",
+                        }),
+                    )
                     if st.button("⭐ Salvar em Meus Editais", key=f'open_catalog_{item["id"]}', type="primary", width="stretch"):
                         try:
                             opportunity_id = db.add_global_catalog_item_to_pipeline(company_id, item["id"])
