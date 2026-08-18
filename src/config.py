@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 APP_NAME = "LicitaNexo"
-APP_VERSION = "1.0 Essential RC31.6"
+APP_VERSION = "1.0 Essential RC31.6.1"
 APP_TAGLINE = "Simples para começar. Útil para vencer."
 COMPANY_SIGNATURE = "Powered by B2G SaaS · Business to Growth"
 APP_POSITIONING = "Seu departamento de licitações em um único lugar."
@@ -38,10 +38,3 @@ COMMERCIAL_PLAN = "ESSENTIAL"
 BILLING_PROVIDER = "mercadopago"
 
 # RC23 · Consumo e IA
-DEFAULT_ESSENTIAL_ANALYSIS_LIMIT = 15
-
-# RC25 · Segurança + Compliance
-SECURITY_SESSION_IDLE_MINUTES = 60
-SECURITY_SESSION_ABSOLUTE_HOURS = 8
-
-# RC31.5 · UX: Radar rápido com resumo de itens e navegação lateral preenchida.
