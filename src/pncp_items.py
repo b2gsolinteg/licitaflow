@@ -131,6 +131,118 @@ def fetch_contract_items(control_number: str, *, timeout: int = 20, page_size: i
     return result
 
 
+
+def fetch_contract_items_preview(
+    control_number: str,
+    *,
+    limit: int = 4,
+    timeout: int = 7,
+    session=None,
+) -> dict:
+    """Busca apenas a primeira página de itens para cards de pesquisa rápida.
+
+    Diferente de ``fetch_contract_items``, esta função não percorre todas as páginas.
+    O objetivo é manter o Radar responsivo e exibir um resumo oficial do PNCP antes
+    de o usuário decidir abrir ou salvar a oportunidade.
+    """
+    parsed = parse_pncp_control_number(control_number)
+    if not parsed:
+        raise PncpItemsError("Número de controle PNCP inválido para consultar os itens.")
+    cnpj, year, sequence = parsed
+    client = session or requests.Session()
+    if session is None:
+        client.headers.update({
+            "User-Agent": "LicitaNexo/1.0 (+b2gsolucoesintegradas@gmail.com)",
+            "Accept": "application/json",
+        })
+    endpoint = f"{PNCP_DATA_URL}/orgaos/{cnpj}/compras/{year}/{sequence}/itens"
+    size = max(1, min(int(limit or 4), 20))
+    response = None
+    last_error = None
+
+    # Preview não pode transformar a busca em uma espera longa. Faz no máximo
+    # uma repetição curta para erros transitórios e devolve falha isolada por card.
+    for attempt in range(2):
+        try:
+            response = client.get(
+                endpoint,
+                params={"pagina": 1, "tamanhoPagina": size},
+                timeout=max(2, int(timeout)),
+            )
+            if response.status_code == 204:
+                return {
+                    "items": [], "item_count": 0, "count_known": True,
+                    "has_more": False, "items_error": "",
+                }
+            if response.status_code in {429, 500, 502, 503, 504} and attempt == 0:
+                last_error = f"PNCP respondeu {response.status_code}"
+                time.sleep(0.35)
+                continue
+            response.raise_for_status()
+            break
+        except (requests.Timeout, requests.ConnectionError, requests.HTTPError) as exc:
+            last_error = str(exc)
+            if attempt == 0:
+                time.sleep(0.25)
+
+    if response is None or response.status_code >= 400:
+        raise PncpItemsError(
+            f"Itens temporariamente indisponíveis no PNCP. {last_error or ''}".strip()
+        )
+
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        raise PncpItemsError("O PNCP retornou os itens em formato inesperado.") from exc
+
+    total_value = None
+    if isinstance(payload, list):
+        raw_items = payload
+        total_value = len(raw_items)
+    elif isinstance(payload, dict):
+        raw_items = payload.get("itens") or payload.get("data") or payload.get("items") or []
+        for key in (
+            "totalRegistros", "totalElementos", "totalItems", "total",
+            "quantidadeRegistros", "totalCount",
+        ):
+            if payload.get(key) is not None:
+                total_value = payload.get(key)
+                break
+    else:
+        raw_items = []
+
+    if not isinstance(raw_items, list):
+        raise PncpItemsError("O PNCP não devolveu a lista de itens no formato esperado.")
+
+    normalized = []
+    seen = set()
+    for raw in raw_items:
+        if not isinstance(raw, dict):
+            continue
+        item = _normalize_item(raw, control_number)
+        if item["source_reference"] in seen:
+            continue
+        seen.add(item["source_reference"])
+        normalized.append(item)
+        if len(normalized) >= size:
+            break
+
+    count_known = total_value is not None
+    try:
+        total = max(int(total_value), len(normalized)) if count_known else len(normalized)
+    except (TypeError, ValueError):
+        total = len(normalized)
+        count_known = False
+    has_more = total > len(normalized) if count_known else len(raw_items) >= size
+    return {
+        "items": normalized,
+        "item_count": total,
+        "count_known": count_known,
+        "has_more": has_more,
+        "items_error": "",
+    }
+
+
 def fetch_contract_documents(control_number: str, *, timeout: int = 20, session=None) -> list[dict]:
     parsed = parse_pncp_control_number(control_number)
     if not parsed:
