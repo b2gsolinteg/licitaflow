@@ -41,7 +41,6 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          # Legacy contracts now validate the professional plain labels.
           p = Path('tests/test_rc31_6_essential.py')
           s = p.read_text(encoding='utf-8')
           s = s.replace('self.assertIn("❤️ Minha lista", app)', 'self.assertIn("Minha lista", app)')
@@ -61,7 +60,6 @@ jobs:
           s = s.replace('self.assertIn(\'elif page == "📅 Calendário"\', app)', 'self.assertIn(\'elif page == "Calendário"\', app)')
           p.write_text(s, encoding='utf-8')
 
-          # Keep sidebar labels intentionally stronger while the main content remains light.
           p = Path('src/essential_discovery.py')
           s = p.read_text(encoding='utf-8')
           css = '[data-testid="stSidebar"] .stButton button{font-weight:600 !important;}\n'
@@ -82,7 +80,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm .github/workflows/rc31-10-modern-filters.yml scripts/rc31_10_patch.py
+          git rm -f .github/workflows/rc31-10-modern-filters.yml scripts/rc31_10_patch.py
           git add app.py src/essential_discovery.py src/config.py tests docs/rc31-10-modern-filters.md
           git commit -m "feat: filtros por região tipo e SRP RC31.10"
           git push origin HEAD:agent/rc31-10-modern-filters
