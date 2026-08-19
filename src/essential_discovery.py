@@ -77,7 +77,9 @@ def _apply_styles() -> None:
         [data-testid="stMain"] .stButton button[kind="primary"],[data-testid="stMain"] button[kind="primary"]{background:#EAF2F3 !important;color:#293746 !important;border:1px solid #ADC6C9 !important;box-shadow:none !important;}
         [data-testid="stMain"] .stButton button:hover{background:#F4F7F8 !important;border-color:#AFC0C9 !important;}
         [data-testid="stMain"] div[class*="st-key-state_"] button{min-height:2.8rem !important;font-size:.88rem !important;background:#FFFFFF !important;color:#293746 !important;border:1px solid #CCD6DD !important;}
-        .ln-state-card{min-height:142px;}
+        .ln-state-card{min-height:154px;}
+.ln-home-count{font-size:1.55rem;color:#293746;margin:.25rem 0 .95rem;}
+[data-testid="stSidebar"] .stButton button{font-weight:600 !important;}
         @media(max-width:900px){.ln-info-grid,.ln-meta-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ln-item-row{grid-template-columns:38px minmax(0,1fr)}.ln-item-qty,.ln-item-price{text-align:left;grid-column:2}}
         </style>
         """,
@@ -305,15 +307,16 @@ def _render_card(db, user: dict, item: dict, pack: dict) -> None:
     company_id = user["company_id"]
     modality = str(item.get("modality") or "Licitação")
     control = str(item.get("pncp_control_number") or "").strip()
-    reference = control or "Contratação pública"
     city = str(item.get("city") or "Município não informado")
     state = str(item.get("state") or "--")
     agency = str(item.get("agency") or "Órgão não informado")
+    reference = agency
     estimated_value = item.get("estimated_value")
     value = format_brl(estimated_value) if estimated_value not in (None, "") else "Não informado"
     opening = item.get("opening_at") or item.get("closing_at")
     deadline = item.get("closing_at")
     opening_text = _datetime_text(opening)
+    published_text = _datetime_text(item.get("published_at"))
     countdown = _countdown(deadline)
     obj = str(item.get("object") or "Objeto não informado").strip()
 
@@ -340,9 +343,9 @@ def _render_card(db, user: dict, item: dict, pack: dict) -> None:
         st.markdown(
             '<div class="ln-info-grid">'
             f'<div class="ln-info-box"><div class="ln-info-label">Cidade</div><div class="ln-info-value">{escape(city)} — {escape(state)}</div></div>'
-            f'<div class="ln-info-box"><div class="ln-info-label">Órgão</div><div class="ln-info-value">{escape(agency)}</div></div>'
             f'<div class="ln-info-box"><div class="ln-info-label">Valor</div><div class="ln-info-value">{escape(value)}</div></div>'
             f'<div class="ln-info-box"><div class="ln-info-label">Data e prazo</div><div class="ln-info-value">{escape(opening_text)}</div>{extra}</div>'
+            f'<div class="ln-info-box"><div class="ln-info-label">Publicado em</div><div class="ln-info-value">{escape(published_text)}</div></div>'
             '</div>', unsafe_allow_html=True,
         )
         st.markdown('<div class="ln-object-label">O que o governo quer comprar ou contratar</div>', unsafe_allow_html=True)
@@ -398,6 +401,63 @@ def _render_results(db, user: dict, items: list[dict], *, page_key: str, per_pag
         if n3.button("Próxima ▶", disabled=current >= total_pages, key=f"{page_key}_next", width="stretch"):
             st.session_state[page_key] = current + 1
             st.rerun()
+
+
+def home_page(db, user: dict) -> None:
+    _apply_styles()
+    counts = db.global_catalog_group_counts("state", closing_from=date.today().isoformat())
+    open_total = sum(int(row.get("total") or 0) for row in counts)
+
+    st.markdown('<div class="ln-discovery-title">Encontre o que o governo está comprando</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-sub">Você pode pesquisar um produto ou começar por estado, cidade, modalidade ou site da disputa.</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="ln-home-count">{open_total:,} editais abertos para participação</div>'.replace(",", "."), unsafe_allow_html=True)
+
+    with st.form("essential_home_search", clear_on_submit=False, enter_to_submit=False):
+        keyword = st.text_input("O que você procura?", placeholder="Ex.: papel A4, pneus, medicamentos, uniformes...")
+        if st.form_submit_button("Buscar licitações", type="primary", width="stretch"):
+            st.session_state["essential_search_criteria"] = _criteria(keyword=keyword.strip())
+            st.session_state["essential_search_page"] = 1
+            st.session_state["_navigation_request"] = "🔎 Buscar licitações"
+            st.rerun()
+
+    st.caption("Ou comece por uma destas opções:")
+    shortcuts = [
+        ("🗺️ Por Estado", "Ver estados"),
+        ("📍 Por Cidade", "Buscar cidade"),
+        ("☰ Por Modalidade", "Ver modalidades"),
+        ("🌐 Por site de disputa", "Ver sites"),
+    ]
+    cols = st.columns(4)
+    for col, (target, label) in zip(cols, shortcuts):
+        if col.button(label, key=f"home_{target}", width="stretch"):
+            st.session_state["_navigation_request"] = target
+            st.rerun()
+
+
+def portal_page(db, user: dict) -> None:
+    _apply_styles()
+    st.markdown('<div class="ln-discovery-title">🌐 Por site de disputa</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-sub">Escolha onde deseja participar. Se não tiver preferência, use Todos os sites.</div>', unsafe_allow_html=True)
+
+    if st.button("Todos os sites", key="portal_all", type="primary", width="stretch"):
+        st.session_state["essential_search_criteria"] = _criteria(portal="Todos os sites")
+        st.session_state["essential_search_page"] = 1
+        st.session_state["_navigation_request"] = "🔎 Buscar licitações"
+        st.rerun()
+
+    portals = list(PORTAL_ACCESS.keys())
+    for start in range(0, len(portals), 3):
+        cols = st.columns(3)
+        for col, portal in zip(cols, portals[start:start + 3]):
+            access = portal_access_info(portal)
+            with col.container(border=True):
+                st.write(portal)
+                st.caption(f"Custo do acesso: {access['label']}")
+                if st.button("Ver editais", key=f"portal_{portal}", width="stretch"):
+                    st.session_state["essential_search_criteria"] = _criteria(portal=portal)
+                    st.session_state["essential_search_page"] = 1
+                    st.session_state["_navigation_request"] = "🔎 Buscar licitações"
+                    st.rerun()
 
 
 def search_page(db, user: dict, usage=None) -> None:
@@ -487,9 +547,9 @@ def state_page(db, user: dict) -> None:
             with col.container(border=True):
                 flag = FLAGS_DIR / f"{state.lower()}.svg"
                 if flag.exists():
-                    st.image(str(flag), width=62)
+                    st.image(str(flag), width=72)
                 st.write(f"{STATE_NAMES.get(state, state)} ({state})")
-                st.caption(f"{total:,} editais abertos".replace(",", "."))
+                st.caption(f"{total:,} editais abertos para participação".replace(",", "."))
                 if st.button("Ver editais", key=f"state_{state}", width="stretch"):
                     st.session_state["essential_search_criteria"] = _criteria(states=[state])
                     st.session_state["essential_search_page"] = 1
@@ -531,7 +591,7 @@ def modality_page(db, user: dict) -> None:
             total = int(row.get("total") or 0)
             with col.container(border=True):
                 st.markdown(f"**{label}**")
-                st.caption(f"{total:,} editais abertos".replace(",", "."))
+                st.caption(f"{total:,} editais abertos para participação".replace(",", "."))
                 if st.button("Ver editais", key=f"modality_{label}", width="stretch"):
                     st.session_state["essential_search_criteria"] = _criteria(modalities=[label])
                     st.session_state["essential_search_page"] = 1
@@ -578,8 +638,8 @@ def advanced_search_page(db, user: dict) -> None:
 
 def top50_page(db, user: dict) -> None:
     _apply_styles()
-    st.markdown('<div class="ln-discovery-title">🏆 Top 50</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">50 editais abertos para você explorar agora.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-title">🔥 Em destaque</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-sub">50 editais recentes para você explorar sem precisar definir uma busca.</div>', unsafe_allow_html=True)
     items = db.list_global_catalog(
         closing_from=date.today().isoformat(), limit=50, order_by="recent"
     )
