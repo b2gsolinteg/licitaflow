@@ -25,7 +25,9 @@ jobs:
           python -m pip install -r requirements.lock
           python -m pip check
       - name: Apply RC31.11 patch
-        run: python scripts/rc31_11_patch.py
+        run: |
+          python scripts/rc31_11_patch.py
+          python scripts/rc31_11_test_compat.py
       - name: Validate
         env:
           LICITANEXO_DB_BACKEND: sqlite
@@ -36,7 +38,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm -f .github/workflows/rc31-11-value-login-home.yml scripts/rc31_11_patch.py
+          git rm -f .github/workflows/rc31-11-value-login-home.yml scripts/rc31_11_patch.py scripts/rc31_11_test_compat.py
           git add app.py src/essential_discovery.py src/config.py tests docs/rc31-11-value-login-home.md
           git commit -m "feat: reforçar valor para iniciantes RC31.11"
           git push origin HEAD:agent/rc31-11-value-login-home
