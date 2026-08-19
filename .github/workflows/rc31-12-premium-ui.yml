@@ -1,0 +1,42 @@
+name: RC31.12 Premium UI
+
+on:
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rc31-12-premium-ui
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          cache: pip
+          cache-dependency-path: requirements.lock
+      - name: Install locked dependencies
+        run: |
+          python -m pip install -r requirements.lock
+          python -m pip check
+      - name: Apply RC31.12 patch
+        run: python scripts/rc31_12_patch.py
+      - name: Validate
+        env:
+          LICITANEXO_DB_BACKEND: sqlite
+        run: |
+          python -m compileall -q app.py src scripts tests
+          python -m unittest discover -s tests -v
+      - name: Commit validated patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -f .github/workflows/rc31-12-premium-ui.yml scripts/rc31_12_patch.py
+          git add app.py src/essential_discovery.py src/config.py tests docs/rc31-12-premium-ui.md
+          git commit -m "feat: elevar linguagem visual do Essential RC31.12"
+          git push origin HEAD:agent/rc31-12-premium-ui
