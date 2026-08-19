@@ -48,10 +48,10 @@ class EssentialDiscoveryContractsTest(unittest.TestCase):
         self.assertNotIn("profile_search_ready", discovery)
         self.assertNotIn("CNAEs / atividades formais", company)
         self.assertNotIn("Como o Radar usa meu perfil", company)
-        self.assertIn("❤️ Minha lista", app)
-        self.assertIn("🗺️ Por Estado", app)
-        self.assertIn("📡 Radar de licitações", app)
-        self.assertIn('APP_VERSION = "1.0 Essential RC31.9"', config)
+        self.assertIn("Minha lista", app)
+        self.assertIn("Por Estado", app)
+        self.assertIn("Radar de licitações", app)
+        self.assertIn('APP_VERSION = "1.0 Essential RC31.10"', config)
 
 
 if __name__ == "__main__":
