@@ -25,7 +25,18 @@ jobs:
           python -m pip install -r requirements.lock
           python -m pip check
       - name: Apply RC31.10 patch
-        run: python scripts/rc31_10_patch.py
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/rc31_10_patch.py')
+          s = p.read_text(encoding='utf-8')
+          old = '    end = source.index(f"\\n\\ndef {next_name}", start)\n    return source[:start] + replacement.rstrip() + source[end:]\n'
+          new = '    end = source.index(f"def {next_name}", start)\n    return source[:start] + replacement.rstrip() + "\\n\\n" + source[end:]\n'
+          if old not in s:
+              raise SystemExit('replace_function helper anchor missing')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          PY
+          python scripts/rc31_10_patch.py
       - name: Validate
         env:
           LICITANEXO_DB_BACKEND: sqlite
@@ -36,7 +47,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm .github/workflows/rc31-10-modern-filters.yml .github/workflows/rc31-10-modern-filters-v2.yml scripts/rc31_10_patch.py
+          git rm .github/workflows/rc31-10-modern-filters.yml scripts/rc31_10_patch.py
           git add app.py src/essential_discovery.py src/config.py tests docs/rc31-10-modern-filters.md
           git commit -m "feat: filtros por região tipo e SRP RC31.10"
           git push origin HEAD:agent/rc31-10-modern-filters
