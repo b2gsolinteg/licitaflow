@@ -7,4 +7,5 @@
 - Removida qualquer âncora de "menos de R$1 por dia".
 - Sidebar mantém Material Symbols profissionais e recebe paleta suave com baixa saturação.
 - Home fica mais densa com atalhos explicativos e ícones funcionais.
+- Pré-validação concluída em Python 3.14.7 com dependências travadas, compilação e suíte completa SQLite.
 - Sem migration e sem alteração de estrutura de dados.
