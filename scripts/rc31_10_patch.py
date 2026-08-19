@@ -1,0 +1,388 @@
+from pathlib import Path
+
+
+def replace_function(source: str, name: str, next_name: str, replacement: str) -> str:
+    start = source.index(f"def {name}")
+    end = source.index(f"\n\ndef {next_name}", start)
+    return source[:start] + replacement.rstrip() + source[end:]
+
+
+# ---------- essential discovery ----------
+p = Path("src/essential_discovery.py")
+s = p.read_text(encoding="utf-8")
+
+anchor = 'FLAGS_DIR = Path(__file__).resolve().parents[1] / "assets" / "state_flags"\n'
+if anchor not in s:
+    raise SystemExit("flags anchor missing")
+s = s.replace(
+    anchor,
+    '''BRAZIL_REGIONS = {
+    "Brasil inteiro": (),
+    "Norte": ("AC", "AP", "AM", "PA", "RO", "RR", "TO"),
+    "Nordeste": ("AL", "BA", "CE", "MA", "PB", "PE", "PI", "RN", "SE"),
+    "Centro-Oeste": ("DF", "GO", "MT", "MS"),
+    "Sudeste": ("ES", "MG", "RJ", "SP"),
+    "Sul": ("PR", "RS", "SC"),
+}
+REGION_OPTIONS = tuple(BRAZIL_REGIONS.keys())
+NATURE_OPTIONS = ("Todos", "Produtos", "Serviços")
+SRP_OPTIONS = ("Todos", "Com registro de preços", "Sem registro de preços")
+''' + anchor,
+    1,
+)
+
+marker = '\ndef _criteria(**updates) -> dict:\n'
+if marker not in s:
+    raise SystemExit("criteria marker missing")
+helpers = r'''
+SERVICE_TERMS = (
+    "serviço", "servicos", "serviços", "prestação de serviço", "prestacao de servico",
+    "manutenção", "manutencao", "locação", "locacao", "consultoria", "engenharia",
+    "obra", "reforma", "limpeza", "vigilância", "vigilancia", "instalação", "instalacao",
+    "suporte técnico", "suporte tecnico", "capacitação", "capacitacao", "transporte",
+    "terceirização", "terceirizacao", "mão de obra", "mao de obra", "seguro", "apólice", "apolice",
+)
+PRODUCT_TERMS = (
+    "aquisição", "aquisicao", "compra", "fornecimento", "material", "materiais", "medicamento",
+    "equipamento", "produto", "insumo", "gênero alimentício", "genero alimenticio", "mobiliário",
+    "mobiliario", "uniforme", "peça", "peca",
+)
+
+
+def _opportunity_nature(item: dict) -> str:
+    text = " ".join(str(item.get("object") or "").lower().split())
+    service_anchors = (
+        "prestação de serviço", "prestacao de servico", "prestação dos serviços", "prestacao dos servicos",
+        "contratação de serviço", "contratacao de servico", "serviços de ", "servicos de ",
+        "mão de obra", "mao de obra", "seguro", "apólice", "apolice", "manutenção", "manutencao",
+        "locação", "locacao", "consultoria", "terceirização", "terceirizacao", "vigilância", "vigilancia",
+        "limpeza", "capacitação", "capacitacao", "obra", "reforma",
+    )
+    product_anchors = (
+        "aquisição de ", "aquisicao de ", "compra de ", "registro de preços para aquisição",
+        "registro de precos para aquisicao", "fornecimento de materiais", "fornecimento de medicamentos",
+        "fornecimento de equipamentos", "fornecimento de produtos", "fornecimento de insumos",
+        "fornecimento de mobiliário", "fornecimento de mobiliario", "fornecimento de uniformes",
+    )
+    explicit_service = any(term in text for term in service_anchors)
+    explicit_product = any(term in text for term in product_anchors)
+    if explicit_service and not explicit_product:
+        return "Serviços"
+    if explicit_product and not explicit_service:
+        return "Produtos"
+    if explicit_service and explicit_product:
+        return "Produtos e serviços"
+    service = any(term in text for term in SERVICE_TERMS)
+    product = any(term in text for term in PRODUCT_TERMS)
+    if service and not product:
+        return "Serviços"
+    if product and not service:
+        return "Produtos"
+    if service and product:
+        return "Produtos e serviços"
+    return "Não classificado"
+
+
+def _nature_matches(item: dict, wanted: str) -> bool:
+    if wanted == "Todos":
+        return True
+    nature = _opportunity_nature(item)
+    if wanted == "Produtos":
+        return nature in {"Produtos", "Produtos e serviços"}
+    if wanted == "Serviços":
+        return nature in {"Serviços", "Produtos e serviços"}
+    return True
+
+
+def _effective_states(criteria: dict) -> list[str]:
+    selected = [state for state in list(criteria.get("states") or []) if state in BRAZIL_STATES]
+    region_states = list(BRAZIL_REGIONS.get(str(criteria.get("region") or "Brasil inteiro")) or ())
+    if not region_states:
+        return selected
+    if not selected:
+        return region_states
+    return [state for state in selected if state in region_states]
+
+
+def _srp_query_value(label: str):
+    if label == "Com registro de preços":
+        return True
+    if label == "Sem registro de preços":
+        return False
+    return None
+
+
+def _srp_profile_value(label: str) -> str:
+    return {"Com registro de preços": "Sim", "Sem registro de preços": "Não"}.get(label, "Todos")
+
+'''
+s = s.replace(marker, "\n" + helpers + marker, 1)
+
+s = replace_function(
+    s,
+    "_criteria(**updates) -> dict:",
+    "_profile_defaults",
+    '''def _criteria(**updates) -> dict:
+    base = {
+        "keyword": "", "city": "", "region": "Brasil inteiro", "states": [],
+        "nature": "Todos", "srp": "Todos", "modalities": [],
+        "minimum": None, "maximum": None,
+        "closing_from": date.today().isoformat(), "closing_to": None,
+        "order": "recent", "portal": "Todos os sites",
+    }
+    base.update(updates)
+    return base
+''',
+)
+
+s = replace_function(
+    s,
+    "_profile_defaults(db, company_id: str) -> dict:",
+    "_query_catalog",
+    '''def _profile_defaults(db, company_id: str) -> dict:
+    profile = db.get_company_profile(company_id) or {}
+    states = [x.strip().upper() for x in str(profile.get("service_states") or "").replace(";", ",").split(",") if x.strip().upper() in BRAZIL_STATES]
+    modalities = [x.strip() for x in str(profile.get("search_modalities") or "").split("|") if x.strip() in MODALITIES]
+    nature = str(profile.get("search_nature") or "Todos")
+    if nature not in NATURE_OPTIONS:
+        nature = "Todos"
+    srp = {"Sim": "Com registro de preços", "Não": "Sem registro de preços"}.get(str(profile.get("search_srp") or "Todos"), str(profile.get("search_srp") or "Todos"))
+    if srp not in SRP_OPTIONS:
+        srp = "Todos"
+    return {
+        "keyword": str(profile.get("search_keyword") or ""), "states": states,
+        "modalities": modalities, "nature": nature, "srp": srp,
+        "minimum": profile.get("search_minimum"), "maximum": profile.get("search_maximum"),
+    }
+''',
+)
+
+s = replace_function(
+    s,
+    "_query_catalog(db, criteria: dict, *, limit: int = 10000) -> list[dict]:",
+    "_save_to_list",
+    '''def _query_catalog(db, criteria: dict, *, limit: int = 10000) -> list[dict]:
+    cities = [str(criteria.get("city") or "").strip()] if str(criteria.get("city") or "").strip() else []
+    portal = str(criteria.get("portal") or "Todos os sites")
+    items = db.list_global_catalog(
+        search=str(criteria.get("keyword") or "").strip(), states=_effective_states(criteria), cities=cities,
+        modalities=list(criteria.get("modalities") or []), srp=_srp_query_value(str(criteria.get("srp") or "Todos")),
+        minimum=criteria.get("minimum"), maximum=criteria.get("maximum"),
+        closing_from=criteria.get("closing_from") or date.today().isoformat(), closing_to=criteria.get("closing_to"),
+        limit=limit, order_by=str(criteria.get("order") or "recent"), portal_terms=PORTAL_SEARCH_TERMS.get(portal),
+    )
+    nature = str(criteria.get("nature") or "Todos")
+    return items if nature == "Todos" else [item for item in items if _nature_matches(item, nature)]
+''',
+)
+
+s = replace_function(
+    s,
+    "search_page(db, user: dict, usage=None) -> None:",
+    "state_page",
+    '''def search_page(db, user: dict, usage=None) -> None:
+    _apply_styles()
+    company_id = user["company_id"]
+    defaults = _profile_defaults(db, company_id)
+    current = st.session_state.get("essential_search_criteria") or {}
+    st.markdown('<div class="ln-discovery-title">Buscar licitações</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-sub">Escolha só o que fizer sentido. Campos vazios deixam a busca mais ampla.</div>', unsafe_allow_html=True)
+    with st.form("essential_quick_search", clear_on_submit=False, enter_to_submit=False):
+        keyword = st.text_input("O que você procura?", value=str(current.get("keyword") if "keyword" in current else defaults["keyword"]), placeholder="Ex.: papel A4, pneus, medicamentos, manutenção...")
+        g1, g2, g3 = st.columns([1, 1.2, 1.2])
+        current_region = str(current.get("region") or "Brasil inteiro")
+        region = g1.selectbox("Região", REGION_OPTIONS, index=REGION_OPTIONS.index(current_region) if current_region in REGION_OPTIONS else 0)
+        states = g2.multiselect("Estado (opcional)", list(BRAZIL_STATES), default=list(current.get("states") if "states" in current else defaults["states"]), placeholder="Todos da região")
+        city = g3.text_input("Cidade (opcional)", value=str(current.get("city") or ""), placeholder="Ex.: Londrina")
+        f1, f2, f3 = st.columns(3)
+        current_nature = str(current.get("nature") if "nature" in current else defaults["nature"])
+        nature = f1.selectbox("O que procura", NATURE_OPTIONS, index=NATURE_OPTIONS.index(current_nature) if current_nature in NATURE_OPTIONS else 0)
+        current_srp = str(current.get("srp") if "srp" in current else defaults["srp"])
+        srp = f2.selectbox("Registro de preços", SRP_OPTIONS, index=SRP_OPTIONS.index(current_srp) if current_srp in SRP_OPTIONS else 0)
+        current_portal = str(current.get("portal") or "Todos os sites")
+        portal = f3.selectbox("Site da disputa", PORTAL_OPTIONS, index=PORTAL_OPTIONS.index(current_portal) if current_portal in PORTAL_OPTIONS else 0)
+        modalities = st.multiselect("Modalidade", list(MODALITIES.keys()), default=list(current.get("modalities") if "modalities" in current else defaults["modalities"]), placeholder="Todas")
+        v1, v2 = st.columns(2)
+        min_default = current.get("minimum") if "minimum" in current else defaults["minimum"]
+        max_default = current.get("maximum") if "maximum" in current else defaults["maximum"]
+        minimum_text = v1.text_input("Valor mínimo", value="" if min_default in (None, "") else str(min_default), placeholder="Sem mínimo")
+        maximum_text = v2.text_input("Valor máximo", value="" if max_default in (None, "") else str(max_default), placeholder="Sem máximo")
+        submitted = st.form_submit_button("Buscar licitações", type="primary", width="stretch")
+    if submitted:
+        minimum = parse_brl(minimum_text) if minimum_text.strip() else None
+        maximum = parse_brl(maximum_text) if maximum_text.strip() else None
+        if minimum_text.strip() and minimum is None:
+            st.error("Confira o valor mínimo digitado."); return
+        if maximum_text.strip() and maximum is None:
+            st.error("Confira o valor máximo digitado."); return
+        current = _criteria(keyword=keyword.strip(), city=city.strip(), region=region, states=states, nature=nature, srp=srp, modalities=modalities, minimum=minimum, maximum=maximum, portal=portal)
+        st.session_state["essential_search_criteria"] = current
+        st.session_state["essential_search_page"] = 1
+        if usage is not None:
+            usage.record_search(company_id, user.get("id", ""), keyword.strip())
+        db.save_company_profile(company_id, search_keyword=keyword.strip(), search_nature=nature, service_states=", ".join(states), search_modalities="|".join(modalities), search_srp=_srp_profile_value(srp), search_minimum=minimum, search_maximum=maximum, search_order="Mais recentes")
+    if not current:
+        st.info("Digite uma palavra ou escolha um filtro para começar."); return
+    if str(current.get("region") or "Brasil inteiro") != "Brasil inteiro":
+        st.caption(f"Região: {current['region']} · UFs consideradas: {', '.join(_effective_states(current)) or 'nenhuma'}")
+    with st.spinner("Buscando editais abertos..."):
+        items = _query_catalog(db, current)
+    st.markdown("### Editais abertos para participação")
+    _render_results(db, user, items, page_key="essential_search_page", per_page=6)
+''',
+)
+
+s = replace_function(
+    s,
+    "advanced_search_page(db, user: dict) -> None:",
+    "top50_page",
+    '''def advanced_search_page(db, user: dict) -> None:
+    _apply_styles()
+    st.markdown('<div class="ln-discovery-title">Filtro avançado</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-sub">Combine os filtros que quiser. Nenhum campo é obrigatório.</div>', unsafe_allow_html=True)
+    with st.form("essential_advanced_search", clear_on_submit=False, enter_to_submit=False):
+        r1, r2 = st.columns(2)
+        region = r1.selectbox("Região", REGION_OPTIONS)
+        states = r2.multiselect("Estados", list(BRAZIL_STATES), placeholder="Todos da região")
+        city = st.text_input("Cidade", placeholder="Opcional")
+        c1, c2, c3 = st.columns(3)
+        nature = c1.selectbox("O que procura", NATURE_OPTIONS)
+        srp = c2.selectbox("Registro de preços", SRP_OPTIONS)
+        portal = c3.selectbox("Site da disputa", PORTAL_OPTIONS)
+        modalities = st.multiselect("Modalidades", list(MODALITIES.keys()), placeholder="Todas")
+        keyword = st.text_input("O que você procura?", placeholder="Ex.: material de limpeza")
+        v1, v2 = st.columns(2)
+        minimum_text = v1.text_input("Valor mínimo", placeholder="Sem mínimo")
+        maximum_text = v2.text_input("Valor máximo", placeholder="Sem máximo")
+        d1, d2 = st.columns(2)
+        start_date = d1.date_input("Participação a partir de", value=date.today())
+        no_end = d2.checkbox("Sem data final", value=True)
+        end_date = d2.date_input("Participação até", value=date.today(), disabled=no_end)
+        if st.form_submit_button("Buscar licitações", type="primary", width="stretch"):
+            minimum = parse_brl(minimum_text) if minimum_text.strip() else None
+            maximum = parse_brl(maximum_text) if maximum_text.strip() else None
+            if minimum_text.strip() and minimum is None:
+                st.error("Confira o valor mínimo digitado.")
+            elif maximum_text.strip() and maximum is None:
+                st.error("Confira o valor máximo digitado.")
+            else:
+                st.session_state["essential_search_criteria"] = _criteria(keyword=keyword.strip(), city=city.strip(), region=region, states=states, nature=nature, srp=srp, modalities=modalities, minimum=minimum, maximum=maximum, portal=portal, closing_from=start_date.isoformat(), closing_to=None if no_end else end_date.isoformat())
+                st.session_state["essential_search_page"] = 1
+                st.session_state["_navigation_request"] = "Buscar licitações"
+                st.rerun()
+''',
+)
+
+for old, new in {
+    "🏠 Início":"Início", "🔎 Buscar licitações":"Buscar licitações", "🗺️ Por Estado":"Por Estado",
+    "📍 Por Cidade":"Por Cidade", "☰ Por Modalidade":"Por Modalidade", "🌐 Por site de disputa":"Por site de disputa",
+    "⚙️ Filtro avançado":"Filtro avançado", "🔥 Em destaque":"Em destaque", "❤️ Minha lista":"Minha lista",
+    "🔔 Preferências":"Preferências", "📡 Radar de licitações":"Radar de licitações", "📦 Itens da licitação":"Itens da licitação",
+}.items():
+    s = s.replace(old, new)
+s = s.replace('[data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]{background:#FFFFFF !important;border-color:#DCE3E8 !important;box-shadow:none !important;}', '[data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]{background:#FFFFFF !important;border:1px solid #E1E7EC !important;border-radius:14px !important;box-shadow:0 1px 2px rgba(25,39,52,.04) !important;}', 1)
+s = s.replace('[data-testid="stMain"] .stButton button,[data-testid="stMain"] .stDownloadButton button{background:#FFFFFF !important;color:#293746 !important;border:1px solid #CCD6DD !important;box-shadow:none !important;}', '[data-testid="stMain"] .stButton button,[data-testid="stMain"] .stDownloadButton button{background:#FFFFFF !important;color:#293746 !important;border:1px solid #D2DBE2 !important;border-radius:10px !important;box-shadow:none !important;}', 1)
+s = s.replace('.ln-state-card{min-height:154px;}', '.ln-state-card{min-height:160px;}')
+p.write_text(s, encoding="utf-8")
+
+# ---------- app navigation ----------
+p = Path("app.py")
+s = p.read_text(encoding="utf-8")
+for old, new in {
+    "🏠 Início":"Início", "🔎 Buscar licitações":"Buscar licitações", "🗺️ Por Estado":"Por Estado", "📍 Por Cidade":"Por Cidade",
+    "☰ Por Modalidade":"Por Modalidade", "🌐 Por site de disputa":"Por site de disputa", "⚙️ Filtro avançado":"Filtro avançado",
+    "🔥 Em destaque":"Em destaque", "❤️ Minha lista":"Minha lista", "📅 Calendário":"Calendário", "🔔 Preferências":"Preferências",
+    "📡 Radar de licitações":"Radar de licitações", "💬 Suporte":"Suporte", "👤 Minha Conta":"Minha conta",
+}.items():
+    s = s.replace(old, new)
+s = s.replace('f\'<div style="font-weight:400;color:#172033">{_greeting(user)} 👋</div>\'', 'f\'<div style="font-weight:400;color:#172033">{_greeting(user)}</div>\'', 1)
+s = s.replace('st.markdown("## 🛡️ LicitaNexo")', 'st.markdown("## LicitaNexo")', 1)
+marker = '            def _nav_group(title, options, group_key):\n'
+if marker not in s:
+    raise SystemExit("nav marker missing")
+s = s.replace(marker, '''            nav_icons = {
+                "Início": ":material/home:", "Buscar licitações": ":material/search:",
+                "Por Estado": ":material/map:", "Por Cidade": ":material/location_on:",
+                "Por Modalidade": ":material/category:", "Por site de disputa": ":material/language:",
+                "Filtro avançado": ":material/filter_alt:", "Em destaque": ":material/trending_up:",
+                "Minha lista": ":material/bookmarks:", "Calendário": ":material/calendar_month:",
+                "Preferências": ":material/tune:", "Radar de licitações": ":material/notifications_active:",
+                "Suporte": ":material/help_center:", "Minha conta": ":material/account_circle:",
+            }
+
+''' + marker, 1)
+old = '                        option, key=f"nav_{group_key}_{index}",\n                        type="primary" if selected else "secondary", width="stretch",'
+new = '                        option, icon=nav_icons.get(option), key=f"nav_{group_key}_{index}",\n                        type="primary" if selected else "secondary", width="stretch",'
+if old not in s:
+    raise SystemExit("nav button anchor missing")
+s = s.replace(old, new, 1)
+s = s.replace('        if st.button("↪ Sair", key="sidebar_logout", width="stretch"):', '        if st.button("Sair", icon=":material/logout:", key="sidebar_logout", width="stretch"):', 1)
+
+main_pos = s.index("def main():")
+guide_start = s.index("            guide_page = ", main_pos)
+guide_end = s.index('\n\n        if st.button("Sair"', guide_start)
+s = s[:guide_start] + '''            guide_page = {
+                "Buscar licitações": "🔎 Buscar Editais",
+                "Calendário": "📅 Calendário",
+                "Suporte": "💬 Suporte",
+                "Minha conta": "👤 Minha Conta",
+            }.get(page, page)
+            if guide_page in {"📅 Calendário", "🔎 Buscar Editais", "💬 Suporte", "👤 Minha Conta"}:
+                render_sidebar_guides(guide_page)
+''' + s[guide_end:]
+
+old_css = '[data-testid="stSidebar"] .stButton button{width:100% !important;min-height:2.15rem !important;justify-content:flex-start !important;background:#FFFFFF !important;color:#293746 !important;border:1px solid #DCE3E8 !important;border-radius:8px !important;box-shadow:none !important;padding:.20rem .48rem !important;}'
+new_css = '[data-testid="stSidebar"] .stButton button{width:100% !important;min-height:2.25rem !important;justify-content:flex-start !important;background:transparent !important;color:#293746 !important;border:1px solid transparent !important;border-radius:10px !important;box-shadow:none !important;padding:.28rem .52rem !important;gap:.38rem !important;}'
+if old_css not in s:
+    raise SystemExit("sidebar css missing")
+s = s.replace(old_css, new_css, 1)
+s = s.replace('[data-testid="stSidebar"] .stButton button[kind="primary"]{background:#EDF3F4 !important;color:#293746 !important;border-color:#B9CDD0 !important;box-shadow:none !important;}', '[data-testid="stSidebar"] .stButton button[kind="primary"]{background:#F0F4F5 !important;color:#243746 !important;border-color:#E1E8EC !important;box-shadow:none !important;}', 1)
+s = s.replace('div[data-testid="stVerticalBlockBorderWrapper"],div[data-testid="stMetric"]{background:#FFFFFF !important;border-color:#DCE3E8 !important;box-shadow:none !important;}', 'div[data-testid="stVerticalBlockBorderWrapper"],div[data-testid="stMetric"]{background:#FFFFFF !important;border-color:#E1E7EC !important;border-radius:14px !important;box-shadow:0 1px 2px rgba(25,39,52,.035) !important;}', 1)
+s = s.replace('[data-baseweb="input"],[data-baseweb="base-input"],[data-baseweb="select"] > div,textarea{background:#FFFFFF !important;color:#293746 !important;border-color:#CCD6DD !important;box-shadow:none !important;}', '[data-baseweb="input"],[data-baseweb="base-input"],[data-baseweb="select"] > div,textarea{background:#FFFFFF !important;color:#293746 !important;border-color:#D1DAE1 !important;border-radius:10px !important;box-shadow:none !important;}', 1)
+p.write_text(s, encoding="utf-8")
+
+# ---------- version + tests + doc ----------
+p = Path("src/config.py")
+s = p.read_text(encoding="utf-8")
+if 'APP_VERSION = "1.0 Essential RC31.9"' not in s:
+    raise SystemExit("version anchor missing")
+p.write_text(s.replace('APP_VERSION = "1.0 Essential RC31.9"', 'APP_VERSION = "1.0 Essential RC31.10"', 1), encoding="utf-8")
+
+for tp in Path("tests").glob("test_rc31_*.py"):
+    t = tp.read_text(encoding="utf-8")
+    t = t.replace('APP_VERSION = "1.0 Essential RC31.9"', 'APP_VERSION = "1.0 Essential RC31.10"')
+    t = t.replace('self.assertIn("🏠 Início", app)', 'self.assertIn("Início", app)')
+    t = t.replace('self.assertIn("🌐 Por site de disputa", app)', 'self.assertIn("Por site de disputa", app)')
+    t = t.replace('self.assertIn("🔥 Em destaque", app)', 'self.assertIn("Em destaque", app)')
+    tp.write_text(t, encoding="utf-8")
+
+Path("tests/test_rc31_10_modern_filters.py").write_text('''from pathlib import Path
+import unittest
+ROOT = Path(__file__).resolve().parents[1]
+class ModernFilters(unittest.TestCase):
+    def test_filters(self):
+        s=(ROOT/"src"/"essential_discovery.py").read_text(encoding="utf-8")
+        self.assertIn('"Sul": ("PR", "RS", "SC")', s)
+        self.assertIn('NATURE_OPTIONS = ("Todos", "Produtos", "Serviços")', s)
+        self.assertIn('SRP_OPTIONS = ("Todos", "Com registro de preços", "Sem registro de preços")', s)
+        self.assertIn('states=_effective_states(criteria)', s)
+        self.assertIn('srp=_srp_query_value', s)
+    def test_modern_nav(self):
+        a=(ROOT/"app.py").read_text(encoding="utf-8")
+        self.assertIn('"Minha lista": ":material/bookmarks:"', a)
+        self.assertIn('"Buscar licitações": ":material/search:"', a)
+        self.assertNotIn('"❤️ Minha lista"', a)
+    def test_version(self):
+        c=(ROOT/"src"/"config.py").read_text(encoding="utf-8")
+        self.assertIn('APP_VERSION = "1.0 Essential RC31.10"', c)
+if __name__ == "__main__": unittest.main()
+''', encoding="utf-8")
+Path("docs/rc31-10-modern-filters.md").write_text('''# RC31.10 · filtros práticos e navegação moderna
+
+- Região do Brasil, Estado e Cidade na busca.
+- Produtos ou Serviços.
+- Com ou sem registro de preços (SRP).
+- Material Symbols no menu, sem emojis decorativos.
+- Sidebar plana, cards e campos neutros e claros.
+- Sem migration e sem alteração de dados.
+''', encoding="utf-8")
