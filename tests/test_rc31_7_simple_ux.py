@@ -23,8 +23,8 @@ class SimpleUxContracts(unittest.TestCase):
     def test_sidebar_override_is_compact_and_selected_item_is_light(self):
         app = (ROOT / "app.py").read_text(encoding="utf-8")
         self.assertIn("width:250px !important", app)
-        self.assertIn("min-height:2.15rem !important", app)
-        self.assertIn("background:#EDF3F4 !important", app)
+        self.assertIn("min-height:2.25rem !important", app)
+        self.assertIn("background:#F0F4F5 !important", app)
         self.assertIn("max-width:190px !important", app)
 
 

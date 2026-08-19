@@ -28,8 +28,8 @@ class CleanEssentialContracts(unittest.TestCase):
 
     def test_beginner_navigation_hides_future_modules(self):
         app = (ROOT / "app.py").read_text(encoding="utf-8")
-        self.assertIn('work_pages = ["❤️ Minha lista", "📅 Calendário"]', app)
-        self.assertIn('elif page == "📅 Calendário"', app)
+        self.assertIn('work_pages = ["Minha lista", "Calendário"]', app)
+        self.assertIn('elif page == "Calendário"', app)
 
     def test_search_can_filter_dispute_site(self):
         discovery = (ROOT / "src" / "essential_discovery.py").read_text(encoding="utf-8")

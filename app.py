@@ -401,14 +401,14 @@ def apply_brand():
         [data-testid="stSidebar"] *{color:#293746 !important;}
         [data-testid="stSidebar"] > div:first-child{overflow-y:auto !important;overflow-x:hidden !important;max-height:100vh !important;}
         @media(min-width:901px){[data-testid="stSidebar"],[data-testid="stSidebar"] > div:first-child{width:250px !important;min-width:250px !important;max-width:250px !important;}}
-        [data-testid="stSidebar"] .stButton button{width:100% !important;min-height:2.15rem !important;justify-content:flex-start !important;background:#FFFFFF !important;color:#293746 !important;border:1px solid #DCE3E8 !important;border-radius:8px !important;box-shadow:none !important;padding:.20rem .48rem !important;}
-        [data-testid="stSidebar"] .stButton button[kind="primary"]{background:#EDF3F4 !important;color:#293746 !important;border-color:#B9CDD0 !important;box-shadow:none !important;}
+        [data-testid="stSidebar"] .stButton button{width:100% !important;min-height:2.25rem !important;justify-content:flex-start !important;background:transparent !important;color:#293746 !important;border:1px solid transparent !important;border-radius:10px !important;box-shadow:none !important;padding:.28rem .52rem !important;gap:.38rem !important;}
+        [data-testid="stSidebar"] .stButton button[kind="primary"]{background:#F0F4F5 !important;color:#243746 !important;border-color:#E1E8EC !important;box-shadow:none !important;}
         [data-testid="stSidebar"] .st-key-sidebar_logout button{justify-content:center !important;background:#F4F7F9 !important;}
         [data-testid="stSidebar"] [data-testid="stCaptionContainer"]{margin-top:.18rem !important;margin-bottom:.04rem !important;}
         [data-testid="stSidebar"] [data-testid="stImage"] img{max-width:190px !important;width:190px !important;margin:0 auto !important;display:block !important;}
         .block-container{padding-top:1.1rem;padding-bottom:2rem;max-width:1240px;}
-        div[data-testid="stVerticalBlockBorderWrapper"],div[data-testid="stMetric"]{background:#FFFFFF !important;border-color:#DCE3E8 !important;box-shadow:none !important;}
-        [data-baseweb="input"],[data-baseweb="base-input"],[data-baseweb="select"] > div,textarea{background:#FFFFFF !important;color:#293746 !important;border-color:#CCD6DD !important;box-shadow:none !important;}
+        div[data-testid="stVerticalBlockBorderWrapper"],div[data-testid="stMetric"]{background:#FFFFFF !important;border-color:#E1E7EC !important;border-radius:14px !important;box-shadow:0 1px 2px rgba(25,39,52,.035) !important;}
+        [data-baseweb="input"],[data-baseweb="base-input"],[data-baseweb="select"] > div,textarea{background:#FFFFFF !important;color:#293746 !important;border-color:#D1DAE1 !important;border-radius:10px !important;box-shadow:none !important;}
         input,textarea{background:#FFFFFF !important;color:#293746 !important;-webkit-text-fill-color:#293746 !important;}
         .stButton>button,.stDownloadButton>button{background:#FFFFFF !important;color:#293746 !important;border:1px solid #CCD6DD !important;box-shadow:none !important;}
         .stButton>button[kind="primary"],.stDownloadButton>button[kind="primary"]{background:#EAF2F3 !important;color:#293746 !important;border-color:#ADC6C9 !important;}
@@ -862,7 +862,7 @@ def account_page(user):
 
 
 def support_page(user):
-    st.header("💬 Suporte LicitaNexo")
+    st.header("Suporte LicitaNexo")
     st.caption("Converse com nossa equipe dentro do aplicativo. As respostas ficam salvas no seu histórico.")
 
     with st.expander("Abrir novo atendimento", expanded=False):
@@ -2837,12 +2837,12 @@ def main():
         if LOGO_PATH.exists():
             st.image(str(LOGO_PATH), width="stretch")
         else:
-            st.markdown("## 🛡️ LicitaNexo")
+            st.markdown("## LicitaNexo")
         st.markdown(f'<div style="color:#293746">LicitaNexo · {APP_VERSION}</div>', unsafe_allow_html=True)
         st.markdown('<div style="color:#718096;font-size:.80rem;margin-bottom:.7rem">B2G SaaS · Business to Growth</div>', unsafe_allow_html=True)
         st.markdown(
             f'<div style="background:#F7F9FC;border:1px solid #E3E8EF;border-radius:12px;padding:.65rem .72rem;margin-bottom:.75rem">'
-            f'<div style="font-weight:400;color:#172033">{_greeting(user)} 👋</div>'
+            f'<div style="font-weight:400;color:#172033">{_greeting(user)}</div>'
             f'<div style="font-size:.76rem;color:#718096">{escape(str(user.get("name") or user.get("email") or "Minha conta"))}</div></div>',
             unsafe_allow_html=True,
         )
@@ -2861,15 +2861,15 @@ def main():
             )
         else:
             explore_pages = [
-                "🏠 Início", "🔎 Buscar licitações", "🗺️ Por Estado", "📍 Por Cidade",
-                "☰ Por Modalidade", "🌐 Por site de disputa", "⚙️ Filtro avançado", "🔥 Em destaque",
+                "Início", "Buscar licitações", "Por Estado", "Por Cidade",
+                "Por Modalidade", "Por site de disputa", "Filtro avançado", "Em destaque",
             ]
-            work_pages = ["❤️ Minha lista", "📅 Calendário"]
-            account_pages = ["🔔 Preferências", "📡 Radar de licitações", "💬 Suporte", "👤 Minha Conta"]
+            work_pages = ["Minha lista", "Calendário"]
+            account_pages = ["Preferências", "Radar de licitações", "Suporte", "Minha conta"]
             pages = [*explore_pages, *work_pages, *account_pages]
             if not allowed:
                 explore_pages, work_pages = [], []
-                account_pages = ["💬 Suporte", "👤 Minha Conta"]
+                account_pages = ["Suporte", "Minha conta"]
                 pages = account_pages
 
             requested_page = st.session_state.pop("_navigation_request", None)
@@ -2879,6 +2879,16 @@ def main():
                 st.session_state["main_navigation"] = pages[0]
             page = st.session_state["main_navigation"]
 
+            nav_icons = {
+                "Início": ":material/home:", "Buscar licitações": ":material/search:",
+                "Por Estado": ":material/map:", "Por Cidade": ":material/location_on:",
+                "Por Modalidade": ":material/category:", "Por site de disputa": ":material/language:",
+                "Filtro avançado": ":material/filter_alt:", "Em destaque": ":material/trending_up:",
+                "Minha lista": ":material/bookmarks:", "Calendário": ":material/calendar_month:",
+                "Preferências": ":material/tune:", "Radar de licitações": ":material/notifications_active:",
+                "Suporte": ":material/help_center:", "Minha conta": ":material/account_circle:",
+            }
+
             def _nav_group(title, options, group_key):
                 nonlocal page
                 if not options:
@@ -2887,7 +2897,7 @@ def main():
                 for index, option in enumerate(options):
                     selected = page == option
                     if st.button(
-                        option, key=f"nav_{group_key}_{index}",
+                        option, icon=nav_icons.get(option), key=f"nav_{group_key}_{index}",
                         type="primary" if selected else "secondary", width="stretch",
                     ):
                         st.session_state["main_navigation"] = option
@@ -2897,43 +2907,49 @@ def main():
             _nav_group("MINHA ÁREA", work_pages, "work")
             _nav_group("CONTA", account_pages, "account")
 
-            guide_page = {"🔎 Buscar licitações": "🔎 Buscar Editais"}.get(page, page)
+            guide_page = {
+                "Buscar licitações": "🔎 Buscar Editais",
+                "Calendário": "📅 Calendário",
+                "Suporte": "💬 Suporte",
+                "Minha conta": "👤 Minha Conta",
+            }.get(page, page)
             if guide_page in {"📅 Calendário", "🔎 Buscar Editais", "💬 Suporte", "👤 Minha Conta"}:
                 render_sidebar_guides(guide_page)
 
-        if st.button("↪ Sair", key="sidebar_logout", width="stretch"):
+
+        if st.button("Sair", icon=":material/logout:", key="sidebar_logout", width="stretch"):
             security.revoke_session(st.session_state.get("security_session_token"))
             security.event("logout", user.get("email", ""), _client_ip(), True, f'user_id={user.get("id", "")}')
             st.session_state.clear()
             st.rerun()
 
-    if page == "🏠 Início":
+    if page == "Início":
         essential_home_page(db, user)
-    elif page == "🔎 Buscar licitações":
+    elif page == "Buscar licitações":
         essential_search_page(db, user, usage)
-    elif page == "🗺️ Por Estado":
+    elif page == "Por Estado":
         essential_state_page(db, user)
-    elif page == "📍 Por Cidade":
+    elif page == "Por Cidade":
         essential_city_page(db, user)
-    elif page == "☰ Por Modalidade":
+    elif page == "Por Modalidade":
         essential_modality_page(db, user)
-    elif page == "🌐 Por site de disputa":
+    elif page == "Por site de disputa":
         essential_portal_page(db, user)
-    elif page == "⚙️ Filtro avançado":
+    elif page == "Filtro avançado":
         essential_advanced_search_page(db, user)
-    elif page == "🔥 Em destaque":
+    elif page == "Em destaque":
         essential_top50_page(db, user)
-    elif page == "❤️ Minha lista":
+    elif page == "Minha lista":
         essential_my_list_page(db, user)
-    elif page == "📅 Calendário":
+    elif page == "Calendário":
         calendar_page(user)
-    elif page == "🔔 Preferências":
+    elif page == "Preferências":
         essential_preferences_page(db, user)
-    elif page == "📡 Radar de licitações":
+    elif page == "Radar de licitações":
         essential_radar_page(db, user)
-    elif page == "💬 Suporte":
+    elif page == "Suporte":
         support_page(user)
-    elif page == "👤 Minha Conta":
+    elif page == "Minha conta":
         essential_account_page(user)
     else:
         admin_page(user, admin_section or "Visão geral")

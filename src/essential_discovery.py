@@ -28,6 +28,17 @@ STATE_NAMES = {
     "RO": "Rondônia", "RR": "Roraima", "SC": "Santa Catarina", "SP": "São Paulo",
     "SE": "Sergipe", "TO": "Tocantins",
 }
+BRAZIL_REGIONS = {
+    "Brasil inteiro": (),
+    "Norte": ("AC", "AP", "AM", "PA", "RO", "RR", "TO"),
+    "Nordeste": ("AL", "BA", "CE", "MA", "PB", "PE", "PI", "RN", "SE"),
+    "Centro-Oeste": ("DF", "GO", "MT", "MS"),
+    "Sudeste": ("ES", "MG", "RJ", "SP"),
+    "Sul": ("PR", "RS", "SC"),
+}
+REGION_OPTIONS = tuple(BRAZIL_REGIONS.keys())
+NATURE_OPTIONS = ("Todos", "Produtos", "Serviços")
+SRP_OPTIONS = ("Todos", "Com registro de preços", "Sem registro de preços")
 FLAGS_DIR = Path(__file__).resolve().parents[1] / "assets" / "state_flags"
 PORTAL_OPTIONS = ("Todos os sites", *PORTAL_ACCESS.keys())
 PORTAL_SEARCH_TERMS = {
@@ -52,7 +63,7 @@ def _apply_styles() -> None:
         [data-testid="stMain"] *{font-weight:400 !important;}
         [data-testid="stMain"] h1,[data-testid="stMain"] h2,[data-testid="stMain"] h3,
         [data-testid="stMain"] p,[data-testid="stMain"] label p,[data-testid="stMain"] .stCaption p{color:#293746 !important;}
-        [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]{background:#FFFFFF !important;border-color:#DCE3E8 !important;box-shadow:none !important;}
+        [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]{background:#FFFFFF !important;border:1px solid #E1E7EC !important;border-radius:14px !important;box-shadow:0 1px 2px rgba(25,39,52,.04) !important;}
         .ln-discovery-title{font-size:1.95rem;font-weight:400 !important;letter-spacing:-.015em;margin:.05rem 0 .2rem;color:#293746}
         .ln-discovery-sub{color:#667786;font-size:.96rem;margin:0 0 1rem}
         .ln-modality-badge{display:inline-block;background:#F2F5F7;color:#526371;border:1px solid #DCE3E8;border-radius:999px;padding:.2rem .6rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.02em}
@@ -73,11 +84,11 @@ def _apply_styles() -> None:
         .ln-item-desc{font-size:.78rem;line-height:1.32}
         .ln-item-qty,.ln-item-price{text-align:right}
         .ln-items-note{font-size:.72rem;color:#71808D;margin-top:.35rem}
-        [data-testid="stMain"] .stButton button,[data-testid="stMain"] .stDownloadButton button{background:#FFFFFF !important;color:#293746 !important;border:1px solid #CCD6DD !important;box-shadow:none !important;}
+        [data-testid="stMain"] .stButton button,[data-testid="stMain"] .stDownloadButton button{background:#FFFFFF !important;color:#293746 !important;border:1px solid #D2DBE2 !important;border-radius:10px !important;box-shadow:none !important;}
         [data-testid="stMain"] .stButton button[kind="primary"],[data-testid="stMain"] button[kind="primary"]{background:#EAF2F3 !important;color:#293746 !important;border:1px solid #ADC6C9 !important;box-shadow:none !important;}
         [data-testid="stMain"] .stButton button:hover{background:#F4F7F8 !important;border-color:#AFC0C9 !important;}
         [data-testid="stMain"] div[class*="st-key-state_"] button{min-height:2.8rem !important;font-size:.88rem !important;background:#FFFFFF !important;color:#293746 !important;border:1px solid #CCD6DD !important;}
-        .ln-state-card{min-height:154px;}
+        .ln-state-card{min-height:160px;}
 .ln-home-count{font-size:1.55rem;color:#293746;margin:.25rem 0 .95rem;}
 [data-testid="stSidebar"] .stButton button{font-weight:600 !important;}
         @media(max-width:900px){.ln-info-grid,.ln-meta-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ln-item-row{grid-template-columns:38px minmax(0,1fr)}.ln-item-qty,.ln-item-price{text-align:left;grid-column:2}}
@@ -168,60 +179,127 @@ def _item_price_text(row: dict) -> str:
     return format_brl(price) if price > 0 else "Não publicado"
 
 
+
+SERVICE_TERMS = (
+    "serviço", "servicos", "serviços", "prestação de serviço", "prestacao de servico",
+    "manutenção", "manutencao", "locação", "locacao", "consultoria", "engenharia",
+    "obra", "reforma", "limpeza", "vigilância", "vigilancia", "instalação", "instalacao",
+    "suporte técnico", "suporte tecnico", "capacitação", "capacitacao", "transporte",
+    "terceirização", "terceirizacao", "mão de obra", "mao de obra", "seguro", "apólice", "apolice",
+)
+PRODUCT_TERMS = (
+    "aquisição", "aquisicao", "compra", "fornecimento", "material", "materiais", "medicamento",
+    "equipamento", "produto", "insumo", "gênero alimentício", "genero alimenticio", "mobiliário",
+    "mobiliario", "uniforme", "peça", "peca",
+)
+
+
+def _opportunity_nature(item: dict) -> str:
+    text = " ".join(str(item.get("object") or "").lower().split())
+    service_anchors = (
+        "prestação de serviço", "prestacao de servico", "prestação dos serviços", "prestacao dos servicos",
+        "contratação de serviço", "contratacao de servico", "serviços de ", "servicos de ",
+        "mão de obra", "mao de obra", "seguro", "apólice", "apolice", "manutenção", "manutencao",
+        "locação", "locacao", "consultoria", "terceirização", "terceirizacao", "vigilância", "vigilancia",
+        "limpeza", "capacitação", "capacitacao", "obra", "reforma",
+    )
+    product_anchors = (
+        "aquisição de ", "aquisicao de ", "compra de ", "registro de preços para aquisição",
+        "registro de precos para aquisicao", "fornecimento de materiais", "fornecimento de medicamentos",
+        "fornecimento de equipamentos", "fornecimento de produtos", "fornecimento de insumos",
+        "fornecimento de mobiliário", "fornecimento de mobiliario", "fornecimento de uniformes",
+    )
+    explicit_service = any(term in text for term in service_anchors)
+    explicit_product = any(term in text for term in product_anchors)
+    if explicit_service and not explicit_product:
+        return "Serviços"
+    if explicit_product and not explicit_service:
+        return "Produtos"
+    if explicit_service and explicit_product:
+        return "Produtos e serviços"
+    service = any(term in text for term in SERVICE_TERMS)
+    product = any(term in text for term in PRODUCT_TERMS)
+    if service and not product:
+        return "Serviços"
+    if product and not service:
+        return "Produtos"
+    if service and product:
+        return "Produtos e serviços"
+    return "Não classificado"
+
+
+def _nature_matches(item: dict, wanted: str) -> bool:
+    if wanted == "Todos":
+        return True
+    nature = _opportunity_nature(item)
+    if wanted == "Produtos":
+        return nature in {"Produtos", "Produtos e serviços"}
+    if wanted == "Serviços":
+        return nature in {"Serviços", "Produtos e serviços"}
+    return True
+
+
+def _effective_states(criteria: dict) -> list[str]:
+    selected = [state for state in list(criteria.get("states") or []) if state in BRAZIL_STATES]
+    region_states = list(BRAZIL_REGIONS.get(str(criteria.get("region") or "Brasil inteiro")) or ())
+    if not region_states:
+        return selected
+    if not selected:
+        return region_states
+    return [state for state in selected if state in region_states]
+
+
+def _srp_query_value(label: str):
+    if label == "Com registro de preços":
+        return True
+    if label == "Sem registro de preços":
+        return False
+    return None
+
+
+def _srp_profile_value(label: str) -> str:
+    return {"Com registro de preços": "Sim", "Sem registro de preços": "Não"}.get(label, "Todos")
+
+
 def _criteria(**updates) -> dict:
     base = {
-        "keyword": "",
-        "city": "",
-        "states": [],
-        "modalities": [],
-        "minimum": None,
-        "maximum": None,
-        "closing_from": date.today().isoformat(),
-        "closing_to": None,
-        "order": "recent",
-        "portal": "Todos os sites",
+        "keyword": "", "city": "", "region": "Brasil inteiro", "states": [],
+        "nature": "Todos", "srp": "Todos", "modalities": [],
+        "minimum": None, "maximum": None,
+        "closing_from": date.today().isoformat(), "closing_to": None,
+        "order": "recent", "portal": "Todos os sites",
     }
     base.update(updates)
     return base
 
-
 def _profile_defaults(db, company_id: str) -> dict:
     profile = db.get_company_profile(company_id) or {}
-    states = [
-        x.strip().upper()
-        for x in str(profile.get("service_states") or "").replace(";", ",").split(",")
-        if x.strip().upper() in BRAZIL_STATES
-    ]
-    modalities = [
-        x.strip() for x in str(profile.get("search_modalities") or "").split("|")
-        if x.strip() in MODALITIES
-    ]
+    states = [x.strip().upper() for x in str(profile.get("service_states") or "").replace(";", ",").split(",") if x.strip().upper() in BRAZIL_STATES]
+    modalities = [x.strip() for x in str(profile.get("search_modalities") or "").split("|") if x.strip() in MODALITIES]
+    nature = str(profile.get("search_nature") or "Todos")
+    if nature not in NATURE_OPTIONS:
+        nature = "Todos"
+    srp = {"Sim": "Com registro de preços", "Não": "Sem registro de preços"}.get(str(profile.get("search_srp") or "Todos"), str(profile.get("search_srp") or "Todos"))
+    if srp not in SRP_OPTIONS:
+        srp = "Todos"
     return {
-        "keyword": str(profile.get("search_keyword") or ""),
-        "states": states,
-        "modalities": modalities,
-        "minimum": profile.get("search_minimum"),
-        "maximum": profile.get("search_maximum"),
+        "keyword": str(profile.get("search_keyword") or ""), "states": states,
+        "modalities": modalities, "nature": nature, "srp": srp,
+        "minimum": profile.get("search_minimum"), "maximum": profile.get("search_maximum"),
     }
-
 
 def _query_catalog(db, criteria: dict, *, limit: int = 10000) -> list[dict]:
     cities = [str(criteria.get("city") or "").strip()] if str(criteria.get("city") or "").strip() else []
     portal = str(criteria.get("portal") or "Todos os sites")
-    return db.list_global_catalog(
-        search=str(criteria.get("keyword") or "").strip(),
-        states=list(criteria.get("states") or []),
-        cities=cities,
-        modalities=list(criteria.get("modalities") or []),
-        minimum=criteria.get("minimum"),
-        maximum=criteria.get("maximum"),
-        closing_from=criteria.get("closing_from") or date.today().isoformat(),
-        closing_to=criteria.get("closing_to"),
-        limit=limit,
-        order_by=str(criteria.get("order") or "recent"),
-        portal_terms=PORTAL_SEARCH_TERMS.get(portal),
+    items = db.list_global_catalog(
+        search=str(criteria.get("keyword") or "").strip(), states=_effective_states(criteria), cities=cities,
+        modalities=list(criteria.get("modalities") or []), srp=_srp_query_value(str(criteria.get("srp") or "Todos")),
+        minimum=criteria.get("minimum"), maximum=criteria.get("maximum"),
+        closing_from=criteria.get("closing_from") or date.today().isoformat(), closing_to=criteria.get("closing_to"),
+        limit=limit, order_by=str(criteria.get("order") or "recent"), portal_terms=PORTAL_SEARCH_TERMS.get(portal),
     )
-
+    nature = str(criteria.get("nature") or "Todos")
+    return items if nature == "Todos" else [item for item in items if _nature_matches(item, nature)]
 
 def _save_to_list(db, company_id: str, catalog_id: str) -> None:
     opportunity_id = db.add_global_catalog_item_to_pipeline(company_id, catalog_id)
@@ -264,7 +342,7 @@ def _render_items(opportunity: dict, pack: dict) -> None:
     else:
         count_label = "itens da licitação"
 
-    html = [f'<div class="ln-items-box"><div class="ln-items-title">📦 Itens da licitação · {escape(count_label)}</div>']
+    html = [f'<div class="ln-items-box"><div class="ln-items-title">Itens da licitação · {escape(count_label)}</div>']
     if error and not preview:
         html.append('<div class="ln-items-note">Os itens ainda não estão disponíveis no PNCP.</div>')
     elif not visible:
@@ -417,15 +495,15 @@ def home_page(db, user: dict) -> None:
         if st.form_submit_button("Buscar licitações", type="primary", width="stretch"):
             st.session_state["essential_search_criteria"] = _criteria(keyword=keyword.strip())
             st.session_state["essential_search_page"] = 1
-            st.session_state["_navigation_request"] = "🔎 Buscar licitações"
+            st.session_state["_navigation_request"] = "Buscar licitações"
             st.rerun()
 
     st.caption("Ou comece por uma destas opções:")
     shortcuts = [
-        ("🗺️ Por Estado", "Ver estados"),
-        ("📍 Por Cidade", "Buscar cidade"),
-        ("☰ Por Modalidade", "Ver modalidades"),
-        ("🌐 Por site de disputa", "Ver sites"),
+        ("Por Estado", "Ver estados"),
+        ("Por Cidade", "Buscar cidade"),
+        ("Por Modalidade", "Ver modalidades"),
+        ("Por site de disputa", "Ver sites"),
     ]
     cols = st.columns(4)
     for col, (target, label) in zip(cols, shortcuts):
@@ -436,13 +514,13 @@ def home_page(db, user: dict) -> None:
 
 def portal_page(db, user: dict) -> None:
     _apply_styles()
-    st.markdown('<div class="ln-discovery-title">🌐 Por site de disputa</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-title">Por site de disputa</div>', unsafe_allow_html=True)
     st.markdown('<div class="ln-discovery-sub">Escolha onde deseja participar. Se não tiver preferência, use Todos os sites.</div>', unsafe_allow_html=True)
 
     if st.button("Todos os sites", key="portal_all", type="primary", width="stretch"):
         st.session_state["essential_search_criteria"] = _criteria(portal="Todos os sites")
         st.session_state["essential_search_page"] = 1
-        st.session_state["_navigation_request"] = "🔎 Buscar licitações"
+        st.session_state["_navigation_request"] = "Buscar licitações"
         st.rerun()
 
     portals = list(PORTAL_ACCESS.keys())
@@ -456,7 +534,7 @@ def portal_page(db, user: dict) -> None:
                 if st.button("Ver editais", key=f"portal_{portal}", width="stretch"):
                     st.session_state["essential_search_criteria"] = _criteria(portal=portal)
                     st.session_state["essential_search_page"] = 1
-                    st.session_state["_navigation_request"] = "🔎 Buscar licitações"
+                    st.session_state["_navigation_request"] = "Buscar licitações"
                     st.rerun()
 
 
@@ -465,75 +543,54 @@ def search_page(db, user: dict, usage=None) -> None:
     company_id = user["company_id"]
     defaults = _profile_defaults(db, company_id)
     current = st.session_state.get("essential_search_criteria") or {}
-
-    st.markdown('<div class="ln-discovery-title">🔎 Buscar licitações</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">Pesquise pelo que deseja vender. Se deixar em branco, mostramos editais de vários tipos.</div>', unsafe_allow_html=True)
-
+    st.markdown('<div class="ln-discovery-title">Buscar licitações</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-sub">Escolha só o que fizer sentido. Campos vazios deixam a busca mais ampla.</div>', unsafe_allow_html=True)
     with st.form("essential_quick_search", clear_on_submit=False, enter_to_submit=False):
-        keyword = st.text_input(
-            "O que você procura?",
-            value=str(current.get("keyword") if "keyword" in current else defaults["keyword"]),
-            placeholder="Ex.: papel A4, pneus, medicamentos, uniformes...",
-        )
-        c1, c2 = st.columns(2)
-        states = c1.multiselect(
-            "Estado", list(BRAZIL_STATES),
-            default=list(current.get("states") if "states" in current else defaults["states"]),
-            placeholder="Brasil inteiro",
-        )
-        city = c2.text_input("Cidade (opcional)", value=str(current.get("city") or ""), placeholder="Ex.: Londrina")
-        m1, m2 = st.columns(2)
-        modalities = m1.multiselect(
-            "Modalidade", list(MODALITIES.keys()),
-            default=list(current.get("modalities") if "modalities" in current else defaults["modalities"]),
-            placeholder="Todas",
-        )
+        keyword = st.text_input("O que você procura?", value=str(current.get("keyword") if "keyword" in current else defaults["keyword"]), placeholder="Ex.: papel A4, pneus, medicamentos, manutenção...")
+        g1, g2, g3 = st.columns([1, 1.2, 1.2])
+        current_region = str(current.get("region") or "Brasil inteiro")
+        region = g1.selectbox("Região", REGION_OPTIONS, index=REGION_OPTIONS.index(current_region) if current_region in REGION_OPTIONS else 0)
+        states = g2.multiselect("Estado (opcional)", list(BRAZIL_STATES), default=list(current.get("states") if "states" in current else defaults["states"]), placeholder="Todos da região")
+        city = g3.text_input("Cidade (opcional)", value=str(current.get("city") or ""), placeholder="Ex.: Londrina")
+        f1, f2, f3 = st.columns(3)
+        current_nature = str(current.get("nature") if "nature" in current else defaults["nature"])
+        nature = f1.selectbox("O que procura", NATURE_OPTIONS, index=NATURE_OPTIONS.index(current_nature) if current_nature in NATURE_OPTIONS else 0)
+        current_srp = str(current.get("srp") if "srp" in current else defaults["srp"])
+        srp = f2.selectbox("Registro de preços", SRP_OPTIONS, index=SRP_OPTIONS.index(current_srp) if current_srp in SRP_OPTIONS else 0)
         current_portal = str(current.get("portal") or "Todos os sites")
-        portal_index = PORTAL_OPTIONS.index(current_portal) if current_portal in PORTAL_OPTIONS else 0
-        portal = m2.selectbox("Site da disputa", PORTAL_OPTIONS, index=portal_index)
+        portal = f3.selectbox("Site da disputa", PORTAL_OPTIONS, index=PORTAL_OPTIONS.index(current_portal) if current_portal in PORTAL_OPTIONS else 0)
+        modalities = st.multiselect("Modalidade", list(MODALITIES.keys()), default=list(current.get("modalities") if "modalities" in current else defaults["modalities"]), placeholder="Todas")
         v1, v2 = st.columns(2)
         min_default = current.get("minimum") if "minimum" in current else defaults["minimum"]
         max_default = current.get("maximum") if "maximum" in current else defaults["maximum"]
         minimum_text = v1.text_input("Valor mínimo", value="" if min_default in (None, "") else str(min_default), placeholder="Sem mínimo")
         maximum_text = v2.text_input("Valor máximo", value="" if max_default in (None, "") else str(max_default), placeholder="Sem máximo")
         submitted = st.form_submit_button("Buscar licitações", type="primary", width="stretch")
-
     if submitted:
         minimum = parse_brl(minimum_text) if minimum_text.strip() else None
         maximum = parse_brl(maximum_text) if maximum_text.strip() else None
         if minimum_text.strip() and minimum is None:
-            st.error("Confira o valor mínimo digitado.")
-            return
+            st.error("Confira o valor mínimo digitado."); return
         if maximum_text.strip() and maximum is None:
-            st.error("Confira o valor máximo digitado.")
-            return
-        current = _criteria(
-            keyword=keyword.strip(), city=city.strip(), states=states, modalities=modalities,
-            minimum=minimum, maximum=maximum, portal=portal,
-        )
+            st.error("Confira o valor máximo digitado."); return
+        current = _criteria(keyword=keyword.strip(), city=city.strip(), region=region, states=states, nature=nature, srp=srp, modalities=modalities, minimum=minimum, maximum=maximum, portal=portal)
         st.session_state["essential_search_criteria"] = current
         st.session_state["essential_search_page"] = 1
         if usage is not None:
             usage.record_search(company_id, user.get("id", ""), keyword.strip())
-        db.save_company_profile(
-            company_id, search_keyword=keyword.strip(), service_states=", ".join(states),
-            search_modalities="|".join(modalities), search_minimum=minimum, search_maximum=maximum,
-            search_order="Mais recentes",
-        )
-
+        db.save_company_profile(company_id, search_keyword=keyword.strip(), search_nature=nature, service_states=", ".join(states), search_modalities="|".join(modalities), search_srp=_srp_profile_value(srp), search_minimum=minimum, search_maximum=maximum, search_order="Mais recentes")
     if not current:
-        st.info("Digite uma palavra, escolha um estado ou clique em Buscar licitações para ver editais abertos.")
-        return
-
+        st.info("Digite uma palavra ou escolha um filtro para começar."); return
+    if str(current.get("region") or "Brasil inteiro") != "Brasil inteiro":
+        st.caption(f"Região: {current['region']} · UFs consideradas: {', '.join(_effective_states(current)) or 'nenhuma'}")
     with st.spinner("Buscando editais abertos..."):
         items = _query_catalog(db, current)
     st.markdown("### Editais abertos para participação")
     _render_results(db, user, items, page_key="essential_search_page", per_page=6)
 
-
 def state_page(db, user: dict) -> None:
     _apply_styles()
-    st.markdown('<div class="ln-discovery-title">🗺️ Por Estado</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-title">Por Estado</div>', unsafe_allow_html=True)
     st.markdown('<div class="ln-discovery-sub">Escolha um estado para ver os editais abertos para participação.</div>', unsafe_allow_html=True)
     counts = db.global_catalog_group_counts("state", closing_from=date.today().isoformat())
     if not counts:
@@ -553,13 +610,13 @@ def state_page(db, user: dict) -> None:
                 if st.button("Ver editais", key=f"state_{state}", width="stretch"):
                     st.session_state["essential_search_criteria"] = _criteria(states=[state])
                     st.session_state["essential_search_page"] = 1
-                    st.session_state["_navigation_request"] = "🔎 Buscar licitações"
+                    st.session_state["_navigation_request"] = "Buscar licitações"
                     st.rerun()
 
 
 def city_page(db, user: dict) -> None:
     _apply_styles()
-    st.markdown('<div class="ln-discovery-title">📍 Por Cidade</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-title">Por Cidade</div>', unsafe_allow_html=True)
     st.markdown('<div class="ln-discovery-sub">Digite a cidade para ver os editais abertos para participação.</div>', unsafe_allow_html=True)
     with st.form("essential_city_search", clear_on_submit=False, enter_to_submit=False):
         city = st.text_input("Nome da cidade", placeholder="Ex.: Londrina")
@@ -572,13 +629,13 @@ def city_page(db, user: dict) -> None:
                     city=city.strip(), states=[] if state == "Todos" else [state]
                 )
                 st.session_state["essential_search_page"] = 1
-                st.session_state["_navigation_request"] = "🔎 Buscar licitações"
+                st.session_state["_navigation_request"] = "Buscar licitações"
                 st.rerun()
 
 
 def modality_page(db, user: dict) -> None:
     _apply_styles()
-    st.markdown('<div class="ln-discovery-title">☰ Por Modalidade</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-title">Por Modalidade</div>', unsafe_allow_html=True)
     st.markdown('<div class="ln-discovery-sub">Escolha a modalidade para ver os editais abertos para participação.</div>', unsafe_allow_html=True)
     counts = db.global_catalog_group_counts("modality", closing_from=date.today().isoformat())
     if not counts:
@@ -595,20 +652,24 @@ def modality_page(db, user: dict) -> None:
                 if st.button("Ver editais", key=f"modality_{label}", width="stretch"):
                     st.session_state["essential_search_criteria"] = _criteria(modalities=[label])
                     st.session_state["essential_search_page"] = 1
-                    st.session_state["_navigation_request"] = "🔎 Buscar licitações"
+                    st.session_state["_navigation_request"] = "Buscar licitações"
                     st.rerun()
 
 
 def advanced_search_page(db, user: dict) -> None:
     _apply_styles()
-    st.markdown('<div class="ln-discovery-title">⚙️ Filtro avançado</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">Use só os filtros que quiser. Você não precisa preencher todos.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-title">Filtro avançado</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-sub">Combine os filtros que quiser. Nenhum campo é obrigatório.</div>', unsafe_allow_html=True)
     with st.form("essential_advanced_search", clear_on_submit=False, enter_to_submit=False):
-        states = st.multiselect("Estados", list(BRAZIL_STATES), placeholder="Todos")
+        r1, r2 = st.columns(2)
+        region = r1.selectbox("Região", REGION_OPTIONS)
+        states = r2.multiselect("Estados", list(BRAZIL_STATES), placeholder="Todos da região")
         city = st.text_input("Cidade", placeholder="Opcional")
-        m1, m2 = st.columns(2)
-        modalities = m1.multiselect("Modalidades", list(MODALITIES.keys()), placeholder="Todas")
-        portal = m2.selectbox("Site da disputa", PORTAL_OPTIONS)
+        c1, c2, c3 = st.columns(3)
+        nature = c1.selectbox("O que procura", NATURE_OPTIONS)
+        srp = c2.selectbox("Registro de preços", SRP_OPTIONS)
+        portal = c3.selectbox("Site da disputa", PORTAL_OPTIONS)
+        modalities = st.multiselect("Modalidades", list(MODALITIES.keys()), placeholder="Todas")
         keyword = st.text_input("O que você procura?", placeholder="Ex.: material de limpeza")
         v1, v2 = st.columns(2)
         minimum_text = v1.text_input("Valor mínimo", placeholder="Sem mínimo")
@@ -625,20 +686,14 @@ def advanced_search_page(db, user: dict) -> None:
             elif maximum_text.strip() and maximum is None:
                 st.error("Confira o valor máximo digitado.")
             else:
-                st.session_state["essential_search_criteria"] = _criteria(
-                    keyword=keyword.strip(), city=city.strip(), states=states, modalities=modalities,
-                    minimum=minimum, maximum=maximum, portal=portal,
-                    closing_from=start_date.isoformat(),
-                    closing_to=None if no_end else end_date.isoformat(),
-                )
+                st.session_state["essential_search_criteria"] = _criteria(keyword=keyword.strip(), city=city.strip(), region=region, states=states, nature=nature, srp=srp, modalities=modalities, minimum=minimum, maximum=maximum, portal=portal, closing_from=start_date.isoformat(), closing_to=None if no_end else end_date.isoformat())
                 st.session_state["essential_search_page"] = 1
-                st.session_state["_navigation_request"] = "🔎 Buscar licitações"
+                st.session_state["_navigation_request"] = "Buscar licitações"
                 st.rerun()
-
 
 def top50_page(db, user: dict) -> None:
     _apply_styles()
-    st.markdown('<div class="ln-discovery-title">🔥 Em destaque</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-title">Em destaque</div>', unsafe_allow_html=True)
     st.markdown('<div class="ln-discovery-sub">50 editais recentes para você explorar sem precisar definir uma busca.</div>', unsafe_allow_html=True)
     items = db.list_global_catalog(
         closing_from=date.today().isoformat(), limit=50, order_by="recent"
@@ -649,7 +704,7 @@ def top50_page(db, user: dict) -> None:
 def my_list_page(db, user: dict) -> None:
     _apply_styles()
     company_id = user["company_id"]
-    st.markdown('<div class="ln-discovery-title">❤️ Minha lista</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-title">Minha lista</div>', unsafe_allow_html=True)
     st.markdown('<div class="ln-discovery-sub">Decida apenas se vai participar, não vai participar ou quer descartar o edital.</div>', unsafe_allow_html=True)
     rows = [
         row for row in db.pipeline_summaries(company_id, "")
@@ -738,7 +793,7 @@ def preferences_page(db, user: dict) -> None:
     _apply_styles()
     company_id = user["company_id"]
     defaults = _profile_defaults(db, company_id)
-    st.markdown('<div class="ln-discovery-title">🔔 Preferências</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-title">Preferências</div>', unsafe_allow_html=True)
     st.markdown('<div class="ln-discovery-sub">Se quiser, salve o que costuma procurar. Isso ajuda o Radar, mas não é obrigatório.</div>', unsafe_allow_html=True)
     with st.form("essential_preferences_simple", clear_on_submit=False, enter_to_submit=False):
         keyword = st.text_input(
@@ -762,12 +817,12 @@ def preferences_page(db, user: dict) -> None:
 def radar_page(db, user: dict) -> None:
     _apply_styles()
     defaults = _profile_defaults(db, user["company_id"])
-    st.markdown('<div class="ln-discovery-title">📡 Radar de licitações</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-title">Radar de licitações</div>', unsafe_allow_html=True)
     st.markdown('<div class="ln-discovery-sub">Veja editais novos relacionados ao que você escolheu acompanhar.</div>', unsafe_allow_html=True)
     if not (defaults["keyword"].strip() or defaults["states"] or defaults["modalities"]):
         st.info("Você ainda não escolheu o que quer acompanhar. Continue usando a busca normalmente ou configure o Radar quando quiser.")
         if st.button("Configurar preferências", type="primary", width="stretch"):
-            st.session_state["_navigation_request"] = "🔔 Preferências"
+            st.session_state["_navigation_request"] = "Preferências"
             st.rerun()
         return
     criteria = _criteria(
