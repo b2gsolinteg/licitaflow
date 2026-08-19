@@ -37,6 +37,29 @@ jobs:
           p.write_text(s.replace(old, new, 1), encoding='utf-8')
           PY
           python scripts/rc31_10_patch.py
+
+          python - <<'PY'
+          from pathlib import Path
+
+          # RC31.6 contracts now validate the plain professional labels.
+          p = Path('tests/test_rc31_6_essential.py')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('self.assertIn("❤️ Minha lista", app)', 'self.assertIn("Minha lista", app)')
+          s = s.replace('self.assertIn("🗺️ Por Estado", app)', 'self.assertIn("Por Estado", app)')
+          s = s.replace('self.assertIn("📡 Radar de licitações", app)', 'self.assertIn("Radar de licitações", app)')
+          p.write_text(s, encoding='utf-8')
+
+          # Keep sidebar labels intentionally stronger while the main content remains light.
+          p = Path('src/essential_discovery.py')
+          s = p.read_text(encoding='utf-8')
+          css = '[data-testid="stSidebar"] .stButton button{font-weight:600 !important;}\n'
+          if css not in s:
+              anchor = '.ln-home-count{font-size:1.55rem;color:#293746;margin:.25rem 0 .95rem;}\n'
+              if anchor not in s:
+                  raise SystemExit('sidebar bold anchor missing')
+              s = s.replace(anchor, anchor + css, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
       - name: Validate
         env:
           LICITANEXO_DB_BACKEND: sqlite
