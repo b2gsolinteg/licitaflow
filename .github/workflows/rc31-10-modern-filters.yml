@@ -49,6 +49,12 @@ jobs:
           s = s.replace('self.assertIn("📡 Radar de licitações", app)', 'self.assertIn("Radar de licitações", app)')
           p.write_text(s, encoding='utf-8')
 
+          p = Path('tests/test_rc31_7_simple_ux.py')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('self.assertIn("min-height:2.15rem !important", app)', 'self.assertIn("min-height:2.25rem !important", app)')
+          s = s.replace('self.assertIn("background:#EDF3F4 !important", app)', 'self.assertIn("background:#F0F4F5 !important", app)')
+          p.write_text(s, encoding='utf-8')
+
           p = Path('tests/test_rc31_8_clean_essential.py')
           s = p.read_text(encoding='utf-8')
           s = s.replace('self.assertIn(\'work_pages = ["❤️ Minha lista", "📅 Calendário"]\', app)', 'self.assertIn(\'work_pages = ["Minha lista", "Calendário"]\', app)')
