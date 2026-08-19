@@ -38,10 +38,12 @@ from src.radar_items import fetch_radar_item_summaries
 from src.pipeline_ui import pipeline_page
 from src.company_ui import company_page
 from src.essential_discovery import (
+    home_page as essential_home_page,
     search_page as essential_search_page,
     state_page as essential_state_page,
     city_page as essential_city_page,
     modality_page as essential_modality_page,
+    portal_page as essential_portal_page,
     advanced_search_page as essential_advanced_search_page,
     top50_page as essential_top50_page,
     my_list_page as essential_my_list_page,
@@ -2840,7 +2842,7 @@ def main():
         st.markdown('<div style="color:#718096;font-size:.80rem;margin-bottom:.7rem">B2G SaaS · Business to Growth</div>', unsafe_allow_html=True)
         st.markdown(
             f'<div style="background:#F7F9FC;border:1px solid #E3E8EF;border-radius:12px;padding:.65rem .72rem;margin-bottom:.75rem">'
-            f'<div style="font-weight:850;color:#172033">{_greeting(user)} 👋</div>'
+            f'<div style="font-weight:400;color:#172033">{_greeting(user)} 👋</div>'
             f'<div style="font-size:.76rem;color:#718096">{escape(str(user.get("name") or user.get("email") or "Minha conta"))}</div></div>',
             unsafe_allow_html=True,
         )
@@ -2859,8 +2861,8 @@ def main():
             )
         else:
             explore_pages = [
-                "🔎 Buscar licitações", "🗺️ Por Estado", "📍 Por Cidade",
-                "☰ Por Modalidade", "⚙️ Filtro avançado", "🏆 Top 50",
+                "🏠 Início", "🔎 Buscar licitações", "🗺️ Por Estado", "📍 Por Cidade",
+                "☰ Por Modalidade", "🌐 Por site de disputa", "⚙️ Filtro avançado", "🔥 Em destaque",
             ]
             work_pages = ["❤️ Minha lista", "📅 Calendário"]
             account_pages = ["🔔 Preferências", "📡 Radar de licitações", "💬 Suporte", "👤 Minha Conta"]
@@ -2905,7 +2907,9 @@ def main():
             st.session_state.clear()
             st.rerun()
 
-    if page == "🔎 Buscar licitações":
+    if page == "🏠 Início":
+        essential_home_page(db, user)
+    elif page == "🔎 Buscar licitações":
         essential_search_page(db, user, usage)
     elif page == "🗺️ Por Estado":
         essential_state_page(db, user)
@@ -2913,9 +2917,11 @@ def main():
         essential_city_page(db, user)
     elif page == "☰ Por Modalidade":
         essential_modality_page(db, user)
+    elif page == "🌐 Por site de disputa":
+        essential_portal_page(db, user)
     elif page == "⚙️ Filtro avançado":
         essential_advanced_search_page(db, user)
-    elif page == "🏆 Top 50":
+    elif page == "🔥 Em destaque":
         essential_top50_page(db, user)
     elif page == "❤️ Minha lista":
         essential_my_list_page(db, user)
