@@ -24,6 +24,17 @@ jobs:
         run: |
           python -m pip install -r requirements.lock
           python -m pip check
+      - name: Make header patch resilient
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/rc31_12_patch.py')
+          s = p.read_text(encoding='utf-8')
+          start = s.index('# Upgrade page headers without touching functional logic of the forms/results.')
+          end = s.index('# Modern pagination glyphs -> Material Symbols.', start)
+          robust = '''# Upgrade page headers without touching functional logic of the forms/results.\nheader_lines = [\n    (\"Buscar licitações\", \"Escolha só o que fizer sentido. Campos vazios deixam a busca mais ampla.\", \"ENCONTRE OPORTUNIDADES\"),\n    (\"Filtro avançado\", \"Combine os filtros que quiser. Nenhum campo é obrigatório.\", \"REFINE SUA BUSCA\"),\n    (\"Em destaque\", \"50 editais recentes para você explorar sem precisar definir uma busca.\", \"DESCUBRA OPORTUNIDADES\"),\n    (\"Minha lista\", \"Decida apenas se vai participar, não vai participar ou quer descartar o edital.\", \"ORGANIZE SUAS OPORTUNIDADES\"),\n    (\"Preferências\", \"Se quiser, salve o que costuma procurar. Isso ajuda o Radar, mas não é obrigatório.\", \"PERSONALIZE O LICITANEXO\"),\n    (\"Radar de licitações\", \"Veja editais novos relacionados ao que você escolheu acompanhar.\", \"ACOMPANHE O QUE IMPORTA\"),\n]\nfor title, subtitle, kicker in header_lines:\n    title_line = f\'st.markdown(\\\'<div class=\"ln-discovery-title\">{title}</div>\\\', unsafe_allow_html=True)\'\n    sub_line = f\'st.markdown(\\\'<div class=\"ln-discovery-sub\">{subtitle}</div>\\\', unsafe_allow_html=True)\'\n    if title_line not in s or sub_line not in s:\n        raise SystemExit(f\"anchor ausente: header {title}\")\n    s = s.replace(title_line, f\'_page_header(\"{kicker}\", \"{title}\", \"{subtitle}\")\', 1)\n    s = s.replace(sub_line, '', 1)\n\n'''
+          p.write_text(s[:start] + robust + s[end:], encoding='utf-8')
+          PY
       - name: Apply RC31.12 patch
         run: python scripts/rc31_12_patch.py
       - name: Validate
