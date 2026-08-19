@@ -403,6 +403,14 @@ def apply_brand():
         @media(min-width:901px){[data-testid="stSidebar"],[data-testid="stSidebar"] > div:first-child{width:250px !important;min-width:250px !important;max-width:250px !important;}}
         [data-testid="stSidebar"] .stButton button{width:100% !important;min-height:2.25rem !important;justify-content:flex-start !important;background:transparent !important;color:#293746 !important;border:1px solid transparent !important;border-radius:10px !important;box-shadow:none !important;padding:.28rem .52rem !important;gap:.38rem !important;}
         [data-testid="stSidebar"] .stButton button[kind="primary"]{background:#F0F4F5 !important;color:#243746 !important;border-color:#E1E8EC !important;box-shadow:none !important;}
+        [data-testid="stSidebar"] .stButton [data-testid="stIconMaterial"]{display:inline-flex !important;align-items:center !important;justify-content:center !important;width:1.75rem !important;height:1.75rem !important;border-radius:8px !important;background:#F3F6F7 !important;color:#58767A !important;}
+        [data-testid="stSidebar"] .st-key-nav_explore_0 [data-testid="stIconMaterial"], [data-testid="stSidebar"] .st-key-nav_explore_1 [data-testid="stIconMaterial"]{background:#E9F3EE !important;color:#4F846E !important;}
+        [data-testid="stSidebar"] .st-key-nav_explore_2 [data-testid="stIconMaterial"], [data-testid="stSidebar"] .st-key-nav_explore_3 [data-testid="stIconMaterial"]{background:#F4EFE8 !important;color:#8A7357 !important;}
+        [data-testid="stSidebar"] .st-key-nav_explore_4 [data-testid="stIconMaterial"], [data-testid="stSidebar"] .st-key-nav_explore_5 [data-testid="stIconMaterial"]{background:#EAF0F4 !important;color:#557387 !important;}
+        [data-testid="stSidebar"] .st-key-nav_explore_6 [data-testid="stIconMaterial"], [data-testid="stSidebar"] .st-key-nav_explore_7 [data-testid="stIconMaterial"]{background:#F0ECF4 !important;color:#766487 !important;}
+        [data-testid="stSidebar"] .st-key-nav_work_0 [data-testid="stIconMaterial"], [data-testid="stSidebar"] .st-key-nav_work_1 [data-testid="stIconMaterial"]{background:#EDF2F5 !important;color:#536F80 !important;}
+        [data-testid="stSidebar"] .st-key-nav_account_0 [data-testid="stIconMaterial"], [data-testid="stSidebar"] .st-key-nav_account_1 [data-testid="stIconMaterial"]{background:#EEF3EA !important;color:#668057 !important;}
+        [data-testid="stSidebar"] .st-key-nav_account_2 [data-testid="stIconMaterial"], [data-testid="stSidebar"] .st-key-nav_account_3 [data-testid="stIconMaterial"]{background:#F4ECEA !important;color:#8A675F !important;}
         [data-testid="stSidebar"] .st-key-sidebar_logout button{justify-content:center !important;background:#F4F7F9 !important;}
         [data-testid="stSidebar"] [data-testid="stCaptionContainer"]{margin-top:.18rem !important;margin-bottom:.04rem !important;}
         [data-testid="stSidebar"] [data-testid="stImage"] img{max-width:190px !important;width:190px !important;margin:0 auto !important;display:block !important;}
@@ -430,7 +438,7 @@ def brand_header(compact=False):
     if not compact:
         st.markdown(
             '<div style="font-size:1.08rem;font-weight:700;margin:.15rem 0 .25rem 0">'
-            'Busque editais. Analise. Acompanhe.</div>'
+            'Encontre editais. Veja os itens. Decida.</div>'
             '<div style="color:#8FA0B6;font-size:.9rem;margin-bottom:.65rem">'
             'LicitaNexo · um produto da B2G SaaS</div>',
             unsafe_allow_html=True,
@@ -438,7 +446,7 @@ def brand_header(compact=False):
 
 
 def login_page():
-    """Tela pública de entrada — RC19.8: composição visual final aprovada."""
+    """Tela pública de entrada — RC31.11: valor do Essential e linguagem para iniciantes."""
     st.markdown(
         """<style>
         html, body, [data-testid="stAppViewContainer"], .stApp {margin:0 !important;padding:0 !important;background:#FFFFFF !important;min-height:100vh !important;color:#293746 !important;overflow:auto !important;}
@@ -449,6 +457,9 @@ def login_page():
         div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]{background:#FFFFFF !important;padding:0 !important;}
         .ln-login-intro{color:#293746;font-size:1.9rem;line-height:1.22;margin:.8rem 0 .65rem;}
         .ln-login-copy{color:#667786;font-size:1rem;line-height:1.55;max-width:32rem;}
+        .ln-login-value{margin:1.15rem 0 0;display:grid;gap:.55rem;max-width:31rem;}
+        .ln-login-value-item{display:flex;align-items:center;gap:.65rem;color:#526371;font-size:.9rem;}
+        .ln-login-value-dot{width:1.75rem;height:1.75rem;border-radius:8px;background:#EAF3EF;color:#4F846E;display:flex;align-items:center;justify-content:center;font-size:.72rem;}
         .ln-price{text-align:left;line-height:1.15;margin:0 0 1rem;}
         .ln-price span{display:inline;color:#667786;font-size:.82rem;margin-right:.35rem;}
         .ln-price strong,.ln-price small{color:#486F74;font-size:1rem;font-weight:400 !important;}
@@ -484,13 +495,21 @@ def login_page():
     with left:
         if LOGO_PATH.exists():
             st.image(str(LOGO_PATH), width=300)
-        st.markdown('<div class="ln-login-intro">Licitações sem complicação.</div>', unsafe_allow_html=True)
-        st.markdown('<div class="ln-login-copy">Encontre editais, veja o que o governo quer comprar e organize os certames que você decidiu participar.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="ln-login-intro">Encontre oportunidades para vender ao governo.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="ln-login-copy">Você não precisa adivinhar o que vender. Veja primeiro o que o governo está comprando e encontre oportunidades de forma simples.</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="ln-login-value">'
+            '<div class="ln-login-value-item"><span class="ln-login-value-dot">01</span><span>Editais com os itens da compra já abertos na busca</span></div>'
+            '<div class="ln-login-value-item"><span class="ln-login-value-dot">02</span><span>Pesquisa simples em todo o Brasil</span></div>'
+            '<div class="ln-login-value-item"><span class="ln-login-value-dot">03</span><span>Salve as oportunidades e organize os certames</span></div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
 
     with right:
         st.markdown(
             '<div class="ln-price"><span>Planos a partir de</span>'
-            '<strong>R$ 49,90</strong><small>/mês</small></div>',
+            '<strong>R$ 29,90</strong><small>/mês</small></div>',
             unsafe_allow_html=True,
         )
 

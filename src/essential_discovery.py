@@ -89,7 +89,10 @@ def _apply_styles() -> None:
         [data-testid="stMain"] .stButton button:hover{background:#F4F7F8 !important;border-color:#AFC0C9 !important;}
         [data-testid="stMain"] div[class*="st-key-state_"] button{min-height:2.8rem !important;font-size:.88rem !important;background:#FFFFFF !important;color:#293746 !important;border:1px solid #CCD6DD !important;}
         .ln-state-card{min-height:160px;}
-.ln-home-count{font-size:1.55rem;color:#293746;margin:.25rem 0 .95rem;}
+.ln-home-count{font-size:1.55rem;color:#293746;margin:.25rem 0 .8rem;}
+.ln-home-value{background:#F7FAFA;border:1px solid #DDE7E8;border-radius:12px;padding:.8rem .9rem;margin:.65rem 0 1rem;color:#526371;font-size:.9rem;line-height:1.45;}
+.ln-home-section{font-size:.82rem;color:#667786;margin:.9rem 0 .45rem;}
+.ln-shortcut-copy{min-height:2.1rem;color:#71808D;font-size:.75rem;line-height:1.35;margin:0 0 .45rem;}
 [data-testid="stSidebar"] .stButton button{font-weight:600 !important;}
         @media(max-width:900px){.ln-info-grid,.ln-meta-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ln-item-row{grid-template-columns:38px minmax(0,1fr)}.ln-item-qty,.ln-item-price{text-align:left;grid-column:2}}
         </style>
@@ -486,31 +489,39 @@ def home_page(db, user: dict) -> None:
     counts = db.global_catalog_group_counts("state", closing_from=date.today().isoformat())
     open_total = sum(int(row.get("total") or 0) for row in counts)
 
-    st.markdown('<div class="ln-discovery-title">Encontre o que o governo está comprando</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">Você pode pesquisar um produto ou começar por estado, cidade, modalidade ou site da disputa.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-discovery-title">Descubra o que o governo está comprando.</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="ln-discovery-sub">Você não precisa adivinhar o que vender. Pesquise editais de todo o Brasil e veja os itens da compra já na tela.</div>',
+        unsafe_allow_html=True,
+    )
     st.markdown(f'<div class="ln-home-count">{open_total:,} editais abertos para participação</div>'.replace(",", "."), unsafe_allow_html=True)
+    st.markdown(
+        '<div class="ln-home-value">No LicitaNexo, o edital já aparece com os itens da compra. Você entende a oportunidade antes de perder tempo abrindo documento por documento.</div>',
+        unsafe_allow_html=True,
+    )
 
     with st.form("essential_home_search", clear_on_submit=False, enter_to_submit=False):
         keyword = st.text_input("O que você procura?", placeholder="Ex.: papel A4, pneus, medicamentos, uniformes...")
-        if st.form_submit_button("Buscar licitações", type="primary", width="stretch"):
+        if st.form_submit_button("Buscar licitações", type="primary", icon=":material/search:", width="stretch"):
             st.session_state["essential_search_criteria"] = _criteria(keyword=keyword.strip())
             st.session_state["essential_search_page"] = 1
             st.session_state["_navigation_request"] = "Buscar licitações"
             st.rerun()
 
-    st.caption("Ou comece por uma destas opções:")
+    st.markdown('<div class="ln-home-section">Ou comece explorando:</div>', unsafe_allow_html=True)
     shortcuts = [
-        ("Por Estado", "Ver estados"),
-        ("Por Cidade", "Buscar cidade"),
-        ("Por Modalidade", "Ver modalidades"),
-        ("Por site de disputa", "Ver sites"),
+        ("Por Estado", "Estados", "Veja os editais abertos em cada UF.", ":material/map:"),
+        ("Por Cidade", "Cidades", "Procure oportunidades em uma cidade específica.", ":material/location_on:"),
+        ("Por Modalidade", "Modalidades", "Escolha pregão, dispensa, concorrência e outras.", ":material/category:"),
+        ("Por site de disputa", "Sites de disputa", "Veja onde a participação acontece.", ":material/language:"),
     ]
     cols = st.columns(4)
-    for col, (target, label) in zip(cols, shortcuts):
-        if col.button(label, key=f"home_{target}", width="stretch"):
-            st.session_state["_navigation_request"] = target
-            st.rerun()
-
+    for col, (target, label, description, icon) in zip(cols, shortcuts):
+        with col.container(border=True):
+            st.markdown(f'<div class="ln-shortcut-copy">{description}</div>', unsafe_allow_html=True)
+            if st.button(label, icon=icon, key=f"home_{target}", width="stretch"):
+                st.session_state["_navigation_request"] = target
+                st.rerun()
 
 def portal_page(db, user: dict) -> None:
     _apply_styles()

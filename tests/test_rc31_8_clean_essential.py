@@ -24,7 +24,7 @@ class CleanEssentialContracts(unittest.TestCase):
         self.assertNotIn("#031329", login)
         self.assertNotIn("#D99C17", login)
         self.assertNotIn("linear-gradient(90deg,#C88D13,#DEA92B)", login)
-        self.assertIn("Licitações sem complicação.", login)
+        self.assertIn("Encontre oportunidades para vender ao governo.", login)
 
     def test_beginner_navigation_hides_future_modules(self):
         app = (ROOT / "app.py").read_text(encoding="utf-8")

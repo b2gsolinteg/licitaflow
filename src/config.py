@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 APP_NAME = "LicitaNexo"
-APP_VERSION = "1.0 Essential RC31.10"
+APP_VERSION = "1.0 Essential RC31.11"
 APP_TAGLINE = "Simples para começar. Útil para vencer."
 COMPANY_SIGNATURE = "Powered by B2G SaaS · Business to Growth"
 APP_POSITIONING = "Seu departamento de licitações em um único lugar."
@@ -31,7 +31,7 @@ def is_admin(email: str) -> bool:
 
 
 # RC20 · Fundação Comercial
-ESSENTIAL_PRICE_CENTS = 4990
+ESSENTIAL_PRICE_CENTS = 2990
 COMMERCIAL_PLAN = "ESSENTIAL"
 
 # RC21 · Pagamentos e Assinaturas
