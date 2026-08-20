@@ -93,10 +93,10 @@ def _apply_styles() -> None:
         .ln-state-name{font-size:1.02rem;color:#172B3A;font-weight:700 !important;margin:.42rem 0 0}.ln-state-code{font-size:.78rem;color:#7A8B98;margin-left:.25rem;font-weight:600 !important}.ln-state-count{font-size:1.85rem;color:#0B4B76;font-weight:750 !important;line-height:1.05;margin:.9rem 0 .05rem}.ln-state-label{font-size:.78rem;color:#748592;margin-bottom:.65rem}.ln-state-card-note{font-size:.70rem;color:#8A99A5;margin-top:.2rem}.ln-state-grid-title{font-size:.73rem;color:#788995;font-weight:750 !important;letter-spacing:.08em;text-transform:uppercase;margin:.95rem 0 .48rem}
         .ln-portal-name,.ln-modality-name{font-size:1rem;color:#172B3A;font-weight:700 !important;margin-bottom:.2rem}.ln-card-count{font-size:1.55rem;color:#0B4B76;font-weight:750 !important;margin:.55rem 0 .08rem;line-height:1}.ln-card-caption{font-size:.76rem;color:#748592;margin-bottom:.65rem}
         [data-testid="stMain"] .block-container div[class*="st-key-state_"] button{min-height:2.7rem !important;}
-        /* RC31.14 density polish */
-        header[data-testid="stHeader"]{height:44px !important;min-height:44px !important;box-shadow:0 1px 8px rgba(7,29,48,.08) !important;}
+        /* RC31.15 visual balance */
+        header[data-testid="stHeader"]{height:36px !important;min-height:36px !important;background:#FFFFFF !important;border-bottom:1px solid #E6EBEF !important;box-shadow:none !important;}
         [data-testid="stMain"]{background:#F3F6F9 !important;}
-        [data-testid="stMain"] .block-container{max-width:900px !important;padding-top:.78rem !important;padding-bottom:1.8rem !important;}
+        [data-testid="stMain"] .block-container{max-width:980px !important;padding-top:.82rem !important;padding-bottom:1.8rem !important;}
         [data-testid="stSidebar"],[data-testid="stSidebar"] > div:first-child{width:240px !important;min-width:240px !important;max-width:240px !important;}
         [data-testid="stSidebar"] > div:first-child{padding-bottom:.7rem !important;}
         [data-testid="stSidebar"] [data-testid="stImage"] img{max-width:154px !important;width:154px !important;margin:.08rem auto 0 !important;}
@@ -109,13 +109,13 @@ def _apply_styles() -> None:
         [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]{border-radius:12px !important;border-color:#E7EBEF !important;box-shadow:0 4px 14px rgba(30,52,69,.05) !important;}
         [data-testid="stMain"] [data-testid="stForm"]{border-radius:12px !important;padding:.78rem .82rem .72rem !important;box-shadow:0 4px 14px rgba(30,52,69,.04) !important;}
         .ln-page-kicker{padding:.18rem .48rem !important;font-size:.61rem !important;margin-bottom:.38rem !important;}
-        .ln-discovery-title{font-size:1.62rem !important;line-height:1.1 !important;margin:0 0 .18rem !important;letter-spacing:-.02em !important;}
+        .ln-discovery-title{font-size:1.68rem !important;line-height:1.1 !important;margin:0 0 .2rem !important;letter-spacing:-.022em !important;}
         .ln-discovery-sub{font-size:.88rem !important;line-height:1.42 !important;margin:0 0 .7rem !important;max-width:48rem !important;}
         .ln-home-count{font-size:1.34rem !important;margin:.08rem 0 .55rem !important;}
         .ln-home-value{padding:.66rem .78rem !important;margin:.4rem 0 .72rem !important;border-radius:11px !important;font-size:.84rem !important;line-height:1.42 !important;}
         .ln-home-section{font-size:.66rem !important;margin:.72rem 0 .36rem !important;}
-        .ln-shortcut-copy{min-height:1.72rem !important;font-size:.71rem !important;line-height:1.3 !important;margin:0 0 .35rem !important;}
-        [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-shortcut-copy){border-radius:11px !important;box-shadow:0 3px 10px rgba(30,52,69,.035) !important;}
+        .ln-shortcut-copy{min-height:1.72rem !important;font-size:.73rem !important;line-height:1.34 !important;margin:0 0 .38rem !important;}
+        [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-shortcut-copy){background:#FFFFFF !important;border-color:#E1E8EC !important;border-radius:11px !important;box-shadow:0 4px 12px rgba(30,52,69,.05) !important;}
         [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-shortcut-copy) > div{padding:.62rem .68rem !important;}
         [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-state-name){border:1px solid #E7EBEF !important;border-radius:12px !important;box-shadow:0 5px 15px rgba(30,52,69,.055) !important;}
         [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-state-name) > div{padding:.66rem .72rem .7rem !important;}
@@ -129,6 +129,10 @@ def _apply_styles() -> None:
         [data-testid="stMain"] .block-container .stButton button,[data-testid="stMain"] .block-container .stDownloadButton button{min-height:2.3rem !important;border-radius:9px !important;font-size:.82rem !important;}
         [data-testid="stMain"] .block-container div[class*="st-key-state_"] button{min-height:2.25rem !important;}
         [data-testid="stMain"] .block-container .stButton button[kind="primary"] p,[data-testid="stMain"] .block-container .stButton button[kind="primary"] span{color:#FFFFFF !important;}
+        [data-testid="stMain"] .block-container div[data-testid="stFormSubmitButton"] button{background:#0E8B82 !important;color:#FFFFFF !important;border:1px solid #0E8B82 !important;border-radius:9px !important;box-shadow:0 4px 10px rgba(14,139,130,.16) !important;font-weight:700 !important;}
+        [data-testid="stMain"] .block-container div[data-testid="stFormSubmitButton"] button *{color:#FFFFFF !important;}
+        [data-testid="stMain"] .block-container div[data-testid="stFormSubmitButton"] button:hover{background:#0A746D !important;border-color:#0A746D !important;}
+        [data-testid="stMain"] .block-container div[data-testid="stFormSubmitButton"] button:focus{box-shadow:0 0 0 3px rgba(14,139,130,.14) !important;}
         .ln-info-grid{gap:.48rem !important;margin:.14rem 0 .65rem !important;}
         .ln-info-box,.ln-meta-box{padding:.6rem .64rem !important;min-height:70px !important;border-radius:10px !important;}
         .ln-reference{font-size:1rem !important;margin:.35rem 0 .55rem !important;}
