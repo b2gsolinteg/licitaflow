@@ -40,7 +40,7 @@ global_css = r'''        /* RC31.16 competitor-inspired global shell */
         [data-testid="stMain"] h2{font-size:1.28rem !important;line-height:1.2 !important;color:#17212B !important;font-weight:730 !important;}
         [data-testid="stMain"] h3{font-size:1.02rem !important;color:#17212B !important;font-weight:700 !important;}
         [data-testid="stMain"] p,[data-testid="stMain"] label p,[data-testid="stMain"] .stCaption p{color:var(--ln16-muted) !important;}
-        [data-testid="stSidebar"]{background:#FFFFFF !important;border-right:1px solid #E2E8EE !important;box-shadow:2px 0 14px rgba(25,39,52,.035) !important;}
+        [data-testid="stSidebar"]{background:#FFFFFF !important;border-right:1px solid #E2E8EE !important;box-shadow:2px 0 14px rgba(25,39,52,.04) !important;}
         @media(min-width:901px){[data-testid="stSidebar"],[data-testid="stSidebar"] > div:first-child{width:240px !important;min-width:240px !important;max-width:240px !important;}}
         [data-testid="stSidebar"] > div:first-child{overflow-y:auto !important;overflow-x:hidden !important;max-height:100vh !important;padding-bottom:.75rem !important;}
         [data-testid="stSidebar"] [data-testid="stImage"] img{width:142px !important;max-width:142px !important;margin:.18rem auto .05rem !important;display:block !important;}
