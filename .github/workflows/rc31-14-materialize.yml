@@ -45,7 +45,7 @@ jobs:
       - name: Remove one-time materializer and commit real source
         run: |
           git rm .github/workflows/rc31-14-materialize.yml scripts/rc31_14_apply.py
-          git add src/config.py src/essential_discovery.py tests/test_rc31_13_premium_ui.py tests/test_rc31_9_simple_discovery.py tests/test_rc31_14_density.py
+          git add src/config.py src/essential_discovery.py tests/test_rc31_6_essential.py tests/test_rc31_9_simple_discovery.py tests/test_rc31_10_modern_filters.py tests/test_rc31_13_premium_ui.py tests/test_rc31_14_density.py
           git config user.name "b2gsolinteg"
           git config user.email "b2gsolinteg@gmail.com"
           git commit -m "feat: compactar interface Essential RC31.14"
