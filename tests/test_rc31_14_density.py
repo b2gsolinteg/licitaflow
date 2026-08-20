@@ -25,6 +25,10 @@ class Rc3114DensityContracts(unittest.TestCase):
         self.assertIn('min-height:2.25rem !important', src)
         self.assertIn('FLAGS_DIR / f"{state.lower()}.svg"', src)
 
+    def test_release_does_not_keep_one_time_materializer(self):
+        self.assertFalse((ROOT / "scripts" / "rc31_14_apply.py").exists())
+        self.assertFalse((ROOT / ".github" / "workflows" / "rc31-14-materialize.yml").exists())
+
 
 if __name__ == "__main__":
     unittest.main()
