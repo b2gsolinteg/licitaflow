@@ -12,3 +12,9 @@ Objetivo: elevar a percepção de qualidade do LicitaNexo sem copiar concorrente
 - Login recebe o mesmo acabamento visual: tipografia forte, card com profundidade e CTA principal teal.
 - Paginação troca glifos por Material Symbols.
 - Sem migration e sem alteração de estrutura de dados.
+
+## Fluxo de release
+
+A RC31.13 mantém o redesign diretamente nos arquivos-fonte versionados. GitHub Actions é usado somente para validação; não há workflow de produção que aplique patches ou gere código antes do deploy.
+
+A tentativa RC31.12 permanece apenas no histórico do GitHub para auditoria e não participa do fluxo de publicação desta release.
