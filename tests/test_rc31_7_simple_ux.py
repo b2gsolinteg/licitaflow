@@ -16,16 +16,16 @@ class SimpleUxContracts(unittest.TestCase):
     def test_state_buttons_are_readable(self):
         text = (ROOT / "src" / "essential_discovery.py").read_text(encoding="utf-8")
         self.assertIn('div[class*="st-key-state_"] button', text)
-        self.assertIn("background:#FFFFFF !important;color:#293746 !important", text)
+        self.assertIn("min-height:2.7rem !important", text)
         self.assertIn("STATE_NAMES", text)
         self.assertIn("editais abertos", text)
 
-    def test_sidebar_override_is_compact_and_selected_item_is_light(self):
+    def test_sidebar_premium_dimensions_and_selected_item_are_consistent(self):
         app = (ROOT / "app.py").read_text(encoding="utf-8")
-        self.assertIn("width:250px !important", app)
-        self.assertIn("min-height:2.25rem !important", app)
-        self.assertIn("background:#F0F4F5 !important", app)
-        self.assertIn("max-width:190px !important", app)
+        self.assertIn("width:276px !important", app)
+        self.assertIn("min-height:3.55rem !important", app)
+        self.assertIn("background:#F1F7F6 !important", app)
+        self.assertIn("max-width:188px !important", app)
 
 
 if __name__ == "__main__":
