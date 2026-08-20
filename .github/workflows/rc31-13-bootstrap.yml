@@ -35,16 +35,31 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          replacements = {
-              Path('app.py'): [('RC31.12', 'RC31.13')],
-              Path('src/essential_discovery.py'): [('RC31.12', 'RC31.13')],
-              Path('src/config.py'): [('RC31.12', 'RC31.13')],
-          }
-          for path, pairs in replacements.items():
-              text = path.read_text(encoding='utf-8')
-              for old, new in pairs:
-                  text = text.replace(old, new)
+          # Promote the materialized source from the abandoned RC31.12 label to
+          # the clean RC31.13 release. Keep the change scoped to runtime/tests/docs.
+          targets = [
+              Path('app.py'),
+              Path('src/essential_discovery.py'),
+              Path('src/config.py'),
+              *Path('tests').glob('test_rc31_*.py'),
+          ]
+          for path in targets:
+              if not path.exists():
+                  continue
+              text = path.read_text(encoding='utf-8').replace('RC31.12', 'RC31.13')
               path.write_text(text, encoding='utf-8')
+
+          old_test = Path('tests/test_rc31_12_premium_ui.py')
+          new_test = Path('tests/test_rc31_13_premium_ui.py')
+          if old_test.exists():
+              old_test.replace(new_test)
+              new_test.write_text(new_test.read_text(encoding='utf-8').replace('RC31.12', 'RC31.13'), encoding='utf-8')
+
+          old_doc = Path('docs/rc31-12-premium-ui.md')
+          new_doc = Path('docs/rc31-13-premium-ui.md')
+          if old_doc.exists():
+              old_doc.replace(new_doc)
+              new_doc.write_text(new_doc.read_text(encoding='utf-8').replace('RC31.12', 'RC31.13'), encoding='utf-8')
 
           app = Path('app.py').read_text(encoding='utf-8')
           discovery = Path('src/essential_discovery.py').read_text(encoding='utf-8')
@@ -52,22 +67,32 @@ jobs:
 
           required = {
               'app.py': [
-                  'brand-header-mark',
-                  'Decisão e inteligência em licitações',
-                  'Oportunidades prioritárias',
+                  '--ln-navy:#0B2944',
+                  'ln-login-eyebrow',
+                  'MINHA CONTA',
               ],
               'src/essential_discovery.py': [
-                  'premium-card-callout',
-                  'Por que vale olhar',
-                  'Oportunidades prioritárias',
+                  'ln-home-count',
+                  'Descubra o que o governo está comprando.',
+                  'font-family:Inter',
+              ],
+              'src/config.py': [
+                  'APP_VERSION = "1.0 Essential RC31.13"',
               ],
           }
-          contents = {'app.py': app, 'src/essential_discovery.py': discovery}
-          missing = [f'{path}: {marker}' for path, markers in required.items() for marker in markers if marker not in contents[path]]
+          contents = {
+              'app.py': app,
+              'src/essential_discovery.py': discovery,
+              'src/config.py': config,
+          }
+          missing = [
+              f'{path}: {marker}'
+              for path, markers in required.items()
+              for marker in markers
+              if marker not in contents[path]
+          ]
           if missing:
               raise SystemExit('RC31.13 materialization incomplete: ' + ', '.join(missing))
-          if 'RC31.12' in app or 'RC31.12' in discovery or 'RC31.12' in config:
-              raise SystemExit('RC31.12 version marker still present in runtime source')
           PY
 
       - name: Validate Python syntax
