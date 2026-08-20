@@ -1,0 +1,48 @@
+name: RC31.14 Materialize Density Polish
+
+on:
+  push:
+    branches:
+      - feat/rc31-14-density-polish
+    paths:
+      - scripts/rc31_14_apply.py
+      - .github/workflows/rc31-14-materialize.yml
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/rc31-14-density-polish
+          fetch-depth: 0
+
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install locked dependencies
+        run: pip install -r requirements.txt
+
+      - name: Apply RC31.14 density polish
+        run: python scripts/rc31_14_apply.py
+
+      - name: Compile application
+        run: python -m compileall -q app.py src tests
+
+      - name: Run SQLite unit suite before commit
+        run: pytest -q
+
+      - name: Remove one-time materializer and commit real source
+        run: |
+          git rm .github/workflows/rc31-14-materialize.yml scripts/rc31_14_apply.py
+          git add src/config.py src/essential_discovery.py tests/test_rc31_13_premium_ui.py tests/test_rc31_9_simple_discovery.py tests/test_rc31_14_density.py
+          git config user.name "b2gsolinteg"
+          git config user.email "b2gsolinteg@gmail.com"
+          git commit -m "feat: compactar interface Essential RC31.14"
+          git push origin HEAD:feat/rc31-14-density-polish
