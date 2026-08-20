@@ -18,10 +18,12 @@ class SimpleDiscoveryContracts(unittest.TestCase):
         self.assertIn("Início", app)
         self.assertIn("Por site de disputa", app)
 
-    def test_sidebar_menu_is_bold_but_main_content_stays_light(self):
+    def test_sidebar_and_main_content_preserve_premium_typographic_hierarchy(self):
+        app = (ROOT / "app.py").read_text(encoding="utf-8")
         src = (ROOT / "src" / "essential_discovery.py").read_text(encoding="utf-8")
-        self.assertIn('[data-testid="stSidebar"] .stButton button{font-weight:600 !important;}', src)
-        self.assertIn('[data-testid="stMain"] *{font-weight:400 !important;}', src)
+        self.assertIn("font-weight:650 !important", app)
+        self.assertIn('[data-testid="stMain"] h1,[data-testid="stMain"] h2,[data-testid="stMain"] h3{color:#172B3A !important;font-weight:700 !important', src)
+        self.assertNotIn('[data-testid="stMain"] *{font-weight:400 !important;}', src)
 
     def test_em_destaque_replaces_top50_label(self):
         app = (ROOT / "app.py").read_text(encoding="utf-8")
@@ -30,7 +32,7 @@ class SimpleDiscoveryContracts(unittest.TestCase):
 
     def test_version_is_rc319(self):
         cfg = (ROOT / "src" / "config.py").read_text(encoding="utf-8")
-        self.assertIn('APP_VERSION = "1.0 Essential RC31.11"', cfg)
+        self.assertIn('APP_VERSION = "1.0 Essential RC31.13"', cfg)
 
 
 if __name__ == "__main__":

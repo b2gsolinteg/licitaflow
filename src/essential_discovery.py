@@ -58,48 +58,55 @@ def _apply_styles() -> None:
     st.markdown(
         """
         <style>
-        .stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"]{background:#FFFFFF !important;}
-        [data-testid="stMain"] .block-container{max-width:1180px !important;padding-top:1.15rem !important;}
-        [data-testid="stMain"] *{font-weight:400 !important;}
-        [data-testid="stMain"] h1,[data-testid="stMain"] h2,[data-testid="stMain"] h3,
-        [data-testid="stMain"] p,[data-testid="stMain"] label p,[data-testid="stMain"] .stCaption p{color:#293746 !important;}
-        [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]{background:#FFFFFF !important;border:1px solid #E1E7EC !important;border-radius:14px !important;box-shadow:0 1px 2px rgba(25,39,52,.04) !important;}
-        .ln-discovery-title{font-size:1.95rem;font-weight:400 !important;letter-spacing:-.015em;margin:.05rem 0 .2rem;color:#293746}
-        .ln-discovery-sub{color:#667786;font-size:.96rem;margin:0 0 1rem}
-        .ln-modality-badge{display:inline-block;background:#F2F5F7;color:#526371;border:1px solid #DCE3E8;border-radius:999px;padding:.2rem .6rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.02em}
-        .ln-reference{font-size:1.05rem;color:#293746;margin:.42rem 0 .7rem}
-        .ln-info-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.55rem;margin:.15rem 0 .8rem}
-        .ln-info-box,.ln-meta-box{background:#FFFFFF;border:1px solid #DCE3E8;border-radius:12px;padding:.72rem .76rem;min-height:82px}
-        .ln-info-label,.ln-meta-label{font-size:.69rem;color:#71808D;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.30rem}
-        .ln-info-value,.ln-meta-value{color:#293746;font-size:.9rem;line-height:1.28}
-        .ln-info-extra,.ln-meta-help{color:#71808D;font-size:.70rem;margin-top:.32rem;line-height:1.32}
-        .ln-object-label{font-size:.72rem;color:#667786;text-transform:uppercase;margin:.3rem 0 .18rem}
-        .ln-meta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem;margin:.65rem 0}
-        .ln-meta-link{color:#3F7076;text-decoration:none;border-bottom:1px solid #B8CDD0}
-        .ln-items-box{background:#FFFFFF;border:1px solid #DCE3E8;border-radius:12px;padding:.72rem .78rem;margin:.65rem 0}
-        .ln-items-title{color:#293746;font-size:.88rem;margin-bottom:.4rem}
-        .ln-item-row{display:grid;grid-template-columns:48px minmax(0,1fr) 130px 132px;gap:.5rem;align-items:start;padding:.42rem .08rem;border-top:1px solid #EDF1F4;color:#344452}
-        .ln-item-row:first-of-type{border-top:0}
-        .ln-item-number,.ln-item-qty,.ln-item-price{font-size:.74rem;line-height:1.32;color:#667786}
-        .ln-item-desc{font-size:.78rem;line-height:1.32}
-        .ln-item-qty,.ln-item-price{text-align:right}
-        .ln-items-note{font-size:.72rem;color:#71808D;margin-top:.35rem}
-        [data-testid="stMain"] .stButton button,[data-testid="stMain"] .stDownloadButton button{background:#FFFFFF !important;color:#293746 !important;border:1px solid #D2DBE2 !important;border-radius:10px !important;box-shadow:none !important;}
-        [data-testid="stMain"] .stButton button[kind="primary"],[data-testid="stMain"] button[kind="primary"]{background:#EAF2F3 !important;color:#293746 !important;border:1px solid #ADC6C9 !important;box-shadow:none !important;}
-        [data-testid="stMain"] .stButton button:hover{background:#F4F7F8 !important;border-color:#AFC0C9 !important;}
-        [data-testid="stMain"] div[class*="st-key-state_"] button{min-height:2.8rem !important;font-size:.88rem !important;background:#FFFFFF !important;color:#293746 !important;border:1px solid #CCD6DD !important;}
-        .ln-state-card{min-height:160px;}
-.ln-home-count{font-size:1.55rem;color:#293746;margin:.25rem 0 .8rem;}
-.ln-home-value{background:#F7FAFA;border:1px solid #DDE7E8;border-radius:12px;padding:.8rem .9rem;margin:.65rem 0 1rem;color:#526371;font-size:.9rem;line-height:1.45;}
-.ln-home-section{font-size:.82rem;color:#667786;margin:.9rem 0 .45rem;}
-.ln-shortcut-copy{min-height:2.1rem;color:#71808D;font-size:.75rem;line-height:1.35;margin:0 0 .45rem;}
-[data-testid="stSidebar"] .stButton button{font-weight:600 !important;}
-        @media(max-width:900px){.ln-info-grid,.ln-meta-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ln-item-row{grid-template-columns:38px minmax(0,1fr)}.ln-item-qty,.ln-item-price{text-align:left;grid-column:2}}
+        [data-testid="stMain"]{background:#F4F7FA !important;}
+        [data-testid="stMain"] .block-container{max-width:1180px !important;padding-top:1.35rem !important;}
+        [data-testid="stMain"] *{font-family:Inter,"Segoe UI",Arial,sans-serif !important;}
+        [data-testid="stMain"] h1,[data-testid="stMain"] h2,[data-testid="stMain"] h3{color:#172B3A !important;font-weight:700 !important;letter-spacing:-.015em !important;}
+        [data-testid="stMain"] p,[data-testid="stMain"] label p,[data-testid="stMain"] .stCaption p{color:#526675 !important;}
+        [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]{background:#FFFFFF !important;border:1px solid #DEE6EC !important;border-radius:16px !important;box-shadow:0 5px 18px rgba(30,52,69,.055) !important;}
+        [data-testid="stMain"] [data-testid="stForm"]{background:#FFFFFF !important;border:1px solid #DEE6EC !important;border-radius:16px !important;padding:1rem 1rem .9rem !important;box-shadow:0 5px 18px rgba(30,52,69,.045) !important;}
+        .ln-page-kicker{display:inline-flex;align-items:center;background:#E4F4EE;color:#23715D;border:1px solid #CDE8DE;border-radius:999px;padding:.25rem .58rem;font-size:.68rem;font-weight:750 !important;letter-spacing:.07em;text-transform:uppercase;margin:0 0 .55rem;}
+        .ln-discovery-title{font-size:2.05rem;font-weight:750 !important;letter-spacing:-.025em;margin:.02rem 0 .28rem;color:#172B3A;line-height:1.12}
+        .ln-discovery-sub{color:#667786;font-size:.96rem;margin:0 0 1.15rem;line-height:1.5;max-width:58rem}
+        .ln-modality-badge{display:inline-block;background:#EDF3F8;color:#4D687B;border:1px solid #D9E4EC;border-radius:999px;padding:.24rem .62rem;font-size:.69rem;font-weight:650 !important;text-transform:uppercase;letter-spacing:.045em}
+        .ln-reference{font-size:1.12rem;color:#172B3A;margin:.48rem 0 .75rem;font-weight:700 !important;line-height:1.32}
+        .ln-info-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.62rem;margin:.2rem 0 .9rem}
+        .ln-info-box,.ln-meta-box{background:#F8FAFB;border:1px solid #E3E9EE;border-radius:12px;padding:.75rem .8rem;min-height:82px}
+        .ln-info-label,.ln-meta-label{font-size:.67rem;color:#7B8B98;text-transform:uppercase;letter-spacing:.055em;margin-bottom:.32rem;font-weight:700 !important}
+        .ln-info-value,.ln-meta-value{color:#263947;font-size:.9rem;line-height:1.3;font-weight:600 !important}
+        .ln-info-extra,.ln-meta-help{color:#71808D;font-size:.70rem;margin-top:.34rem;line-height:1.32}
+        .ln-object-label{font-size:.69rem;color:#6F808E;text-transform:uppercase;letter-spacing:.055em;margin:.38rem 0 .2rem;font-weight:700 !important}
+        .ln-meta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.62rem;margin:.7rem 0}
+        .ln-meta-link{color:#0D6F69;text-decoration:none;border-bottom:1px solid #B4D3D0;font-weight:650 !important}
+        .ln-items-box{background:#F8FAFB;border:1px solid #E1E8ED;border-radius:13px;padding:.78rem .82rem;margin:.72rem 0}
+        .ln-items-title{color:#172B3A;font-size:.88rem;margin-bottom:.44rem;font-weight:700 !important}
+        .ln-item-row{display:grid;grid-template-columns:48px minmax(0,1fr) 130px 132px;gap:.5rem;align-items:start;padding:.45rem .08rem;border-top:1px solid #E8EDF1;color:#344452}
+        .ln-item-row:first-of-type{border-top:0}.ln-item-number,.ln-item-qty,.ln-item-price{font-size:.74rem;line-height:1.32;color:#667786}.ln-item-desc{font-size:.79rem;line-height:1.34;color:#293C49}.ln-item-qty,.ln-item-price{text-align:right}.ln-items-note{font-size:.72rem;color:#71808D;margin-top:.35rem}
+        [data-testid="stMain"] .stButton button,[data-testid="stMain"] .stDownloadButton button{background:#FFFFFF !important;color:#263947 !important;border:1px solid #CBD7DF !important;border-radius:11px !important;box-shadow:none !important;font-weight:600 !important;}
+        [data-testid="stMain"] .stButton button[kind="primary"],[data-testid="stMain"] button[kind="primary"]{background:#0E7C75 !important;color:#FFFFFF !important;border:1px solid #0E7C75 !important;box-shadow:0 4px 10px rgba(14,124,117,.12) !important;}
+        [data-testid="stMain"] .stButton button:hover{border-color:#9FB3C0 !important;}
+        [data-testid="stMain"] .stButton button[kind="primary"]:hover{background:#0A655F !important;border-color:#0A655F !important;}
+        .ln-home-count{font-size:1.52rem;color:#0B4160;margin:.2rem 0 .85rem;font-weight:700 !important;}
+        .ln-home-value{background:#FFFFFF;border:1px solid #DCE7EA;border-left:4px solid #55A89F;border-radius:14px;padding:.85rem 1rem;margin:.65rem 0 1rem;color:#4F6573;font-size:.9rem;line-height:1.48;box-shadow:0 4px 14px rgba(30,52,69,.035)}
+        .ln-home-section{font-size:.72rem;color:#7A8A97;margin:1rem 0 .5rem;font-weight:750 !important;letter-spacing:.08em;text-transform:uppercase}
+        .ln-shortcut-copy{min-height:2.25rem;color:#71808D;font-size:.76rem;line-height:1.38;margin:.05rem 0 .55rem;}
+        .ln-state-name{font-size:1.02rem;color:#172B3A;font-weight:700 !important;margin:.42rem 0 0}.ln-state-code{font-size:.78rem;color:#7A8B98;margin-left:.25rem;font-weight:600 !important}.ln-state-count{font-size:1.85rem;color:#0B4B76;font-weight:750 !important;line-height:1.05;margin:.9rem 0 .05rem}.ln-state-label{font-size:.78rem;color:#748592;margin-bottom:.65rem}.ln-state-card-note{font-size:.70rem;color:#8A99A5;margin-top:.2rem}.ln-state-grid-title{font-size:.73rem;color:#788995;font-weight:750 !important;letter-spacing:.08em;text-transform:uppercase;margin:.95rem 0 .48rem}
+        .ln-portal-name,.ln-modality-name{font-size:1rem;color:#172B3A;font-weight:700 !important;margin-bottom:.2rem}.ln-card-count{font-size:1.55rem;color:#0B4B76;font-weight:750 !important;margin:.55rem 0 .08rem;line-height:1}.ln-card-caption{font-size:.76rem;color:#748592;margin-bottom:.65rem}
+        [data-testid="stMain"] div[class*="st-key-state_"] button{min-height:2.7rem !important;}
+        @media(max-width:900px){.ln-info-grid,.ln-meta-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ln-item-row{grid-template-columns:38px minmax(0,1fr)}.ln-item-qty,.ln-item-price{text-align:left;grid-column:2}.ln-discovery-title{font-size:1.72rem}}
         </style>
         """,
         unsafe_allow_html=True,
     )
 
+
+def _page_header(kicker: str, title: str, subtitle: str) -> None:
+    st.markdown(
+        f'<div class="ln-page-kicker">{escape(kicker)}</div>'
+        f'<div class="ln-discovery-title">{escape(title)}</div>'
+        f'<div class="ln-discovery-sub">{escape(subtitle)}</div>',
+        unsafe_allow_html=True,
+    )
 
 @st.cache_data(ttl=600, show_spinner=False)
 def _cached_item_summaries(control_numbers: tuple[str, ...]) -> dict[str, dict]:
@@ -475,11 +482,11 @@ def _render_results(db, user: dict, items: list[dict], *, page_key: str, per_pag
 
     if total_pages > 1:
         n1, n2, n3 = st.columns([1, 1, 1])
-        if n1.button("◀ Anterior", disabled=current <= 1, key=f"{page_key}_prev", width="stretch"):
+        if n1.button("Anterior", icon=":material/chevron_left:", disabled=current <= 1, key=f"{page_key}_prev", width="stretch"):
             st.session_state[page_key] = current - 1
             st.rerun()
         n2.markdown(f"<div style='text-align:center;padding:.7rem;color:#52657C'>Página {current} de {total_pages}</div>", unsafe_allow_html=True)
-        if n3.button("Próxima ▶", disabled=current >= total_pages, key=f"{page_key}_next", width="stretch"):
+        if n3.button("Próxima", icon=":material/chevron_right:", disabled=current >= total_pages, key=f"{page_key}_next", width="stretch"):
             st.session_state[page_key] = current + 1
             st.rerun()
 
@@ -489,14 +496,14 @@ def home_page(db, user: dict) -> None:
     counts = db.global_catalog_group_counts("state", closing_from=date.today().isoformat())
     open_total = sum(int(row.get("total") or 0) for row in counts)
 
-    st.markdown('<div class="ln-discovery-title">Descubra o que o governo está comprando.</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="ln-discovery-sub">Você não precisa adivinhar o que vender. Pesquise editais de todo o Brasil e veja os itens da compra já na tela.</div>',
-        unsafe_allow_html=True,
+    _page_header(
+        "COMECE POR AQUI",
+        "Descubra o que o governo está comprando.",
+        "Você não precisa adivinhar o que vender. Pesquise editais de todo o Brasil e veja os itens da compra já na tela.",
     )
     st.markdown(f'<div class="ln-home-count">{open_total:,} editais abertos para participação</div>'.replace(",", "."), unsafe_allow_html=True)
     st.markdown(
-        '<div class="ln-home-value">No LicitaNexo, o edital já aparece com os itens da compra. Você entende a oportunidade antes de perder tempo abrindo documento por documento.</div>',
+        '<div class="ln-home-value"><strong>O diferencial do LicitaNexo:</strong> o edital já aparece com os itens da compra. Você entende a oportunidade antes de perder tempo abrindo documento por documento.</div>',
         unsafe_allow_html=True,
     )
 
@@ -508,7 +515,7 @@ def home_page(db, user: dict) -> None:
             st.session_state["_navigation_request"] = "Buscar licitações"
             st.rerun()
 
-    st.markdown('<div class="ln-home-section">Ou comece explorando:</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ln-home-section">Explore de outras formas</div>', unsafe_allow_html=True)
     shortcuts = [
         ("Por Estado", "Estados", "Veja os editais abertos em cada UF.", ":material/map:"),
         ("Por Cidade", "Cidades", "Procure oportunidades em uma cidade específica.", ":material/location_on:"),
@@ -525,37 +532,36 @@ def home_page(db, user: dict) -> None:
 
 def portal_page(db, user: dict) -> None:
     _apply_styles()
-    st.markdown('<div class="ln-discovery-title">Por site de disputa</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">Escolha onde deseja participar. Se não tiver preferência, use Todos os sites.</div>', unsafe_allow_html=True)
+    _page_header("EXPLORAR LICITAÇÕES", "Por site de disputa", "Escolha onde deseja participar. Se não tiver preferência, consulte todos os sites.")
 
-    if st.button("Todos os sites", key="portal_all", type="primary", width="stretch"):
+    if st.button("Ver todos os sites", icon=":material/public:", key="portal_all", type="primary", width="stretch"):
         st.session_state["essential_search_criteria"] = _criteria(portal="Todos os sites")
         st.session_state["essential_search_page"] = 1
         st.session_state["_navigation_request"] = "Buscar licitações"
         st.rerun()
 
+    st.markdown('<div class="ln-state-grid-title">Portais disponíveis</div>', unsafe_allow_html=True)
     portals = list(PORTAL_ACCESS.keys())
-    for start in range(0, len(portals), 3):
+    for start_index in range(0, len(portals), 3):
         cols = st.columns(3)
-        for col, portal in zip(cols, portals[start:start + 3]):
-            access = portal_access_info(portal)
+        for col, portal_name in zip(cols, portals[start_index:start_index + 3]):
+            access = portal_access_info(portal_name)
             with col.container(border=True):
-                st.write(portal)
+                st.markdown(f'<div class="ln-portal-name">{escape(portal_name)}</div>', unsafe_allow_html=True)
                 st.caption(f"Custo do acesso: {access['label']}")
-                if st.button("Ver editais", key=f"portal_{portal}", width="stretch"):
-                    st.session_state["essential_search_criteria"] = _criteria(portal=portal)
+                st.caption(access["detail"])
+                if st.button("Ver oportunidades", icon=":material/arrow_forward:", key=f"portal_{portal_name}", width="stretch"):
+                    st.session_state["essential_search_criteria"] = _criteria(portal=portal_name)
                     st.session_state["essential_search_page"] = 1
                     st.session_state["_navigation_request"] = "Buscar licitações"
                     st.rerun()
-
 
 def search_page(db, user: dict, usage=None) -> None:
     _apply_styles()
     company_id = user["company_id"]
     defaults = _profile_defaults(db, company_id)
     current = st.session_state.get("essential_search_criteria") or {}
-    st.markdown('<div class="ln-discovery-title">Buscar licitações</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">Escolha só o que fizer sentido. Campos vazios deixam a busca mais ampla.</div>', unsafe_allow_html=True)
+    _page_header("ENCONTRE OPORTUNIDADES", "Buscar licitações", "Escolha só o que fizer sentido. Campos vazios deixam a busca mais ampla.")
     with st.form("essential_quick_search", clear_on_submit=False, enter_to_submit=False):
         keyword = st.text_input("O que você procura?", value=str(current.get("keyword") if "keyword" in current else defaults["keyword"]), placeholder="Ex.: papel A4, pneus, medicamentos, manutenção...")
         g1, g2, g3 = st.columns([1, 1.2, 1.2])
@@ -601,38 +607,44 @@ def search_page(db, user: dict, usage=None) -> None:
 
 def state_page(db, user: dict) -> None:
     _apply_styles()
-    st.markdown('<div class="ln-discovery-title">Por Estado</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">Escolha um estado para ver os editais abertos para participação.</div>', unsafe_allow_html=True)
     counts = db.global_catalog_group_counts("state", closing_from=date.today().isoformat())
-    if not counts:
-        st.info("Ainda não há editais abertos por estado.")
-        return
-    for start in range(0, len(counts), 4):
-        cols = st.columns(4)
-        for col, row in zip(cols, counts[start:start + 4]):
-            state = str(row.get("label") or "").upper()
-            total = int(row.get("total") or 0)
+    count_by_state = {str(row.get("label") or "").upper(): int(row.get("total") or 0) for row in counts}
+    open_total = sum(count_by_state.values())
+    _page_header(
+        "EXPLORAR LICITAÇÕES",
+        "Por Estado",
+        f"Escolha uma UF para ver oportunidades abertas. Hoje o catálogo reúne {open_total:,} editais ativos no Brasil.".replace(",", "."),
+    )
+    st.markdown('<div class="ln-state-grid-title">Estados do Brasil</div>', unsafe_allow_html=True)
+    for start_index in range(0, len(BRAZIL_STATES), 3):
+        cols = st.columns(3)
+        for col, state in zip(cols, BRAZIL_STATES[start_index:start_index + 3]):
+            total = count_by_state.get(state, 0)
             with col.container(border=True):
                 flag = FLAGS_DIR / f"{state.lower()}.svg"
                 if flag.exists():
-                    st.image(str(flag), width=72)
-                st.write(f"{STATE_NAMES.get(state, state)} ({state})")
-                st.caption(f"{total:,} editais abertos para participação".replace(",", "."))
-                if st.button("Ver editais", key=f"state_{state}", width="stretch"):
+                    st.image(str(flag), width=68)
+                st.markdown(
+                    f'<div class="ln-state-name">{escape(STATE_NAMES.get(state, state))}<span class="ln-state-code">({escape(state)})</span></div>'
+                    f'<div class="ln-state-count">{total:,}</div><div class="ln-state-label">editais abertos</div>'.replace(",", "."),
+                    unsafe_allow_html=True,
+                )
+                if st.button(
+                    "Ver oportunidades", icon=":material/arrow_forward:", key=f"state_{state}",
+                    type="primary", width="stretch", disabled=total <= 0,
+                ):
                     st.session_state["essential_search_criteria"] = _criteria(states=[state])
                     st.session_state["essential_search_page"] = 1
                     st.session_state["_navigation_request"] = "Buscar licitações"
                     st.rerun()
 
-
 def city_page(db, user: dict) -> None:
     _apply_styles()
-    st.markdown('<div class="ln-discovery-title">Por Cidade</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">Digite a cidade para ver os editais abertos para participação.</div>', unsafe_allow_html=True)
+    _page_header("EXPLORAR LICITAÇÕES", "Por Cidade", "Digite uma cidade e, se quiser, refine pelo Estado.")
     with st.form("essential_city_search", clear_on_submit=False, enter_to_submit=False):
         city = st.text_input("Nome da cidade", placeholder="Ex.: Londrina")
         state = st.selectbox("Estado (opcional)", ["Todos", *BRAZIL_STATES])
-        if st.form_submit_button("Buscar licitações", type="primary", width="stretch"):
+        if st.form_submit_button("Buscar oportunidades", type="primary", icon=":material/search:", width="stretch"):
             if not city.strip():
                 st.warning("Digite o nome da cidade.")
             else:
@@ -643,34 +655,34 @@ def city_page(db, user: dict) -> None:
                 st.session_state["_navigation_request"] = "Buscar licitações"
                 st.rerun()
 
-
 def modality_page(db, user: dict) -> None:
     _apply_styles()
-    st.markdown('<div class="ln-discovery-title">Por Modalidade</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">Escolha a modalidade para ver os editais abertos para participação.</div>', unsafe_allow_html=True)
+    _page_header("EXPLORAR LICITAÇÕES", "Por Modalidade", "Escolha a modalidade para ver os editais abertos para participação.")
     counts = db.global_catalog_group_counts("modality", closing_from=date.today().isoformat())
     if not counts:
-        st.info("Nenhum edital aberto foi encontrado por modalidade agora.")
+        st.info("Ainda não há modalidades disponíveis no catálogo.")
         return
-    for start in range(0, len(counts), 3):
+    st.markdown('<div class="ln-state-grid-title">Modalidades disponíveis</div>', unsafe_allow_html=True)
+    for start_index in range(0, len(counts), 3):
         cols = st.columns(3)
-        for col, row in zip(cols, counts[start:start + 3]):
-            label = str(row.get("label") or "Modalidade")
+        for col, row in zip(cols, counts[start_index:start_index + 3]):
+            label = str(row.get("label") or "Não informada")
             total = int(row.get("total") or 0)
             with col.container(border=True):
-                st.markdown(f"**{label}**")
-                st.caption(f"{total:,} editais abertos para participação".replace(",", "."))
-                if st.button("Ver editais", key=f"modality_{label}", width="stretch"):
+                st.markdown(
+                    f'<div class="ln-modality-name">{escape(label)}</div>'
+                    f'<div class="ln-card-count">{total:,}</div><div class="ln-card-caption">editais abertos</div>'.replace(",", "."),
+                    unsafe_allow_html=True,
+                )
+                if st.button("Ver oportunidades", icon=":material/arrow_forward:", key=f"modality_{label}", width="stretch"):
                     st.session_state["essential_search_criteria"] = _criteria(modalities=[label])
                     st.session_state["essential_search_page"] = 1
                     st.session_state["_navigation_request"] = "Buscar licitações"
                     st.rerun()
 
-
 def advanced_search_page(db, user: dict) -> None:
     _apply_styles()
-    st.markdown('<div class="ln-discovery-title">Filtro avançado</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">Combine os filtros que quiser. Nenhum campo é obrigatório.</div>', unsafe_allow_html=True)
+    _page_header("REFINE SUA BUSCA", "Filtro avançado", "Combine os filtros que quiser. Nenhum campo é obrigatório.")
     with st.form("essential_advanced_search", clear_on_submit=False, enter_to_submit=False):
         r1, r2 = st.columns(2)
         region = r1.selectbox("Região", REGION_OPTIONS)
@@ -704,8 +716,7 @@ def advanced_search_page(db, user: dict) -> None:
 
 def top50_page(db, user: dict) -> None:
     _apply_styles()
-    st.markdown('<div class="ln-discovery-title">Em destaque</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">50 editais recentes para você explorar sem precisar definir uma busca.</div>', unsafe_allow_html=True)
+    _page_header("DESCUBRA OPORTUNIDADES", "Em destaque", "50 editais recentes para você explorar sem precisar definir uma busca.")
     items = db.list_global_catalog(
         closing_from=date.today().isoformat(), limit=50, order_by="recent"
     )
@@ -715,8 +726,7 @@ def top50_page(db, user: dict) -> None:
 def my_list_page(db, user: dict) -> None:
     _apply_styles()
     company_id = user["company_id"]
-    st.markdown('<div class="ln-discovery-title">Minha lista</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">Decida apenas se vai participar, não vai participar ou quer descartar o edital.</div>', unsafe_allow_html=True)
+    _page_header("ORGANIZE SUAS OPORTUNIDADES", "Minha lista", "Decida apenas se vai participar, não vai participar ou quer descartar o edital.")
     rows = [
         row for row in db.pipeline_summaries(company_id, "")
         if str(row.get("stage") or "") in {"Nova oportunidade", "Decisão"}
@@ -804,8 +814,7 @@ def preferences_page(db, user: dict) -> None:
     _apply_styles()
     company_id = user["company_id"]
     defaults = _profile_defaults(db, company_id)
-    st.markdown('<div class="ln-discovery-title">Preferências</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">Se quiser, salve o que costuma procurar. Isso ajuda o Radar, mas não é obrigatório.</div>', unsafe_allow_html=True)
+    _page_header("PERSONALIZE O LICITANEXO", "Preferências", "Se quiser, salve o que costuma procurar. Isso ajuda o Radar, mas não é obrigatório.")
     with st.form("essential_preferences_simple", clear_on_submit=False, enter_to_submit=False):
         keyword = st.text_input(
             "O que costuma procurar?",
@@ -828,8 +837,7 @@ def preferences_page(db, user: dict) -> None:
 def radar_page(db, user: dict) -> None:
     _apply_styles()
     defaults = _profile_defaults(db, user["company_id"])
-    st.markdown('<div class="ln-discovery-title">Radar de licitações</div>', unsafe_allow_html=True)
-    st.markdown('<div class="ln-discovery-sub">Veja editais novos relacionados ao que você escolheu acompanhar.</div>', unsafe_allow_html=True)
+    _page_header("ACOMPANHE O QUE IMPORTA", "Radar de licitações", "Veja editais novos relacionados ao que você escolheu acompanhar.")
     if not (defaults["keyword"].strip() or defaults["states"] or defaults["modalities"]):
         st.info("Você ainda não escolheu o que quer acompanhar. Continue usando a busca normalmente ou configure o Radar quando quiser.")
         if st.button("Configurar preferências", type="primary", width="stretch"):
