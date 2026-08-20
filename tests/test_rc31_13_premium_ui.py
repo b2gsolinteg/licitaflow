@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class PremiumUiContracts(unittest.TestCase):
     def test_version(self):
         cfg = (ROOT / "src" / "config.py").read_text(encoding="utf-8")
-        self.assertIn('APP_VERSION = "1.0 Essential RC31.15"', cfg)
+        self.assertIn('APP_VERSION = "1.0 Essential RC31.16"', cfg)
 
     def test_sidebar_has_large_pastel_icon_tiles_and_sections(self):
         app = (ROOT / "app.py").read_text(encoding="utf-8")
@@ -36,7 +36,8 @@ class PremiumUiContracts(unittest.TestCase):
         src = (ROOT / "src" / "essential_discovery.py").read_text(encoding="utf-8")
         self.assertIn('FLAGS_DIR / f"{state.lower()}.svg"', src)
         self.assertIn('class="ln-state-count"', src)
-        self.assertIn('"Ver oportunidades", icon=":material/arrow_forward:"', src)
+        self.assertIn('"Ver licitações"', src)
+        self.assertNotIn('"Ver oportunidades"', src)
         self.assertIn('for start_index in range(0, len(BRAZIL_STATES), 3):', src)
 
     def test_page_kickers_create_hierarchy(self):

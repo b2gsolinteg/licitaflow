@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class Rc3115VisualBalanceContracts(unittest.TestCase):
     def test_version_is_rc3115(self):
         cfg = (ROOT / "src" / "config.py").read_text(encoding="utf-8")
-        self.assertIn('APP_VERSION = "1.0 Essential RC31.15"', cfg)
+        self.assertIn('APP_VERSION = "1.0 Essential RC31.16"', cfg)
 
     def test_visual_balance_reduces_empty_chrome_and_recovers_width(self):
         src = (ROOT / "src" / "essential_discovery.py").read_text(encoding="utf-8")

@@ -138,6 +138,37 @@ def _apply_styles() -> None:
         .ln-reference{font-size:1rem !important;margin:.35rem 0 .55rem !important;}
         @media(max-width:900px){[data-testid="stSidebar"],[data-testid="stSidebar"] > div:first-child{width:230px !important;min-width:230px !important;max-width:230px !important;}[data-testid="stMain"] .block-container{max-width:100% !important;padding:.68rem .72rem 1.4rem !important;}.ln-discovery-title{font-size:1.45rem !important;}}
         @media(max-width:900px){.ln-info-grid,.ln-meta-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ln-item-row{grid-template-columns:38px minmax(0,1fr)}.ln-item-qty,.ln-item-price{text-align:left;grid-column:2}.ln-discovery-title{font-size:1.72rem}}
+        /* RC31.16 discovery grid */
+        header[data-testid="stHeader"]{height:48px !important;min-height:48px !important;background:#0B1F38 !important;border-bottom:0 !important;box-shadow:0 2px 7px rgba(11,31,56,.10) !important;}
+        [data-testid="stMain"]{background:#F1F4F8 !important;}
+        [data-testid="stMain"] .block-container{max-width:1040px !important;padding-top:1rem !important;padding-bottom:2rem !important;}
+        .ln-page-kicker{display:inline-flex !important;background:#E4F7E9 !important;color:#20844E !important;border:1px solid #CDEBD5 !important;border-radius:999px !important;padding:.18rem .48rem !important;font-size:.59rem !important;font-weight:780 !important;letter-spacing:.06em !important;margin-bottom:.38rem !important;}
+        .ln-discovery-title{font-size:1.58rem !important;line-height:1.12 !important;margin:0 0 .22rem !important;color:#111C28 !important;font-weight:760 !important;letter-spacing:-.022em !important;}
+        .ln-discovery-sub{font-size:.84rem !important;line-height:1.42 !important;color:#627286 !important;margin:0 0 .75rem !important;max-width:52rem !important;}
+        [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]{background:#FFFFFF !important;border:1px solid #E1E7EE !important;border-radius:12px !important;box-shadow:0 3px 10px rgba(25,42,62,.055) !important;}
+        [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"] > div{padding:.7rem .75rem !important;}
+        [data-testid="stMain"] [data-testid="stForm"]{background:#FFFFFF !important;border:1px solid #E1E7EE !important;border-radius:12px !important;padding:.8rem .85rem .75rem !important;box-shadow:0 3px 10px rgba(25,42,62,.04) !important;}
+        .ln-home-count{font-size:1.42rem !important;color:#0B3A72 !important;margin:.12rem 0 .6rem !important;font-weight:760 !important;}
+        .ln-home-value{background:#FFFFFF !important;border:1px solid #E1E7EE !important;border-left:3px solid #1A9A89 !important;border-radius:10px !important;padding:.7rem .8rem !important;margin:.48rem 0 .75rem !important;color:#566679 !important;font-size:.82rem !important;line-height:1.42 !important;box-shadow:0 2px 7px rgba(25,42,62,.035) !important;}
+        .ln-home-section,.ln-state-grid-title{font-size:.62rem !important;color:#7C8A99 !important;font-weight:780 !important;letter-spacing:.08em !important;text-transform:uppercase !important;margin:.72rem 0 .38rem !important;}
+        .ln-shortcut-copy{min-height:1.62rem !important;font-size:.71rem !important;line-height:1.3 !important;color:#6F7E8E !important;margin:0 0 .36rem !important;}
+        .ln-state-name,.ln-modality-name,.ln-portal-name{font-size:.91rem !important;line-height:1.2 !important;color:#111C28 !important;font-weight:760 !important;margin:.04rem 0 .12rem !important;}
+        .ln-state-code{font-size:.72rem !important;color:#738295 !important;font-weight:650 !important;}
+        .ln-state-count,.ln-card-count{font-size:1.55rem !important;color:#0B3A72 !important;font-weight:780 !important;line-height:1 !important;margin:.58rem 0 .08rem !important;}
+        .ln-state-label,.ln-card-caption{font-size:.72rem !important;color:#718095 !important;margin-bottom:.55rem !important;}
+        [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-state-name),[data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-modality-name),[data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-portal-name){border-radius:11px !important;box-shadow:0 3px 9px rgba(21,39,61,.06) !important;}
+        [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-state-name) [data-testid="stImage"] img{width:34px !important;max-width:34px !important;}
+        [data-testid="stMain"] div[class*="st-key-state_"] button,[data-testid="stMain"] div[class*="st-key-modality_"] button,[data-testid="stMain"] div[class*="st-key-portal_"] button{min-height:2.28rem !important;background:#2563EB !important;color:#FFFFFF !important;border:1px solid #2563EB !important;border-radius:8px !important;box-shadow:0 2px 5px rgba(37,99,235,.18) !important;font-size:.79rem !important;font-weight:720 !important;}
+        [data-testid="stMain"] div[class*="st-key-state_"] button *,[data-testid="stMain"] div[class*="st-key-modality_"] button *,[data-testid="stMain"] div[class*="st-key-portal_"] button *{color:#FFFFFF !important;}
+        [data-testid="stMain"] div[class*="st-key-state_"] button:hover,[data-testid="stMain"] div[class*="st-key-modality_"] button:hover,[data-testid="stMain"] div[class*="st-key-portal_"] button:hover{background:#1D4ED8 !important;border-color:#1D4ED8 !important;}
+        .ln-reference{font-size:1rem !important;color:#17212B !important;margin:.34rem 0 .54rem !important;font-weight:720 !important;}
+        .ln-info-grid{gap:.48rem !important;margin:.14rem 0 .65rem !important;}
+        .ln-info-box,.ln-meta-box{background:#F8FAFC !important;border:1px solid #E3E9F0 !important;border-radius:9px !important;padding:.58rem .62rem !important;min-height:68px !important;}
+        .ln-info-label,.ln-meta-label{font-size:.62rem !important;color:#7B8998 !important;}
+        .ln-info-value,.ln-meta-value{font-size:.82rem !important;color:#263544 !important;}
+        .ln-items-box{background:#F8FAFC !important;border-color:#E3E9F0 !important;border-radius:9px !important;padding:.65rem .7rem !important;}
+        @media(max-width:900px){[data-testid="stMain"] .block-container{max-width:100% !important;padding:.78rem .7rem 1.5rem !important;}.ln-discovery-title{font-size:1.42rem !important;}.ln-info-grid,.ln-meta-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}}
+
         </style>
         """,
         unsafe_allow_html=True,
@@ -594,7 +625,7 @@ def portal_page(db, user: dict) -> None:
                 st.markdown(f'<div class="ln-portal-name">{escape(portal_name)}</div>', unsafe_allow_html=True)
                 st.caption(f"Custo do acesso: {access['label']}")
                 st.caption(access["detail"])
-                if st.button("Ver oportunidades", icon=":material/arrow_forward:", key=f"portal_{portal_name}", width="stretch"):
+                if st.button("Ver licitações", key=f"portal_{portal_name}", width="stretch"):
                     st.session_state["essential_search_criteria"] = _criteria(portal=portal_name)
                     st.session_state["essential_search_page"] = 1
                     st.session_state["_navigation_request"] = "Buscar licitações"
@@ -674,7 +705,7 @@ def state_page(db, user: dict) -> None:
                     unsafe_allow_html=True,
                 )
                 if st.button(
-                    "Ver oportunidades", icon=":material/arrow_forward:", key=f"state_{state}",
+                    "Ver licitações", key=f"state_{state}",
                     type="primary", width="stretch", disabled=total <= 0,
                 ):
                     st.session_state["essential_search_criteria"] = _criteria(states=[state])
@@ -718,7 +749,7 @@ def modality_page(db, user: dict) -> None:
                     f'<div class="ln-card-count">{total:,}</div><div class="ln-card-caption">editais abertos</div>'.replace(",", "."),
                     unsafe_allow_html=True,
                 )
-                if st.button("Ver oportunidades", icon=":material/arrow_forward:", key=f"modality_{label}", width="stretch"):
+                if st.button("Ver licitações", key=f"modality_{label}", width="stretch"):
                     st.session_state["essential_search_criteria"] = _criteria(modalities=[label])
                     st.session_state["essential_search_page"] = 1
                     st.session_state["_navigation_request"] = "Buscar licitações"
