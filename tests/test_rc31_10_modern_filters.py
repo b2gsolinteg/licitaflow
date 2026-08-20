@@ -11,10 +11,10 @@ class ModernFilters(unittest.TestCase):
         self.assertIn('srp=_srp_query_value', s)
     def test_modern_nav(self):
         a=(ROOT/"app.py").read_text(encoding="utf-8")
-        self.assertIn('"Minha lista": ":material/bookmarks:"', a)
+        self.assertIn('"Minha lista": ":material/bookmark:"', a)
         self.assertIn('"Buscar licitações": ":material/search:"', a)
         self.assertNotIn('"❤️ Minha lista"', a)
     def test_version(self):
         c=(ROOT/"src"/"config.py").read_text(encoding="utf-8")
-        self.assertIn('APP_VERSION = "1.0 Essential RC31.11"', c)
+        self.assertIn('APP_VERSION = "1.0 Essential RC31.13"', c)
 if __name__ == "__main__": unittest.main()
