@@ -31,8 +31,9 @@ class ValueLoginHomeContracts(unittest.TestCase):
     def test_sidebar_keeps_professional_icons_with_muted_palette(self):
         app = (ROOT / "app.py").read_text(encoding="utf-8")
         self.assertIn('icon=nav_icons.get(option)', app)
-        self.assertIn('background:#E9F3EE !important', app)
-        self.assertIn('background:#F0ECF4 !important', app)
+        self.assertIn('background:#E4F4EE !important', app)
+        self.assertIn('background:#EEE9F8 !important', app)
+        self.assertIn('background:#F1F7F6 !important', app)
 
 
 if __name__ == "__main__":
