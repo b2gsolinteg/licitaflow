@@ -39,6 +39,10 @@ class Rc3116CompetitorLayoutContracts(unittest.TestCase):
         self.assertIn('st.session_state["essential_search_criteria"]', src)
         self.assertIn('st.session_state["_navigation_request"] = "Buscar licitações"', src)
 
+    def test_release_is_materialized_without_one_time_generator(self):
+        self.assertFalse((ROOT / "scripts" / "rc31_16_apply.py").exists())
+        self.assertFalse((ROOT / ".github" / "workflows" / "rc31-16-materialize.yml").exists())
+
 
 if __name__ == "__main__":
     unittest.main()
