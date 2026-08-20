@@ -1,19 +1,22 @@
 name: RC31.13 Bootstrap Premium UI
 
 on:
-  push:
+  pull_request:
     branches:
-      - feat/rc31-13-premium-ui
+      - main
+    types:
+      - synchronize
 
 permissions:
   contents: write
 
 jobs:
   materialize-source:
+    if: github.head_ref == 'feat/rc31-13-premium-ui'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout branch
+      - name: Checkout RC31.13 source branch
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -33,14 +36,10 @@ jobs:
           from pathlib import Path
 
           replacements = {
-              Path('app.py'): [
-                  ('1.0 Essential RC31.12', '1.0 Essential RC31.13'),
-              ],
-              Path('src/essential_discovery.py'): [
-                  ('RC31.12', 'RC31.13'),
-              ],
+              Path('app.py'): [('RC31.12', 'RC31.13')],
+              Path('src/essential_discovery.py'): [('RC31.12', 'RC31.13')],
+              Path('src/config.py'): [('RC31.12', 'RC31.13')],
           }
-
           for path, pairs in replacements.items():
               text = path.read_text(encoding='utf-8')
               for old, new in pairs:
@@ -49,46 +48,46 @@ jobs:
 
           app = Path('app.py').read_text(encoding='utf-8')
           discovery = Path('src/essential_discovery.py').read_text(encoding='utf-8')
+          config = Path('src/config.py').read_text(encoding='utf-8')
 
-          required_app = [
-              '1.0 Essential RC31.13',
-              'brand-header-mark',
-              'Decisão e inteligência em licitações',
-              'Oportunidades prioritárias',
-          ]
-          required_discovery = [
-              'STATUS = "RC31.13"',
-              'premium-card-callout',
-              'Por que vale olhar',
-              'Oportunidades prioritárias',
-          ]
-
-          missing = [item for item in required_app if item not in app]
-          missing += [item for item in required_discovery if item not in discovery]
+          required = {
+              'app.py': [
+                  'brand-header-mark',
+                  'Decisão e inteligência em licitações',
+                  'Oportunidades prioritárias',
+              ],
+              'src/essential_discovery.py': [
+                  'premium-card-callout',
+                  'Por que vale olhar',
+                  'Oportunidades prioritárias',
+              ],
+          }
+          contents = {'app.py': app, 'src/essential_discovery.py': discovery}
+          missing = [f'{path}: {marker}' for path, markers in required.items() for marker in markers if marker not in contents[path]]
           if missing:
-              raise SystemExit(f'RC31.13 materialization incomplete: {missing}')
+              raise SystemExit('RC31.13 materialization incomplete: ' + ', '.join(missing))
+          if 'RC31.12' in app or 'RC31.12' in discovery or 'RC31.12' in config:
+              raise SystemExit('RC31.12 version marker still present in runtime source')
           PY
 
-      - name: Syntax validation
+      - name: Validate Python syntax
         run: python -m py_compile app.py src/essential_discovery.py src/config.py
 
-      - name: Remove obsolete generators
+      - name: Remove obsolete code generators
         shell: bash
         run: |
           rm -f .github/workflows/rc31-12-premium-ui.yml
           rm -f scripts/rc31_12_patch.py
           rm -f .github/workflows/rc31-13-bootstrap.yml
 
-      - name: Commit materialized RC31.13
+      - name: Commit materialized RC31.13 source
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          if git diff --cached --quiet; then
-            echo "No source changes to commit"
-            exit 1
-          fi
-          git commit -m "feat: rebuild premium UI RC31.13"
+          git diff --cached --stat
+          git diff --cached --quiet && { echo "No RC31.13 changes generated"; exit 1; }
+          git commit -m "feat: materialize premium UI RC31.13"
           git push origin HEAD:feat/rc31-13-premium-ui
