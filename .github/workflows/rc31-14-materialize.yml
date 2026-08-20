@@ -26,16 +26,21 @@ jobs:
           python-version: '3.12'
 
       - name: Install locked dependencies
-        run: pip install -r requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.lock
+          python -m pip check
 
       - name: Apply RC31.14 density polish
         run: python scripts/rc31_14_apply.py
 
       - name: Compile application
-        run: python -m compileall -q app.py src tests
+        run: python -m compileall -q app.py src scripts tests
 
       - name: Run SQLite unit suite before commit
-        run: pytest -q
+        env:
+          LICITANEXO_DB_BACKEND: sqlite
+        run: python -m unittest discover -s tests -v
 
       - name: Remove one-time materializer and commit real source
         run: |
