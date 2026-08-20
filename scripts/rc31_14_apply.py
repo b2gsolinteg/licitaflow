@@ -15,6 +15,8 @@ essential = ROOT / "src" / "essential_discovery.py"
 config = ROOT / "src" / "config.py"
 test_premium = ROOT / "tests" / "test_rc31_13_premium_ui.py"
 test_discovery = ROOT / "tests" / "test_rc31_9_simple_discovery.py"
+test_modern_filters = ROOT / "tests" / "test_rc31_10_modern_filters.py"
+test_essential = ROOT / "tests" / "test_rc31_6_essential.py"
 test_density = ROOT / "tests" / "test_rc31_14_density.py"
 
 source = essential.read_text(encoding="utf-8")
@@ -70,9 +72,8 @@ if source.count(anchor) != 1:
     raise SystemExit("âncora CSS da RC31.13 não encontrada")
 essential.write_text(source.replace(anchor, density_css + anchor, 1), encoding="utf-8")
 
-replace_once(config, 'APP_VERSION = "1.0 Essential RC31.13"', 'APP_VERSION = "1.0 Essential RC31.14"')
-replace_once(test_premium, 'APP_VERSION = "1.0 Essential RC31.13"', 'APP_VERSION = "1.0 Essential RC31.14"')
-replace_once(test_discovery, 'APP_VERSION = "1.0 Essential RC31.13"', 'APP_VERSION = "1.0 Essential RC31.14"')
+for path in (config, test_premium, test_discovery, test_modern_filters, test_essential):
+    replace_once(path, 'APP_VERSION = "1.0 Essential RC31.13"', 'APP_VERSION = "1.0 Essential RC31.14"')
 
 test_density.write_text('''from pathlib import Path\nimport unittest\n\nROOT = Path(__file__).resolve().parents[1]\n\n\nclass Rc3114DensityContracts(unittest.TestCase):\n    def test_version_is_rc3114(self):\n        cfg = (ROOT / "src" / "config.py").read_text(encoding="utf-8")\n        self.assertIn('APP_VERSION = "1.0 Essential RC31.14"', cfg)\n\n    def test_density_layer_is_single_and_compact(self):\n        src = (ROOT / "src" / "essential_discovery.py").read_text(encoding="utf-8")\n        self.assertEqual(src.count("/* RC31.14 density polish */"), 1)\n        self.assertIn('max-width:900px !important', src)\n        self.assertIn('width:240px !important', src)\n        self.assertIn('height:44px !important', src)\n        self.assertIn('min-height:2.85rem !important', src)\n\n    def test_state_cards_are_compact_without_removing_flags(self):\n        src = (ROOT / "src" / "essential_discovery.py").read_text(encoding="utf-8")\n        self.assertIn(':has(.ln-state-name)', src)\n        self.assertIn('width:42px !important', src)\n        self.assertIn('font-size:1.48rem !important', src)\n        self.assertIn('min-height:2.25rem !important', src)\n        self.assertIn('FLAGS_DIR / f"{state.lower()}.svg"', src)\n\n\nif __name__ == "__main__":\n    unittest.main()\n''', encoding="utf-8")
 
