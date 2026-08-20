@@ -1,18 +1,17 @@
 name: RC31.14 Materialize Density Polish
 
 on:
-  push:
+  pull_request:
     branches:
-      - feat/rc31-14-density-polish
-    paths:
-      - scripts/rc31_14_apply.py
-      - .github/workflows/rc31-14-materialize.yml
+      - main
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
 
 jobs:
   materialize:
+    if: github.head_ref == 'feat/rc31-14-density-polish'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout branch
