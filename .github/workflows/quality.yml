@@ -41,7 +41,7 @@ jobs:
           python -m pip check
 
       - name: Compile all Python modules
-        run: python -m compileall -q app.py src scripts tests
+        run: python -m compileall -q app.py mei_app.py src scripts tests
 
       - name: Run complete unit suite
         env:
@@ -97,7 +97,7 @@ jobs:
           python -m pip check
 
       - name: Compile database modules
-        run: python -m compileall -q src scripts tests/test_postgres_integration.py tests/test_postgres_company_intelligence.py
+        run: python -m compileall -q mei_app.py src scripts tests/test_postgres_integration.py tests/test_postgres_company_intelligence.py tests/test_mei_catalog.py
 
       - name: Run PostgreSQL integration suite
         run: python -m unittest discover -s tests -p 'test_postgres*.py' -v
