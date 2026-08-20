@@ -1,0 +1,94 @@
+name: RC31.13 Bootstrap Premium UI
+
+on:
+  push:
+    branches:
+      - feat/rc31-13-premium-ui
+
+permissions:
+  contents: write
+
+jobs:
+  materialize-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: feat/rc31-13-premium-ui
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Materialize premium UI into source files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/rc31_12_patch.py
+          python - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              Path('app.py'): [
+                  ('1.0 Essential RC31.12', '1.0 Essential RC31.13'),
+              ],
+              Path('src/essential_discovery.py'): [
+                  ('RC31.12', 'RC31.13'),
+              ],
+          }
+
+          for path, pairs in replacements.items():
+              text = path.read_text(encoding='utf-8')
+              for old, new in pairs:
+                  text = text.replace(old, new)
+              path.write_text(text, encoding='utf-8')
+
+          app = Path('app.py').read_text(encoding='utf-8')
+          discovery = Path('src/essential_discovery.py').read_text(encoding='utf-8')
+
+          required_app = [
+              '1.0 Essential RC31.13',
+              'brand-header-mark',
+              'Decisão e inteligência em licitações',
+              'Oportunidades prioritárias',
+          ]
+          required_discovery = [
+              'STATUS = "RC31.13"',
+              'premium-card-callout',
+              'Por que vale olhar',
+              'Oportunidades prioritárias',
+          ]
+
+          missing = [item for item in required_app if item not in app]
+          missing += [item for item in required_discovery if item not in discovery]
+          if missing:
+              raise SystemExit(f'RC31.13 materialization incomplete: {missing}')
+          PY
+
+      - name: Syntax validation
+        run: python -m py_compile app.py src/essential_discovery.py src/config.py
+
+      - name: Remove obsolete generators
+        shell: bash
+        run: |
+          rm -f .github/workflows/rc31-12-premium-ui.yml
+          rm -f scripts/rc31_12_patch.py
+          rm -f .github/workflows/rc31-13-bootstrap.yml
+
+      - name: Commit materialized RC31.13
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No source changes to commit"
+            exit 1
+          fi
+          git commit -m "feat: rebuild premium UI RC31.13"
+          git push origin HEAD:feat/rc31-13-premium-ui
