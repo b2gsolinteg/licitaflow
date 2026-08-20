@@ -5,6 +5,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class Rc3117FaithfulLayoutContracts(unittest.TestCase):
+    """Contratos finais da camada visual fiel RC31.17."""
+
     def test_home_and_discovery_share_reference_width(self):
         app = (ROOT / "app.py").read_text(encoding="utf-8")
         src = (ROOT / "src" / "essential_discovery.py").read_text(encoding="utf-8")
