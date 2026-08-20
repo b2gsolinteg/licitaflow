@@ -5,28 +5,24 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class Rc3115VisualBalanceContracts(unittest.TestCase):
-    def test_version_is_rc3115(self):
+    def test_version_tracks_current_rc31_release(self):
         cfg = (ROOT / "src" / "config.py").read_text(encoding="utf-8")
-        self.assertIn('APP_VERSION = "1.0 Essential RC31.16"', cfg)
+        self.assertIn('APP_VERSION = "1.0 Essential RC31.17"', cfg)
 
-    def test_visual_balance_reduces_empty_chrome_and_recovers_width(self):
+    def test_legacy_balance_block_is_replaced_by_single_faithful_layer(self):
         src = (ROOT / "src" / "essential_discovery.py").read_text(encoding="utf-8")
-        self.assertEqual(src.count("/* RC31.15 visual balance */"), 1)
-        self.assertIn('height:36px !important', src)
-        self.assertIn('background:#FFFFFF !important;border-bottom:1px solid #E6EBEF', src)
-        self.assertIn('max-width:980px !important', src)
-        self.assertNotIn('/* RC31.14 density polish */', src)
+        self.assertNotIn("/* RC31.15 visual balance */", src)
+        self.assertNotIn("/* RC31.16 discovery grid */", src)
+        self.assertEqual(src.count("/* RC31.17 faithful discovery layout */"), 1)
+        self.assertIn('max-width:860px !important', src)
 
-    def test_primary_form_cta_is_explicit_and_high_contrast(self):
+    def test_primary_form_cta_is_blue_and_high_contrast(self):
         src = (ROOT / "src" / "essential_discovery.py").read_text(encoding="utf-8")
-        self.assertIn('div[data-testid="stFormSubmitButton"] button{background:#0E8B82', src)
-        self.assertIn('div[data-testid="stFormSubmitButton"] button *{color:#FFFFFF', src)
-        self.assertIn('background:#0A746D !important', src)
+        self.assertIn('div[data-testid="stFormSubmitButton"] button{background:#2E5FEA', src)
+        self.assertIn('button *{color:#FFFFFF !important', src)
 
-    def test_state_density_and_material_icons_remain_preserved(self):
+    def test_material_icons_keep_streamlit_font(self):
         src = (ROOT / "src" / "essential_discovery.py").read_text(encoding="utf-8")
-        self.assertIn('width:42px !important', src)
-        self.assertIn('min-height:2.25rem !important', src)
         self.assertNotIn('[data-testid="stMain"] *{font-family:', src)
 
 

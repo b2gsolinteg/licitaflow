@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class PremiumUiContracts(unittest.TestCase):
     def test_version(self):
         cfg = (ROOT / "src" / "config.py").read_text(encoding="utf-8")
-        self.assertIn('APP_VERSION = "1.0 Essential RC31.16"', cfg)
+        self.assertIn('APP_VERSION = "1.0 Essential RC31.17"', cfg)
 
     def test_sidebar_has_large_pastel_icon_tiles_and_sections(self):
         app = (ROOT / "app.py").read_text(encoding="utf-8")
