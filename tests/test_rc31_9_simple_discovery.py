@@ -32,7 +32,7 @@ class SimpleDiscoveryContracts(unittest.TestCase):
 
     def test_version_is_rc319(self):
         cfg = (ROOT / "src" / "config.py").read_text(encoding="utf-8")
-        self.assertIn('APP_VERSION = "1.0 Essential RC31.14"', cfg)
+        self.assertIn('APP_VERSION = "1.0 Essential RC31.15"', cfg)
 
 
 if __name__ == "__main__":
