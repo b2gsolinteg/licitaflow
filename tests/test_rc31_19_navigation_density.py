@@ -24,11 +24,14 @@ class Rc3119NavigationDensityContracts(unittest.TestCase):
 
     def test_home_shortcuts_have_visual_figures(self):
         src = (ROOT / "src" / "essential_discovery.py").read_text(encoding="utf-8")
+        self.assertIn("/* RC31.19 richer discovery home */", src)
+        self.assertIn("max-width:980px !important", src)
         self.assertIn("ln-shortcut-state", src)
         self.assertIn("ln-shortcut-city", src)
         self.assertIn("ln-shortcut-modality", src)
         self.assertIn("ln-shortcut-site", src)
         self.assertIn("_shortcut_illustration(target)", src)
+        self.assertIn('type="primary", width="stretch"', src)
 
 
 if __name__ == "__main__":
