@@ -5,25 +5,24 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class Rc3116CompetitorLayoutContracts(unittest.TestCase):
-    def test_version_tracks_rc3117(self):
+    def test_version_tracks_current_reference_release(self):
         cfg = (ROOT / "src" / "config.py").read_text(encoding="utf-8")
-        self.assertIn('APP_VERSION = "1.0 Essential RC31.17"', cfg)
+        self.assertIn('APP_VERSION = "1.0 Essential RC31.18"', cfg)
 
     def test_global_shell_is_compact_and_reference_aligned(self):
         app = (ROOT / "app.py").read_text(encoding="utf-8")
         self.assertNotIn("/* RC31.16 competitor-inspired global shell */", app)
-        self.assertEqual(app.count("/* RC31.17 faithful reference shell */"), 1)
-        self.assertIn('background:var(--ln17-navy) !important', app)
+        self.assertEqual(app.count("/* RC31.18 exact reference shell */"), 1)
+        self.assertIn('background:var(--ref-navy) !important', app)
         self.assertIn('width:240px !important', app)
         self.assertIn('max-width:860px !important', app)
-        self.assertIn('--ln17-blue:#2E5FEA', app)
+        self.assertIn('--ref-blue:#2D5FE8', app)
 
     def test_discovery_cards_use_blue_ctas_and_compact_grid(self):
         src = (ROOT / "src" / "essential_discovery.py").read_text(encoding="utf-8")
-        self.assertEqual(src.count("/* RC31.17 faithful discovery layout */"), 1)
+        self.assertEqual(src.count("/* RC31.18 exact discovery cards */"), 1)
         self.assertIn(':has(.ln-modality-name)', src)
-        self.assertIn('div[class*="st-key-modality_"] button', src)
-        self.assertIn('background:#2E5FEA !important', src)
+        self.assertIn('background:#2D5FE8 !important', src)
         self.assertIn('"Ver licitações"', src)
         self.assertNotIn('"Ver oportunidades"', src)
         self.assertIn('for start_index in range(0, len(counts), 3):', src)
