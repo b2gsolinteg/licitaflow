@@ -124,10 +124,46 @@ def _apply_styles() -> None:
         .ln-info-box,.ln-meta-box{background:#F8FAFC !important;border:1px solid #E6EBF1 !important;border-radius:8px !important;padding:.48rem .54rem !important;min-height:60px !important;}
         @media(max-width:900px){[data-testid="stMain"] .block-container{max-width:100% !important;padding:.72rem .6rem 1.5rem !important;}.ln-discovery-title{font-size:1.1rem !important;}.ln-info-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}}
 
+        
+        /* RC31.19 richer discovery home */
+        [data-testid="stMain"] .block-container{max-width:980px !important;}
+        .ln-back-row{margin:-.1rem 0 .45rem !important;}
+        .ln-shortcut-figure{height:92px !important;border-radius:11px !important;margin:0 0 .58rem !important;display:flex !important;align-items:center !important;justify-content:center !important;overflow:hidden !important;}
+        .ln-shortcut-figure svg{width:100% !important;height:100% !important;display:block !important;}
+        .ln-shortcut-state{background:linear-gradient(135deg,#E6F1FF,#F7FBFF) !important;}
+        .ln-shortcut-city{background:linear-gradient(135deg,#E8F8F4,#F7FCFA) !important;}
+        .ln-shortcut-modality{background:linear-gradient(135deg,#F0EAFE,#FBF9FF) !important;}
+        .ln-shortcut-site{background:linear-gradient(135deg,#EAF1FF,#F8FAFF) !important;}
+        [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-shortcut-figure){background:#FFFFFF !important;border:0 !important;border-radius:11px !important;box-shadow:0 3px 11px rgba(18,40,72,.085) !important;min-height:215px !important;}
+        [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-shortcut-figure) > div{padding:.62rem !important;}
+        .ln-shortcut-copy{min-height:2.7rem !important;font-size:.72rem !important;line-height:1.34 !important;color:#65758A !important;margin:.05rem 0 .48rem !important;}
+        [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-shortcut-figure) .stButton button{background:#2D5FE8 !important;color:#FFFFFF !important;border:1px solid #2D5FE8 !important;border-radius:7px !important;min-height:2.35rem !important;font-size:.76rem !important;font-weight:700 !important;}
+        [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-shortcut-figure) .stButton button *{color:#FFFFFF !important;}
+        @media(max-width:900px){[data-testid="stMain"] .block-container{max-width:100% !important;}.ln-shortcut-figure{height:78px !important;}}
+
         </style>
         """,
         unsafe_allow_html=True,
     )
+
+
+
+def _render_back_button(key: str) -> None:
+    st.markdown('<div class="ln-back-row">', unsafe_allow_html=True)
+    if st.button("Voltar", icon=":material/arrow_back:", key=f"discovery_back_{key}"):
+        st.session_state["_navigation_request"] = "Início"
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+
+def _shortcut_illustration(target: str) -> str:
+    figures = {
+        "Por Estado": '''<div class="ln-shortcut-figure ln-shortcut-state"><svg viewBox="0 0 240 92" xmlns="http://www.w3.org/2000/svg"><rect width="240" height="92" rx="12" fill="#EAF3FF"/><path d="M56 15l22 7 16-4 18 14 18 4 2 16-13 9-8 18-17-4-9 9-15-11-18-1-8-17 8-12-4-13z" fill="#63A4FF"/><circle cx="78" cy="43" r="4" fill="#fff"/><circle cx="99" cy="61" r="4" fill="#fff"/><circle cx="64" cy="59" r="4" fill="#fff"/><rect x="149" y="26" width="62" height="8" rx="4" fill="#9EC7FF"/><rect x="149" y="43" width="48" height="8" rx="4" fill="#BED9FF"/><rect x="149" y="60" width="56" height="8" rx="4" fill="#BED9FF"/></svg></div>''',
+        "Por Cidade": '''<div class="ln-shortcut-figure ln-shortcut-city"><svg viewBox="0 0 240 92" xmlns="http://www.w3.org/2000/svg"><rect width="240" height="92" rx="12" fill="#ECF9F5"/><path d="M42 73h156" stroke="#A9DCCC" stroke-width="5" stroke-linecap="round"/><rect x="59" y="42" width="30" height="31" rx="3" fill="#6DC7AB"/><rect x="96" y="28" width="37" height="45" rx="3" fill="#3BA986"/><rect x="141" y="37" width="34" height="36" rx="3" fill="#83D4BA"/><path d="M116 15c8 0 14 6 14 14 0 11-14 24-14 24s-14-13-14-24c0-8 6-14 14-14z" fill="#2467E8"/><circle cx="116" cy="29" r="5" fill="#fff"/></svg></div>''',
+        "Por Modalidade": '''<div class="ln-shortcut-figure ln-shortcut-modality"><svg viewBox="0 0 240 92" xmlns="http://www.w3.org/2000/svg"><rect width="240" height="92" rx="12" fill="#F4EEFF"/><rect x="50" y="19" width="58" height="57" rx="6" fill="#fff" stroke="#D9CAF9"/><rect x="61" y="31" width="34" height="6" rx="3" fill="#B79BEF"/><rect x="61" y="44" width="25" height="6" rx="3" fill="#D0BEF5"/><rect x="61" y="57" width="30" height="6" rx="3" fill="#D0BEF5"/><g transform="rotate(-32 157 47)"><rect x="148" y="27" width="42" height="13" rx="5" fill="#6D4DE3"/><rect x="145" y="42" width="48" height="10" rx="5" fill="#8A6CF0"/><rect x="164" y="51" width="9" height="29" rx="4" fill="#5D42C8"/></g><rect x="138" y="75" width="50" height="7" rx="3" fill="#A98FF0"/></svg></div>''',
+        "Por site de disputa": '''<div class="ln-shortcut-figure ln-shortcut-site"><svg viewBox="0 0 240 92" xmlns="http://www.w3.org/2000/svg"><rect width="240" height="92" rx="12" fill="#EDF3FF"/><rect x="55" y="18" width="130" height="58" rx="7" fill="#174B9E"/><rect x="62" y="25" width="116" height="43" rx="3" fill="#fff"/><circle cx="120" cy="46" r="15" fill="none" stroke="#2D5FE8" stroke-width="4"/><path d="M105 46h30M120 31c-6 7-6 23 0 30M120 31c6 7 6 23 0 30" stroke="#2D5FE8" stroke-width="3" fill="none"/><rect x="91" y="77" width="58" height="5" rx="2.5" fill="#7EA7EA"/></svg></div>''',
+    }
+    return figures.get(target, "")
 
 
 def _page_header(kicker: str, title: str, subtitle: str) -> None:
@@ -555,13 +591,15 @@ def home_page(db, user: dict) -> None:
     cols = st.columns(4)
     for col, (target, label, description, icon) in zip(cols, shortcuts):
         with col.container(border=True):
+            st.markdown(_shortcut_illustration(target), unsafe_allow_html=True)
             st.markdown(f'<div class="ln-shortcut-copy">{description}</div>', unsafe_allow_html=True)
-            if st.button(label, icon=icon, key=f"home_{target}", width="stretch"):
+            if st.button(label, icon=icon, key=f"home_{target}", type="primary", width="stretch"):
                 st.session_state["_navigation_request"] = target
                 st.rerun()
 
 def portal_page(db, user: dict) -> None:
     _apply_styles()
+    _render_back_button("portal_page")
     _page_header("EXPLORAR LICITAÇÕES", "Por site de disputa", "Escolha onde deseja participar. Se não tiver preferência, consulte todos os sites.")
 
     if st.button("Ver todos os sites", icon=":material/public:", key="portal_all", type="primary", width="stretch"):
@@ -588,6 +626,7 @@ def portal_page(db, user: dict) -> None:
 
 def search_page(db, user: dict, usage=None) -> None:
     _apply_styles()
+    _render_back_button("search_page")
     company_id = user["company_id"]
     defaults = _profile_defaults(db, company_id)
     current = st.session_state.get("essential_search_criteria") or {}
@@ -637,6 +676,7 @@ def search_page(db, user: dict, usage=None) -> None:
 
 def state_page(db, user: dict) -> None:
     _apply_styles()
+    _render_back_button("state_page")
     counts = db.global_catalog_group_counts("state", closing_from=date.today().isoformat())
     count_by_state = {str(row.get("label") or "").upper(): int(row.get("total") or 0) for row in counts}
     open_total = sum(count_by_state.values())
@@ -670,6 +710,7 @@ def state_page(db, user: dict) -> None:
 
 def city_page(db, user: dict) -> None:
     _apply_styles()
+    _render_back_button("city_page")
     _page_header("EXPLORAR LICITAÇÕES", "Por Cidade", "Digite uma cidade e, se quiser, refine pelo Estado.")
     with st.form("essential_city_search", clear_on_submit=False, enter_to_submit=False):
         city = st.text_input("Nome da cidade", placeholder="Ex.: Londrina")
@@ -687,6 +728,7 @@ def city_page(db, user: dict) -> None:
 
 def modality_page(db, user: dict) -> None:
     _apply_styles()
+    _render_back_button("modality_page")
     _page_header("EXPLORAR LICITAÇÕES", "Por Modalidade", "Escolha a modalidade para ver os editais abertos para participação.")
     counts = db.global_catalog_group_counts("modality", closing_from=date.today().isoformat())
     if not counts:
@@ -712,6 +754,7 @@ def modality_page(db, user: dict) -> None:
 
 def advanced_search_page(db, user: dict) -> None:
     _apply_styles()
+    _render_back_button("advanced_search_page")
     _page_header("REFINE SUA BUSCA", "Filtro avançado", "Combine os filtros que quiser. Nenhum campo é obrigatório.")
     with st.form("essential_advanced_search", clear_on_submit=False, enter_to_submit=False):
         r1, r2 = st.columns(2)
@@ -746,6 +789,7 @@ def advanced_search_page(db, user: dict) -> None:
 
 def top50_page(db, user: dict) -> None:
     _apply_styles()
+    _render_back_button("top50_page")
     _page_header("DESCUBRA OPORTUNIDADES", "Em destaque", "50 editais recentes para você explorar sem precisar definir uma busca.")
     items = db.list_global_catalog(
         closing_from=date.today().isoformat(), limit=50, order_by="recent"
@@ -755,6 +799,7 @@ def top50_page(db, user: dict) -> None:
 
 def my_list_page(db, user: dict) -> None:
     _apply_styles()
+    _render_back_button("my_list_page")
     company_id = user["company_id"]
     _page_header("ORGANIZE SUAS OPORTUNIDADES", "Minha lista", "Decida apenas se vai participar, não vai participar ou quer descartar o edital.")
     rows = [
@@ -842,6 +887,7 @@ def my_list_page(db, user: dict) -> None:
 
 def preferences_page(db, user: dict) -> None:
     _apply_styles()
+    _render_back_button("preferences_page")
     company_id = user["company_id"]
     defaults = _profile_defaults(db, company_id)
     _page_header("PERSONALIZE O LICITANEXO", "Preferências", "Se quiser, salve o que costuma procurar. Isso ajuda o Radar, mas não é obrigatório.")
@@ -866,6 +912,7 @@ def preferences_page(db, user: dict) -> None:
 
 def radar_page(db, user: dict) -> None:
     _apply_styles()
+    _render_back_button("radar_page")
     defaults = _profile_defaults(db, user["company_id"])
     _page_header("ACOMPANHE O QUE IMPORTA", "Radar de licitações", "Veja editais novos relacionados ao que você escolheu acompanhar.")
     if not (defaults["keyword"].strip() or defaults["states"] or defaults["modalities"]):

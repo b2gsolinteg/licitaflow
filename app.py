@@ -484,6 +484,26 @@ def apply_brand():
         [data-testid="stDataFrame"],[data-testid="stTable"]{background:#FFFFFF !important;border-radius:9px !important;overflow:hidden !important;}
         @media(max-width:900px){header[data-testid="stHeader"]{height:44px !important;min-height:44px !important;}.ln-app-topbar{left:0 !important;height:44px !important;}.ln-sidebar-brand{height:44px !important;}[data-testid="stSidebar"],[data-testid="stSidebar"] > div:first-child{width:225px !important;min-width:225px !important;max-width:225px !important;}.block-container{max-width:100% !important;padding:.72rem .6rem 1.5rem !important;}}
 
+        
+        /* RC31.19 navigation density */
+        :root{--rc19-sidebar:276px;}
+        @media(min-width:901px){
+            [data-testid="stSidebar"],[data-testid="stSidebar"] > div:first-child{width:var(--rc19-sidebar) !important;min-width:var(--rc19-sidebar) !important;max-width:var(--rc19-sidebar) !important;}
+        }
+        .ln-app-topbar{left:var(--rc19-sidebar) !important;}
+        [data-testid="stSidebar"] > div:first-child{padding:60px 12px 78px !important;}
+        .ln-sidebar-brand{width:var(--rc19-sidebar) !important;padding:0 16px !important;}
+        .ln-sidebar-brand img{max-width:150px !important;max-height:32px !important;}
+        [data-testid="stSidebar"] .stCaption p{font-size:.72rem !important;font-weight:750 !important;letter-spacing:.08em !important;color:#91A0B3 !important;text-transform:uppercase !important;}
+        [data-testid="stSidebar"] .stButton{margin:0 0 .24rem !important;}
+        [data-testid="stSidebar"] .stButton button{min-height:3.12rem !important;padding:.28rem .5rem !important;gap:.72rem !important;font-size:.96rem !important;font-weight:650 !important;text-align:left !important;justify-content:flex-start !important;}
+        [data-testid="stSidebar"] .stButton button p{font-size:.96rem !important;font-weight:650 !important;line-height:1.18 !important;text-align:left !important;}
+        [data-testid="stSidebar"] .stButton [data-testid="stIconMaterial"]{flex:0 0 2.25rem !important;width:2.25rem !important;height:2.25rem !important;border-radius:10px !important;font-size:1.08rem !important;}
+        [data-testid="stSidebar"] .stButton button[kind="primary"]{background:#EEF9F5 !important;box-shadow:inset 3px 0 0 #18A77B !important;color:#10253F !important;}
+        [data-testid="stSidebar"] .stButton button[kind="primary"] [data-testid="stIconMaterial"]{background:#DDF5EA !important;color:#10865F !important;}
+        .ln-home-color-logo{margin:0 0 .7rem !important;}
+        @media(max-width:900px){.ln-app-topbar{left:0 !important;}.ln-sidebar-brand{width:225px !important;}[data-testid="stSidebar"] .stButton button,[data-testid="stSidebar"] .stButton button p{font-size:.9rem !important;}}
+
         </style>
     """, unsafe_allow_html=True)
 
@@ -3007,6 +3027,10 @@ def main():
             st.rerun()
 
     if page == "Início":
+        if LOGO_PATH.exists():
+            st.markdown('<div class="ln-home-color-logo">', unsafe_allow_html=True)
+            st.image(str(LOGO_PATH), width=190)
+            st.markdown('</div>', unsafe_allow_html=True)
         essential_home_page(db, user)
     elif page == "Buscar licitações":
         essential_search_page(db, user, usage)
