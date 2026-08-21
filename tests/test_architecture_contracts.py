@@ -39,7 +39,7 @@ class ArchitectureContractTests(unittest.TestCase):
 
     def test_sidebar_css_patch_is_not_duplicated(self):
         source = (ROOT / "app.py").read_text(encoding="utf-8")
-        marker = '[data-testid="stSidebar"]{background:#FFFFFF !important;border-right:1px solid #E2E8EE !important;box-shadow:2px 0 14px rgba(25,39,52,.035) !important;}'
+        marker = '[data-testid="stSidebar"]{background:#FFFFFF !important;border-right:1px solid #E3E8EE !important;box-shadow:none !important;z-index:999995 !important;}'
         self.assertEqual(source.count(marker), 1)
 
     def test_versioned_migration_tool_has_checksum_and_lock(self):
