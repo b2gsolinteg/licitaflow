@@ -16,5 +16,5 @@ class ModernFilters(unittest.TestCase):
         self.assertNotIn('"❤️ Minha lista"', a)
     def test_version(self):
         c=(ROOT/"src"/"config.py").read_text(encoding="utf-8")
-        self.assertIn('APP_VERSION = "1.0 Essential RC31.17"', c)
+        self.assertIn('APP_VERSION = "1.0 Essential RC31.18"', c)
 if __name__ == "__main__": unittest.main()

@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class PremiumUiContracts(unittest.TestCase):
     def test_version(self):
         cfg = (ROOT / "src" / "config.py").read_text(encoding="utf-8")
-        self.assertIn('APP_VERSION = "1.0 Essential RC31.17"', cfg)
+        self.assertIn('APP_VERSION = "1.0 Essential RC31.18"', cfg)
 
     def test_sidebar_has_large_pastel_icon_tiles_and_sections(self):
         app = (ROOT / "app.py").read_text(encoding="utf-8")
@@ -22,7 +22,7 @@ class PremiumUiContracts(unittest.TestCase):
         self.assertIn('background:#F4F7FA !important', src)
         self.assertIn('font-weight:750 !important', src)
         self.assertIn('box-shadow:0 5px 18px', src)
-        self.assertIn('background:#0E7C75 !important', src)
+        self.assertIn('background:#2D5FE8 !important', src)
 
     def test_material_icons_keep_streamlit_font_and_primary_button_contrast(self):
         src = (ROOT / "src" / "essential_discovery.py").read_text(encoding="utf-8")
