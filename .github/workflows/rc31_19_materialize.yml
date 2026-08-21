@@ -30,6 +30,21 @@ jobs:
           python -m pip install -r requirements.lock
           python -m pip check
 
+      - name: Normalize materializer quoting
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/rc31_19_apply.py')
+          text = p.read_text(encoding='utf-8')
+          text = text.replace("helper = r'''", 'helper = r"""', 1)
+          old = "\n\n\n'''\nif '_shortcut_illustration(target: str)' not in src:"
+          new = '\n\n\n"""\nif \'_shortcut_illustration(target: str)\' not in src:'
+          if old not in text:
+              raise SystemExit('helper closing marker not found')
+          text = text.replace(old, new, 1)
+          p.write_text(text, encoding='utf-8')
+          PY
+
       - name: Apply RC31.19
         run: python scripts/rc31_19_apply.py
 
