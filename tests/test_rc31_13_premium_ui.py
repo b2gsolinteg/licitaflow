@@ -22,7 +22,7 @@ class PremiumUiContracts(unittest.TestCase):
         self.assertIn('background:#F4F7FA !important', src)
         self.assertIn('font-weight:750 !important', src)
         self.assertIn('box-shadow:0 5px 18px', src)
-        self.assertIn('background:#0E7C75 !important', src)
+        self.assertIn('background:#2D5FE8 !important', src)
 
     def test_material_icons_keep_streamlit_font_and_primary_button_contrast(self):
         src = (ROOT / "src" / "essential_discovery.py").read_text(encoding="utf-8")
