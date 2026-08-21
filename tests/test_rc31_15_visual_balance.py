@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class Rc3115VisualBalanceContracts(unittest.TestCase):
     def test_version_tracks_current_rc31_release(self):
         cfg = (ROOT / "src" / "config.py").read_text(encoding="utf-8")
-        self.assertIn('APP_VERSION = "1.0 Essential RC31.18"', cfg)
+        self.assertIn('APP_VERSION = "1.0 Essential RC31.19"', cfg)
 
     def test_legacy_balance_blocks_are_replaced_by_single_reference_layer(self):
         src = (ROOT / "src" / "essential_discovery.py").read_text(encoding="utf-8")
