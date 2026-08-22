@@ -18,7 +18,20 @@ class _SafeFormatter(logging.Formatter):
         return text
 
 
+def _install_visual_polish() -> None:
+    try:
+        from .ui_polish_rc31_20 import install_rc31_20_polish
+
+        install_rc31_20_polish()
+    except Exception:
+        # O logger não pode impedir o boot se o Streamlit ainda não tiver contexto.
+        pass
+
+
 def configure_logging(project_root: Path, environment: str = "production"):
+    # Executa em todo rerun. O CSS é idempotente e não toca em dados nem estado.
+    _install_visual_polish()
+
     logger = logging.getLogger("licitanexo")
     if logger.handlers:
         return logger
