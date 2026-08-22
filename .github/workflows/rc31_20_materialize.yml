@@ -11,7 +11,8 @@ permissions:
 jobs:
   materialize:
     if: github.head_ref == 'feat/rc31-20-layout-polish'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout branch
         uses: actions/checkout@v4
