@@ -51,7 +51,7 @@ class EssentialDiscoveryContractsTest(unittest.TestCase):
         self.assertIn("Minha lista", app)
         self.assertIn("Por Estado", app)
         self.assertIn("Radar de licitações", app)
-        self.assertIn('APP_VERSION = "1.0 Essential RC31.19"', config)
+        self.assertIn('APP_VERSION = "1.0 Essential RC31.20"', config)
 
 
 if __name__ == "__main__":
