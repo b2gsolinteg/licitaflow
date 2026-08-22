@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class Rc3119NavigationDensityContracts(unittest.TestCase):
     def test_version(self):
         cfg = (ROOT / "src" / "config.py").read_text(encoding="utf-8")
-        self.assertIn('APP_VERSION = "1.0 Essential RC31.19"', cfg)
+        self.assertIn('APP_VERSION = "1.0 Essential RC31.20"', cfg)
 
     def test_sidebar_is_wider_and_readable(self):
         app = (ROOT / "app.py").read_text(encoding="utf-8")
