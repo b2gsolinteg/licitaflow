@@ -30,9 +30,9 @@ class SimpleDiscoveryContracts(unittest.TestCase):
         self.assertIn("Em destaque", app)
         self.assertNotIn('"🏆 Top 50"', app)
 
-    def test_version_is_rc319(self):
+    def test_version_is_rc3120(self):
         cfg = (ROOT / "src" / "config.py").read_text(encoding="utf-8")
-        self.assertIn('APP_VERSION = "1.0 Essential RC31.19"', cfg)
+        self.assertIn('APP_VERSION = "1.0 Essential RC31.20"', cfg)
 
 
 if __name__ == "__main__":
