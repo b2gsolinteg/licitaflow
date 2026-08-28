@@ -174,6 +174,68 @@ def _auth_layout_fix_css() -> str:
     '''
 
 
+def _commercial_auth_copy_css() -> str:
+    raw_mode = st.query_params.get("auth", "login")
+    if isinstance(raw_mode, list):
+        raw_mode = raw_mode[0] if raw_mode else "login"
+    mode = str(raw_mode or "login").strip().lower()
+
+    if mode == "request":
+        title = "Comece grátis e descubra oportunidades que podem virar novos negócios."
+        caption = "7 dias grátis. Depois, R$ 29,90/mês. Preço justo para quem quer começar a vender para o governo."
+    elif mode == "invite":
+        title = "Ative seu convite e comece a explorar oportunidades com mais clareza."
+        caption = "Use o código recebido para liberar seu acesso ao LicitaNexo."
+    elif mode == "recovery":
+        title = "Recupere seu acesso e volte às oportunidades que importam."
+        caption = "Solicite um código e defina uma nova senha com segurança."
+    else:
+        title = "Entre e vá direto às oportunidades que merecem sua atenção."
+        caption = "Pesquise licitações, veja os itens da compra e organize sua participação em um só lugar."
+
+    title_css = title.replace('"', '\\"')
+    caption_css = caption.replace('"', '\\"')
+    return f'''
+    <style>
+    .lnx-auth-title{{font-size:0!important}}
+    .lnx-auth-title strong{{display:none!important}}
+    .lnx-auth-title::after{{
+        content:"{title_css}";
+        display:block;
+        max-width:480px;
+        font-size:clamp(27px,2vw,38px)!important;
+        line-height:1.08;
+        letter-spacing:-1px;
+        font-weight:800;
+        color:#071a3d;
+    }}
+    .lnx-auth-caption{{font-size:0!important}}
+    .lnx-auth-caption::after{{
+        content:"{caption_css}";
+        display:block;
+        color:#5e6b80;
+        font-size:14px!important;
+        line-height:1.48;
+        max-width:470px;
+    }}
+    .lnx-login-price-info>div:nth-child(2)>b,
+    .lnx-login-price-info>div:nth-child(2)>span{{font-size:0!important}}
+    .lnx-login-price-info>div:nth-child(2)>b::after{{
+        content:"Preço justo para quem quer começar a vender para o governo";
+        font-size:11px!important;
+        color:#fff;
+        line-height:1.25;
+    }}
+    .lnx-login-price-info>div:nth-child(2)>span::after{{
+        content:"Comece simples, encontre oportunidades e evolua com o seu negócio.";
+        font-size:9px!important;
+        color:#d7e4f5;
+        line-height:1.3;
+    }}
+    </style>
+    '''
+
+
 def render_public_landing(logo_path=None) -> None:
     _render_public_landing(logo_path or OFFICIAL_LOGO_PATH)
     css = _official_brand_css()
@@ -187,3 +249,4 @@ def render_public_auth(**kwargs) -> None:
     if css:
         st.html(css)
     st.html(_auth_layout_fix_css())
+    st.html(_commercial_auth_copy_css())
