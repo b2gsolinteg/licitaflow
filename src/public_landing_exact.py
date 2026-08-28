@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import base64
 from pathlib import Path
-
 import streamlit as st
-
 
 def _data_uri(path: Path | str | None) -> str:
     if not path:
@@ -14,200 +12,160 @@ def _data_uri(path: Path | str | None) -> str:
         return ""
     return f"data:image/png;base64,{base64.b64encode(candidate.read_bytes()).decode('ascii')}"
 
-
 def render_public_landing(logo_path=None) -> None:
     logo_uri = _data_uri(logo_path)
     logo_html = f'<img src="{logo_uri}" alt="LicitaNexo">' if logo_uri else '<span>LicitaNexo</span>'
-
-    html = f'''
+    html = f"""
     <style>
-    :root{{--lnx-navy:#061a40;--lnx-navy-2:#082960;--lnx-blue:#0d5bd7;--lnx-blue-2:#2580ff;--lnx-yellow:#f7b714;--lnx-ink:#071a3d;--lnx-muted:#5d6b82;--lnx-line:#e5eaf1;}}
-    html,body,.stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"]{{margin:0!important;padding:0!important;min-height:100vh!important;background:#fff!important;font-family:Inter,"Segoe UI",Arial,sans-serif!important;overflow-x:hidden!important}}
+    :root{{--lnx-bg:#031326;--lnx-panel:#071b35;--lnx-panel-2:#0a2346;--lnx-border:#163a68;--lnx-blue:#2b74ff;--lnx-blue-2:#4a93ff;--lnx-yellow:#f7bd21;--lnx-text:#f7f9fc;--lnx-muted:#b9c7da;--lnx-green:#43d48b}}
+    html,body,.stApp,[data-testid="stAppViewContainer"],[data-testid="stMain"]{{margin:0!important;padding:0!important;min-height:100vh!important;background:var(--lnx-bg)!important;font-family:Inter,"Segoe UI",Arial,sans-serif!important;overflow-x:hidden!important}}
     header[data-testid="stHeader"],[data-testid="stToolbar"],[data-testid="stDecoration"],#MainMenu,footer,[data-testid="stSidebar"],[data-testid="collapsedControl"]{{display:none!important}}
     [data-testid="stMain"]>div,[data-testid="stMainBlockContainer"],.block-container{{width:100vw!important;max-width:100vw!important;margin:0!important;padding:0!important}}
     [data-testid="stVerticalBlock"],[data-testid="stElementContainer"],[data-testid="stHtml"]{{gap:0!important;margin:0!important;padding:0!important}}
     .lnx-page,.lnx-page *{{box-sizing:border-box}}
-    .lnx-page{{min-height:100vh;background:#fff;color:var(--lnx-ink)}}
-    .lnx-top{{height:82px;background:#fff;display:flex;align-items:center;border-bottom:1px solid var(--lnx-line);box-shadow:0 1px 10px rgba(5,25,59,.04)}}
-    .lnx-top-inner{{width:min(1540px,calc(100% - 88px));margin:auto;display:flex;align-items:center;justify-content:space-between}}
-    .lnx-brand{{display:flex;align-items:center;height:58px;text-decoration:none}}
-    .lnx-brand img{{max-width:235px;max-height:56px;display:block;object-fit:contain}}
-    .lnx-brand span{{font-size:28px;font-weight:850;color:var(--lnx-ink)}}
-    .lnx-actions{{display:flex;align-items:center;gap:20px}}
-    .lnx-actions a{{height:44px;padding:0 26px;display:inline-flex;align-items:center;justify-content:center;border-radius:7px;text-decoration:none!important;font-size:15px;font-weight:800;transition:.15s ease}}
-    .lnx-login{{background:var(--lnx-navy)!important;color:#fff!important;border:1px solid var(--lnx-navy)!important}}
-    .lnx-trial{{background:var(--lnx-yellow)!important;color:#07162f!important;border:1px solid var(--lnx-yellow)!important}}
-    .lnx-actions a:hover{{transform:translateY(-1px)}}
-
-    .lnx-hero{{min-height:calc(100vh - 82px);display:grid;grid-template-columns:43.5% 56.5%;overflow:hidden}}
-    .lnx-copy{{background:#fff;padding:clamp(38px,5.5vh,68px) clamp(36px,4.3vw,74px) 30px;display:flex;flex-direction:column;justify-content:center}}
-    .lnx-kicker{{display:inline-flex;align-self:flex-start;background:#eef4ff;color:#1758bd;border-radius:999px;padding:8px 14px;font-size:12px;font-weight:900;letter-spacing:.02em;margin-bottom:20px}}
-    .lnx-title{{margin:0;max-width:690px;font-size:clamp(43px,3.05vw,62px);line-height:1.045;letter-spacing:-2.3px;font-weight:780;color:var(--lnx-ink)}}
-    .lnx-title strong{{color:#1760d0;font-weight:820}}
-    .lnx-sub{{max-width:655px;margin:22px 0 0;color:var(--lnx-muted);font-size:clamp(16px,1.04vw,19px);line-height:1.55}}
-    .lnx-buttons{{display:flex;gap:18px;margin-top:30px;flex-wrap:wrap}}
-    .lnx-buttons a{{height:52px;padding:0 28px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none!important;font-size:16px;font-weight:850}}
-    .lnx-primary{{background:var(--lnx-yellow);color:#061732!important;border:1px solid var(--lnx-yellow)}}
-    .lnx-secondary{{background:#fff;color:var(--lnx-ink)!important;border:1.5px solid #183a6a}}
-
-    .lnx-price{{max-width:640px;margin-top:28px;display:grid;grid-template-columns:1.14fr 1fr;min-height:138px;border-radius:15px;background:linear-gradient(135deg,#052454,#081a40 78%);box-shadow:0 12px 28px rgba(5,29,70,.18);overflow:hidden;color:#fff}}
-    .lnx-price-main{{padding:22px 26px;display:flex;align-items:center;border-right:1px solid rgba(255,255,255,.2)}}
-    .lnx-price-value{{display:flex;align-items:flex-end;gap:8px;white-space:nowrap}}
-    .lnx-price-value span{{font-size:28px;font-weight:850;margin-bottom:7px}}
-    .lnx-price-value strong{{font-size:58px;line-height:.88;letter-spacing:-2px}}
-    .lnx-price-value small{{font-size:17px;margin-bottom:6px}}
-    .lnx-price-benefits{{padding:20px 22px;display:grid;align-content:center;gap:14px}}
-    .lnx-price-benefit{{display:grid;grid-template-columns:28px 1fr;gap:9px;align-items:start}}
-    .lnx-price-icon{{color:var(--lnx-yellow);font-size:22px;line-height:1}}
-    .lnx-price-benefit b{{font-size:13px;color:#fff;display:block;margin-bottom:2px}}
-    .lnx-price-benefit span{{font-size:11px;color:#dbe7f6;line-height:1.35}}
-
-    .lnx-features{{max-width:670px;margin-top:28px;display:grid;grid-template-columns:repeat(4,1fr);gap:0}}
-    .lnx-feature{{padding:0 14px;border-right:1px solid #e2e7ee;min-height:64px}}
-    .lnx-feature:first-child{{padding-left:0}}.lnx-feature:last-child{{border-right:0}}
-    .lnx-feature-icon{{font-size:21px;color:#0f5cca;margin-bottom:6px}}
-    .lnx-feature b{{display:block;font-size:11px;color:#102849;margin-bottom:3px}}
-    .lnx-feature span{{display:block;font-size:9.5px;line-height:1.35;color:#5c6b80}}
-
-    .lnx-visual{{position:relative;min-height:calc(100vh - 82px);overflow:hidden;background:radial-gradient(circle at 48% 36%,#0c3c86 0,#09285e 25%,#061d48 52%,#041735 100%);isolation:isolate}}
-    .lnx-grid{{position:absolute;inset:0;opacity:.34;background-image:linear-gradient(rgba(65,137,255,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(65,137,255,.12) 1px,transparent 1px);background-size:58px 58px;mask-image:linear-gradient(to bottom,transparent 0,#000 20%,#000 86%,transparent 100%)}}
-    .lnx-orbit{{position:absolute;border:1px solid rgba(64,135,255,.30);border-radius:50%;left:50%;top:47%;transform:translate(-50%,-50%)}}
-    .lnx-orbit.o1{{width:560px;height:560px}}.lnx-orbit.o2{{width:760px;height:760px;opacity:.55}}.lnx-orbit.o3{{width:970px;height:970px;opacity:.32}}
-    .lnx-hub{{position:absolute;left:50%;top:32%;transform:translate(-50%,-50%);width:132px;height:132px;border-radius:50%;background:#fff;display:grid;place-items:center;z-index:5;box-shadow:0 0 0 12px rgba(24,111,239,.16),0 0 42px rgba(247,183,20,.28)}}
-    .lnx-hub:after{{content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid var(--lnx-yellow);opacity:.85}}
-    .lnx-hub img{{width:96px;max-height:82px;object-fit:contain}}
-    .lnx-hub span{{font-size:15px;font-weight:900;color:#0b2b5d}}
-    .lnx-node{{position:absolute;z-index:4;border:1px solid rgba(247,183,20,.6);background:linear-gradient(145deg,rgba(8,37,82,.95),rgba(6,25,58,.97));box-shadow:0 12px 34px rgba(0,0,0,.24);border-radius:16px;color:#fff;padding:16px 18px}}
-    .lnx-node b{{display:block;font-size:13px;margin-bottom:4px}}.lnx-node strong{{font-size:22px;line-height:1.05;letter-spacing:-.5px;display:block}}.lnx-node small{{display:block;margin-top:5px;color:#d4e2f5;font-size:10px;line-height:1.35}}
-    .lnx-node.n1{{left:8%;top:7%;width:205px}}.lnx-node.n2{{right:7%;top:7%;width:220px}}.lnx-node.n3{{left:4%;top:27%;width:210px}}.lnx-node.n4{{right:4%;top:27%;width:225px}}
-    .lnx-node .ico{{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#1766d5;font-size:18px;float:left;margin-right:10px}}
-
-    .lnx-demo{{position:absolute;z-index:6;left:50%;bottom:5.5%;transform:translateX(-50%);width:min(640px,70%);height:46%;min-height:355px;background:#fff;border-radius:18px;box-shadow:0 28px 65px rgba(0,0,0,.34);overflow:hidden;display:grid;grid-template-columns:142px 1fr}}
-    .lnx-demo-side{{background:linear-gradient(180deg,#082b62,#051d45);padding:21px 13px;color:#fff}}
-    .lnx-demo-brand{{font-size:17px;font-weight:900;margin:0 0 22px 7px}}.lnx-demo-brand span{{color:var(--lnx-yellow)}}
-    .lnx-demo-row{{height:32px;border-radius:6px;padding:0 8px;display:flex;align-items:center;gap:7px;font-size:9px;color:#d8e6f6;margin-bottom:3px}}
-    .lnx-demo-row.active{{background:#0d58aa;color:var(--lnx-yellow);font-weight:850}}
-    .lnx-demo-main{{padding:22px 20px;background:#fff;overflow:hidden;color:#173454}}
-    .lnx-demo-top{{display:flex;justify-content:space-between;gap:8px;align-items:center}}
-    .lnx-chip{{font-size:8px;font-weight:900;color:#125bbd;background:#edf4ff;padding:6px 8px;border-radius:6px}}
-    .lnx-items-btn{{font-size:8px;font-weight:900;color:#092044;background:var(--lnx-yellow);padding:7px 10px;border-radius:6px}}
-    .lnx-demo h3{{font-size:17px;line-height:1.18;margin:14px 0 4px;color:#132b4b}}
-    .lnx-agency{{font-size:8px;color:#1e63a6;font-weight:850;margin-bottom:12px}}
-    .lnx-meta{{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid #e2e8ef;border-radius:8px;overflow:hidden;margin-bottom:10px}}
-    .lnx-meta div{{padding:7px;border-right:1px solid #e2e8ef}}.lnx-meta div:last-child{{border-right:0}}.lnx-meta small{{display:block;font-size:6px;color:#8b99a9}}.lnx-meta b{{font-size:7px}}
-    .lnx-table{{border:1px solid #e2e7ed;border-radius:8px;overflow:hidden}}
-    .lnx-th,.lnx-tr{{display:grid;grid-template-columns:26px 1fr 45px 60px;align-items:center}}
-    .lnx-th{{height:25px;background:#fafbfc;font-size:6px;color:#728196;font-weight:900;border-bottom:1px solid #e5eaf0}}.lnx-tr{{height:40px;font-size:7px;color:#29425e;border-bottom:1px solid #e7ecf1}}.lnx-tr:last-child{{border-bottom:0}}
-    .lnx-th div,.lnx-tr div{{padding:0 6px}}.lnx-item-name b{{display:block;font-size:7.4px;color:#173653;margin-bottom:2px}}.lnx-item-name small{{font-size:5.8px;color:#8794a5}}
-
+    .lnx-page{{min-height:100vh;color:var(--lnx-text);background:radial-gradient(circle at 78% 15%,rgba(24,90,186,.18),transparent 32%),linear-gradient(180deg,#04162d 0,#031326 100%)}}
+    .lnx-top{{height:84px;border-bottom:1px solid rgba(44,93,151,.34);display:flex;align-items:center;background:rgba(2,14,29,.86);backdrop-filter:blur(12px)}}
+    .lnx-page .lnx-top{{background:rgba(2,14,29,.86)!important;border-bottom:1px solid rgba(44,93,151,.34)!important;box-shadow:none!important}}
+    .lnx-top-inner{{width:min(1580px,calc(100% - 72px));margin:auto;display:flex;align-items:center;justify-content:space-between}}
+    .lnx-brand{{display:flex;align-items:center;height:60px;text-decoration:none}}
+    .lnx-brand img{{display:block;max-width:250px;max-height:58px;object-fit:contain}}
+    .lnx-brand span{{font-size:28px;font-weight:900;color:#fff}}
+    .lnx-page .lnx-top .lnx-brand{{width:270px!important;height:60px!important;min-height:60px!important;flex:0 0 270px!important;background-color:#fff!important;border-radius:8px!important;background-position:center!important;background-size:235px auto!important;box-shadow:0 5px 18px rgba(0,0,0,.16)!important}}
+    .lnx-actions{{display:flex;align-items:center;gap:12px}}
+    .lnx-actions a{{height:42px;padding:0 20px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none!important;font-size:14px;font-weight:850}}
+    .lnx-login{{border:1px solid #315a8f;color:#fff!important;background:#08203e}}
+    .lnx-trial{{background:var(--lnx-yellow);color:#06172e!important;border:1px solid var(--lnx-yellow)}}
+    .lnx-shell{{width:min(1580px,calc(100% - 72px));margin:0 auto;padding:28px 0 30px;display:grid;grid-template-columns:430px minmax(0,1fr);gap:30px}}
+    .lnx-left{{padding:8px 0 0}}
+    .lnx-kicker{{display:inline-flex;align-items:center;gap:8px;border:1px solid #8b6b08;color:var(--lnx-yellow);background:rgba(247,189,33,.07);border-radius:999px;padding:8px 13px;font-size:11px;font-weight:900;letter-spacing:.015em}}
+    .lnx-title{{font-size:clamp(40px,3.05vw,61px);line-height:1.04;letter-spacing:-2px;font-weight:800;margin:22px 0 0;max-width:520px}}
+    .lnx-title strong{{color:var(--lnx-yellow)}}
+    .lnx-sub{{margin:18px 0 0;color:#d8e3f1;font-size:17px;line-height:1.52;max-width:500px}}
+    .lnx-buttons{{display:grid;grid-template-columns:1fr;margin-top:24px;max-width:320px;gap:10px}}
+    .lnx-buttons a{{height:54px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-decoration:none!important;font-size:16px;font-weight:900}}
+    .lnx-primary{{background:linear-gradient(180deg,#337dff,#1b5bd4);color:#fff!important;border:1px solid #3f84ff;box-shadow:0 12px 28px rgba(24,95,218,.22)}}
+    .lnx-secondary{{color:#74b3ff!important;background:transparent;border:0;height:auto!important;padding:7px 0;font-size:14px!important}}
+    .lnx-price{{margin-top:24px;border:1px solid #8f6b09;background:linear-gradient(155deg,rgba(12,39,75,.95),rgba(5,24,48,.98));border-radius:14px;padding:20px 20px 16px;box-shadow:0 18px 45px rgba(0,0,0,.23)}}
+    .lnx-price-label{{font-size:11px;font-weight:900;color:#e6edf6;letter-spacing:.02em}}
+    .lnx-price-value{{display:flex;align-items:flex-end;gap:7px;margin-top:12px}}
+    .lnx-price-value span{{font-size:23px;font-weight:800;margin-bottom:6px}}
+    .lnx-price-value strong{{font-size:49px;line-height:.92;letter-spacing:-2px}}
+    .lnx-price-value small{{font-size:16px;margin-bottom:5px}}
+    .lnx-price-benefits{{display:grid;gap:10px;margin-top:16px}}
+    .lnx-price-benefits div{{display:flex;gap:9px;color:#f1f5fb;font-size:13px;line-height:1.35}}
+    .lnx-price-benefits i{{font-style:normal;color:var(--lnx-yellow);font-weight:900}}
+    .lnx-audience{{margin-top:15px;border:1px solid #1a477e;background:#0a2446;border-radius:10px;padding:13px 14px;display:grid;grid-template-columns:38px 1fr;gap:11px;align-items:center}}
+    .lnx-audience-icon{{width:38px;height:38px;border-radius:8px;display:grid;place-items:center;background:#123c73;color:#72aaff;font-size:20px}}
+    .lnx-audience b{{display:block;font-size:12px;margin-bottom:3px}}
+    .lnx-audience span{{display:block;font-size:11px;color:#c6d5e8;line-height:1.38}}
+    .lnx-right{{min-width:0}}
+    .lnx-audience-banner{{height:90px;border:1px solid #173d70;background:linear-gradient(135deg,#092143,#061a34);border-radius:14px;padding:17px 22px;display:flex;align-items:center;gap:16px}}
+    .lnx-banner-icon{{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(180deg,#316ee7,#1643a7);font-size:24px}}
+    .lnx-audience-banner b{{display:block;font-size:18px;margin-bottom:4px}}.lnx-audience-banner span{{font-size:13px;color:#d7e3f2}}
+    .lnx-demo{{margin-top:18px;border:1px solid #1d477a;background:rgba(5,24,48,.88);border-radius:15px;padding:18px 18px 16px;box-shadow:0 22px 60px rgba(0,0,0,.2)}}
+    .lnx-demo-head{{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}}
+    .lnx-demo-head h2{{margin:0;font-size:24px;letter-spacing:-.5px}}.lnx-demo-head p{{margin:5px 0 0;color:#c7d5e8;font-size:13px}}
+    .lnx-example-badge{{white-space:nowrap;border:1px solid #355d89;border-radius:999px;padding:7px 10px;color:#9fc5f5;font-size:10px;font-weight:850;background:#08213f}}
+    .lnx-tender{{margin-top:16px;border:1px solid #234e82;border-radius:12px;background:linear-gradient(180deg,#0a2548,#081e3c);padding:14px;display:grid;grid-template-columns:minmax(260px,1.5fr) .8fr .9fr;gap:12px;align-items:center}}
+    .lnx-org{{display:grid;grid-template-columns:52px 1fr;gap:12px;align-items:center}}
+    .lnx-org-icon{{width:52px;height:52px;border-radius:10px;background:#edf4ff;color:#174b8f;display:grid;place-items:center;font-size:28px}}
+    .lnx-org b{{display:block;font-size:13px;text-transform:uppercase}}.lnx-org span{{display:block;color:#d6e1ef;font-size:11px;line-height:1.4;margin-top:3px}}
+    .lnx-meta-block{{border-left:1px solid #1f4777;padding-left:14px}}.lnx-meta-block small{{display:block;color:#9db0c8;font-size:10px;margin-bottom:4px}}.lnx-meta-block strong{{font-size:12px}}
+    .lnx-table{{margin-top:12px;border:1px solid #234e82;border-radius:12px;overflow:hidden}}
+    .lnx-table-title{{padding:12px 14px;font-size:15px;font-weight:900;border-bottom:1px solid #234e82;background:#092142}}
+    .lnx-th,.lnx-tr{{display:grid;grid-template-columns:42px 1fr 88px 100px 105px;align-items:center}}
+    .lnx-th{{height:32px;background:#0b284f;color:#afc2d9;font-size:9px;font-weight:800}}
+    .lnx-tr{{min-height:55px;border-top:1px solid #183d6c;font-size:11px;color:#eef4fb}}
+    .lnx-th>div,.lnx-tr>div{{padding:0 10px}}
+    .lnx-item{{display:flex;align-items:center;gap:10px}}.lnx-item-ico{{width:36px;height:36px;border-radius:7px;background:#e9eef5;color:#263c5f;display:grid;place-items:center;font-size:20px;flex:0 0 auto}}
+    .lnx-item b{{display:block;font-size:11px;margin-bottom:2px}}.lnx-item small{{display:block;color:#aebed2;font-size:9px}}
+    .lnx-table-foot{{height:34px;display:flex;align-items:center;justify-content:center;border-top:1px solid #183d6c;color:#66acff;font-size:11px;font-weight:800;background:#071d39}}
+    .lnx-benefits{{margin-top:18px;border:1px solid #173d70;background:#061a34;border-radius:14px;display:grid;grid-template-columns:repeat(4,1fr);overflow:hidden}}
+    .lnx-benefit{{padding:16px 14px;display:grid;grid-template-columns:36px 1fr;gap:10px;border-right:1px solid #173d70;min-height:90px}}
+    .lnx-benefit:last-child{{border-right:0}}
+    .lnx-benefit-icon{{width:36px;height:36px;border-radius:9px;background:#123d75;color:#6da7ff;display:grid;place-items:center;font-size:20px}}
+    .lnx-benefit b{{font-size:11px;display:block;margin-bottom:4px}}.lnx-benefit span{{display:block;color:#c6d5e8;font-size:9.5px;line-height:1.4}}
+    .lnx-closing{{margin-top:18px;border:1px solid #1d477a;border-radius:12px;background:#08213f;padding:13px 18px;text-align:center;font-size:16px;font-weight:800}}
+    .lnx-closing strong{{color:var(--lnx-yellow)}}
     @media(max-width:1220px){{
-      .lnx-top-inner{{width:calc(100% - 46px)}}.lnx-hero{{grid-template-columns:1fr}}
-      .lnx-copy{{min-height:auto;padding:56px 7vw 52px}}.lnx-title{{max-width:760px}}.lnx-price{{max-width:720px}}.lnx-features{{max-width:760px}}
-      .lnx-visual{{min-height:760px}}.lnx-demo{{height:410px;width:min(720px,78%)}}
+      .lnx-shell{{grid-template-columns:1fr;padding-top:24px}}
+      .lnx-left{{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}}
+      .lnx-copy-block{{grid-column:1}}.lnx-price{{grid-column:2;grid-row:1 / span 2;margin-top:0}}
+      .lnx-buttons{{max-width:360px}}
     }}
-    @media(max-width:720px){{
-      .lnx-top{{height:70px}}.lnx-top-inner{{width:calc(100% - 24px)}}.lnx-brand{{height:48px}}.lnx-brand img{{max-width:165px;max-height:44px}}
-      .lnx-actions{{gap:7px}}.lnx-actions a{{height:38px;padding:0 12px;font-size:12px}}
-      .lnx-copy{{padding:44px 22px 42px}}.lnx-title{{font-size:40px;letter-spacing:-1.5px}}.lnx-sub{{font-size:16px}}.lnx-buttons{{gap:10px}}.lnx-buttons a{{width:100%;height:48px}}
-      .lnx-price{{grid-template-columns:1fr;margin-top:23px}}.lnx-price-main{{border-right:0;border-bottom:1px solid rgba(255,255,255,.18);justify-content:center}}.lnx-price-value strong{{font-size:51px}}
-      .lnx-features{{grid-template-columns:1fr 1fr;gap:18px}}.lnx-feature{{border-right:0;padding:0}}
-      .lnx-visual{{min-height:690px}}.lnx-node{{display:none}}.lnx-hub{{top:18%;width:110px;height:110px}}.lnx-hub img{{width:80px}}
-      .lnx-demo{{width:92%;height:430px;bottom:6%;grid-template-columns:1fr;border-radius:16px}}.lnx-demo-side{{display:none}}.lnx-demo-main{{padding:18px 14px}}.lnx-demo h3{{font-size:15px}}.lnx-th,.lnx-tr{{grid-template-columns:24px 1fr 48px}}.lnx-th div:last-child,.lnx-tr div:last-child{{display:none}}
+    @media(max-width:820px){{
+      .lnx-top{{height:72px}}.lnx-top-inner,.lnx-shell{{width:calc(100% - 28px)}}.lnx-brand img{{max-width:180px;max-height:48px}}.lnx-actions{{gap:7px}}.lnx-actions a{{height:38px;padding:0 12px;font-size:12px}}
+      .lnx-page .lnx-top .lnx-brand{{width:205px!important;height:50px!important;min-height:50px!important;flex-basis:205px!important;background-size:180px auto!important}}
+      .lnx-shell{{padding-top:18px;gap:18px}}.lnx-left{{display:block}}.lnx-title{{font-size:40px}}.lnx-sub{{font-size:15px}}.lnx-price{{margin-top:22px}}
+      .lnx-audience-banner{{height:auto;padding:14px}}.lnx-audience-banner b{{font-size:15px}}
+      .lnx-demo{{padding:14px}}.lnx-demo-head{{display:block}}.lnx-example-badge{{display:inline-flex;margin-top:10px}}
+      .lnx-tender{{grid-template-columns:1fr}}.lnx-meta-block{{border-left:0;border-top:1px solid #1f4777;padding:10px 0 0}}
+      .lnx-th,.lnx-tr{{grid-template-columns:32px 1fr 64px 80px}}.lnx-th>div:last-child,.lnx-tr>div:last-child{{display:none}}
+      .lnx-benefits{{grid-template-columns:1fr 1fr}}.lnx-benefit{{border-bottom:1px solid #173d70}}.lnx-benefit:nth-child(2){{border-right:0}}.lnx-benefit:nth-child(3),.lnx-benefit:nth-child(4){{border-bottom:0}}
+    }}
+    @media(max-width:520px){{
+      .lnx-top-inner{{width:calc(100% - 18px)}}.lnx-brand img{{max-width:150px}}.lnx-actions .lnx-login{{display:none}}.lnx-actions a{{padding:0 10px;font-size:11px}}
+      .lnx-page .lnx-top .lnx-brand{{width:170px!important;height:46px!important;min-height:46px!important;flex-basis:170px!important;background-size:148px auto!important}}
+      .lnx-title{{font-size:34px;letter-spacing:-1.1px}}.lnx-buttons{{max-width:none}}.lnx-audience-banner{{align-items:flex-start}}
+      .lnx-demo-head h2{{font-size:21px}}.lnx-org{{grid-template-columns:44px 1fr}}.lnx-org-icon{{width:44px;height:44px}}
+      .lnx-th,.lnx-tr{{grid-template-columns:28px 1fr 56px}}.lnx-th>div:nth-child(4),.lnx-tr>div:nth-child(4),.lnx-th>div:nth-child(5),.lnx-tr>div:nth-child(5){{display:none}}
+      .lnx-benefits{{grid-template-columns:1fr}}.lnx-benefit{{border-right:0;border-bottom:1px solid #173d70!important}}.lnx-benefit:last-child{{border-bottom:0!important}}
     }}
     </style>
-
     <div class="lnx-page">
       <header class="lnx-top">
         <div class="lnx-top-inner">
           <a class="lnx-brand" href="?">{logo_html}</a>
-          <div class="lnx-actions">
-            <a class="lnx-login" href="?auth=login">Login</a>
-            <a class="lnx-trial" href="?auth=request">Teste grátis</a>
-          </div>
+          <div class="lnx-actions"><a class="lnx-login" href="?auth=login">Login</a><a class="lnx-trial" href="?auth=request">Teste grátis</a></div>
         </div>
       </header>
-
-      <main class="lnx-hero">
-        <section class="lnx-copy">
-          <div class="lnx-kicker">INTELIGÊNCIA EM LICITAÇÕES</div>
-          <h1 class="lnx-title">Encontre oportunidades que valem sua atenção. <strong>Veja o que está sendo comprado antes de abrir o edital.</strong></h1>
-          <p class="lnx-sub">O LicitaNexo reúne oportunidades públicas e mostra itens, quantidades e valores em uma só tela para você chegar mais rápido ao que faz sentido e decidir onde vale competir.</p>
-
-          <div class="lnx-buttons">
-            <a class="lnx-primary" href="?auth=request">Começar grátis por 7 dias</a>
-            <a class="lnx-secondary" href="?auth=login">Acessar a plataforma</a>
+      <main class="lnx-shell">
+        <section class="lnx-left">
+          <div class="lnx-copy-block">
+            <div class="lnx-kicker">◎ FEITO PARA MEI, MICROEMPRESAS E EPP</div>
+            <h1 class="lnx-title">Encontre licitações mais rápido e <strong>veja os itens</strong> sem abrir edital por edital.</h1>
+            <p class="lnx-sub">O LicitaNexo mostra o que realmente importa: itens, quantidades e valores em uma só tela para você decidir onde vale competir.</p>
+            <div class="lnx-buttons"><a class="lnx-primary" href="?auth=request">Teste grátis por 7 dias</a><a class="lnx-secondary" href="?auth=login">Acessar a plataforma →</a></div>
           </div>
-
           <div class="lnx-price">
-            <div class="lnx-price-main">
-              <div class="lnx-price-value"><span>R$</span><strong>29,90</strong><small>/mês</small></div>
-            </div>
+            <div class="lnx-price-label">PLANO ACESSÍVEL PARA QUEM ESTÁ COMEÇANDO</div>
+            <div class="lnx-price-value"><span>R$</span><strong>29,90</strong><small>/mês</small></div>
             <div class="lnx-price-benefits">
-              <div class="lnx-price-benefit">
-                <div class="lnx-price-icon">▣</div>
-                <div><b>7 dias grátis</b><span>Conheça o LicitaNexo antes de decidir.</span></div>
-              </div>
-              <div class="lnx-price-benefit">
-                <div class="lnx-price-icon">✦</div>
-                <div><b>Preço justo para quem quer começar a vender para o governo</b><span>Uma assinatura simples para transformar pesquisa em oportunidade.</span></div>
-              </div>
+              <div><i>✓</i><span>7 dias grátis para conhecer a plataforma.</span></div>
+              <div><i>✓</i><span>Preço justo para quem quer começar a vender para o governo.</span></div>
+              <div><i>✓</i><span>Cancele quando quiser. Sem burocracia.</span></div>
             </div>
-          </div>
-
-          <div class="lnx-features">
-            <div class="lnx-feature"><div class="lnx-feature-icon">◎</div><b>Encontre o que interessa</b><span>Chegue mais rápido às oportunidades que merecem análise.</span></div>
-            <div class="lnx-feature"><div class="lnx-feature-icon">▤</div><b>Veja a compra por dentro</b><span>Itens, quantidades e valores na tela antes de abrir o edital.</span></div>
-            <div class="lnx-feature"><div class="lnx-feature-icon">♧</div><b>Não perca o timing</b><span>Organize as oportunidades que merecem sua atenção.</span></div>
-            <div class="lnx-feature"><div class="lnx-feature-icon">◇</div><b>Decida com mais clareza</b><span>Menos procura manual. Mais foco em onde vale competir.</span></div>
+            <div class="lnx-audience"><div class="lnx-audience-icon">▣</div><div><b>Ideal para MEI, microempresas e EPP</b><span>Uma forma simples de dar os primeiros passos nas licitações sem começar com uma ferramenta cara ou complicada.</span></div></div>
           </div>
         </section>
-
-        <section class="lnx-visual" aria-label="Demonstração visual do LicitaNexo">
-          <div class="lnx-grid"></div><div class="lnx-orbit o1"></div><div class="lnx-orbit o2"></div><div class="lnx-orbit o3"></div>
-          <div class="lnx-hub">{logo_html}</div>
-
-          <div class="lnx-node n1"><span class="ico">⌕</span><b>Oportunidades</b><strong>Mais foco</strong><small>Menos ruído na busca. Mais atenção ao que pode virar negócio.</small></div>
-          <div class="lnx-node n2"><span class="ico">▤</span><b>Itens da compra</b><strong>Na tela</strong><small>Veja o que está sendo comprado antes de abrir o edital.</small></div>
-          <div class="lnx-node n3"><span class="ico">⌖</span><b>Cobertura</b><strong>Nacional</strong><small>Oportunidades públicas de diferentes regiões em um só lugar.</small></div>
-          <div class="lnx-node n4"><span class="ico">◇</span><b>Decisão mais rápida</b><small>Compare as informações essenciais e escolha onde vale investir seu tempo.</small></div>
-
+        <section class="lnx-right">
+          <div class="lnx-audience-banner"><div class="lnx-banner-icon">♟</div><div><b>Uma plataforma pensada para pequenos negócios venderem ao governo</b><span>Mais clareza para encontrar oportunidades, entender a compra e decidir onde participar.</span></div></div>
           <div class="lnx-demo">
-            <aside class="lnx-demo-side">
-              <div class="lnx-demo-brand">Licita<span>Nexo</span></div>
-              <div class="lnx-demo-row active">⌕ Buscar licitações</div>
-              <div class="lnx-demo-row">◇ Por Estado</div>
-              <div class="lnx-demo-row">⌖ Por Cidade</div>
-              <div class="lnx-demo-row">▣ Por Modalidade</div>
-              <div class="lnx-demo-row">◎ Por site de disputa</div>
-              <div class="lnx-demo-row">▽ Filtro avançado</div>
-              <div class="lnx-demo-row">☆ Minha lista</div>
-              <div class="lnx-demo-row">□ Calendário</div>
-            </aside>
-
-            <div class="lnx-demo-main">
-              <div class="lnx-demo-top">
-                <span class="lnx-chip">DISPENSA DE LICITAÇÃO</span>
-                <span class="lnx-items-btn">Ver itens da compra</span>
-              </div>
-              <h3>Aquisição de equipamentos e materiais para reabilitação e atendimento hospitalar</h3>
-              <div class="lnx-agency">MUNICÍPIO DE GUARDA-MOR · MG</div>
-              <div class="lnx-meta">
-                <div><small>Modalidade</small><b>Dispensa</b></div>
-                <div><small>Processo</small><b>DL 034/2024</b></div>
-                <div><small>Publicado</small><b>27/08/2024</b></div>
-                <div><small>Itens</small><b>6 itens</b></div>
-              </div>
-              <div class="lnx-table">
-                <div class="lnx-th"><div>#</div><div>DESCRIÇÃO DO ITEM</div><div>QTD.</div><div>VALOR</div></div>
-                <div class="lnx-tr"><div>1</div><div class="lnx-item-name"><b>Cadeira de rodas adulto</b><small>Dobrável, em aço carbono</small></div><div>5</div><div>R$ 6.250</div></div>
-                <div class="lnx-tr"><div>2</div><div class="lnx-item-name"><b>Cama hospitalar manual</b><small>Com grades laterais</small></div><div>3</div><div>R$ 8.970</div></div>
-                <div class="lnx-tr"><div>3</div><div class="lnx-item-name"><b>Muleta axilar</b><small>Em alumínio regulável</small></div><div>10</div><div>R$ 1.800</div></div>
-                <div class="lnx-tr"><div>4</div><div class="lnx-item-name"><b>Andador articulado</b><small>Dobrável em alumínio</small></div><div>5</div><div>R$ 1.600</div></div>
-              </div>
+            <div class="lnx-demo-head"><div><h2>Veja o que está sendo comprado.</h2><p>Itens, quantidades e valores organizados para você avaliar a oportunidade com mais rapidez.</p></div><div class="lnx-example-badge">EXEMPLO DEMONSTRATIVO</div></div>
+            <div class="lnx-tender">
+              <div class="lnx-org"><div class="lnx-org-icon">▦</div><div><b>Prefeitura Municipal de Uberlândia · MG</b><span>Exemplo de compra pública para demonstrar como o LicitaNexo organiza as informações.</span></div></div>
+              <div class="lnx-meta-block"><small>Modalidade</small><strong>Pregão eletrônico</strong></div>
+              <div class="lnx-meta-block"><small>Visualização</small><strong>Itens organizados na tela</strong></div>
+            </div>
+            <div class="lnx-table">
+              <div class="lnx-table-title">Itens da compra</div>
+              <div class="lnx-th"><div>Item</div><div>Descrição</div><div>Qtd.</div><div>Vl. unit.</div><div>Vl. total</div></div>
+              <div class="lnx-tr"><div>01</div><div class="lnx-item"><span class="lnx-item-ico">♿</span><span><b>Cadeira de rodas adulto</b><small>Dobrável, aço carbono</small></span></div><div>5 un</div><div>R$ 950</div><div>R$ 4.750</div></div>
+              <div class="lnx-tr"><div>02</div><div class="lnx-item"><span class="lnx-item-ico">▱</span><span><b>Cama hospitalar manual</b><small>Com grades laterais</small></span></div><div>3 un</div><div>R$ 1.890</div><div>R$ 5.670</div></div>
+              <div class="lnx-tr"><div>03</div><div class="lnx-item"><span class="lnx-item-ico">∥</span><span><b>Muleta axilar</b><small>Alumínio regulável</small></span></div><div>10 un</div><div>R$ 120</div><div>R$ 1.200</div></div>
+              <div class="lnx-tr"><div>04</div><div class="lnx-item"><span class="lnx-item-ico">Π</span><span><b>Andador articulado</b><small>Dobrável em alumínio</small></span></div><div>5 un</div><div>R$ 230</div><div>R$ 1.150</div></div>
+              <div class="lnx-table-foot">Veja os itens antes de decidir se vale abrir o edital →</div>
             </div>
           </div>
+          <div class="lnx-benefits">
+            <div class="lnx-benefit"><div class="lnx-benefit-icon">⚡</div><div><b>Comece com pouco</b><span>Uma ferramenta acessível para quem está entrando no mercado público.</span></div></div>
+            <div class="lnx-benefit"><div class="lnx-benefit-icon">◎</div><div><b>Foco no que importa</b><span>Encontre oportunidades que combinam melhor com o que sua empresa vende.</span></div></div>
+            <div class="lnx-benefit"><div class="lnx-benefit-icon">♧</div><div><b>Alertas personalizados</b><span>Acompanhe novas oportunidades de acordo com seus interesses.</span></div></div>
+            <div class="lnx-benefit"><div class="lnx-benefit-icon">◇</div><div><b>Decida com mais clareza</b><span>Veja as informações principais antes de investir tempo na análise completa.</span></div></div>
+          </div>
+          <div class="lnx-closing">O LicitaNexo foi criado para <strong>empresas como a sua.</strong> &nbsp; Simples de usar. Preço acessível. Informação para decidir melhor.</div>
         </section>
       </main>
     </div>
-    '''
+    """
     st.html(html)
