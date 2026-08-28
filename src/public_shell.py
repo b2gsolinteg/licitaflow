@@ -108,12 +108,12 @@ def _official_brand_css() -> str:
 
     .lnx-auth-head .lnx-auth-logo {{
         display:block!important;
-        width:310px!important;
-        height:78px!important;
+        width:270px!important;
+        height:68px!important;
         background-image:url("{logo_uri}")!important;
         background-repeat:no-repeat!important;
         background-position:left center!important;
-        background-size:300px auto!important;
+        background-size:260px auto!important;
     }}
 
     @media(max-width:680px) {{
@@ -122,9 +122,54 @@ def _official_brand_css() -> str:
             flex-basis:188px!important;background-size:180px auto!important;
         }}
         .lnx-auth-head .lnx-auth-logo {{
-            width:235px!important;height:60px!important;background-size:225px auto!important;
+            width:220px!important;height:56px!important;background-size:210px auto!important;
         }}
     }}
+    </style>
+    '''
+
+
+def _auth_layout_fix_css() -> str:
+    """Mantém cabeçalho e formulário no fluxo vertical para impedir sobreposição."""
+    return '''
+    <style>
+    .lnx-auth-head{
+        position:relative!important;
+        left:auto!important;
+        top:auto!important;
+        width:calc(100% - 76px)!important;
+        margin:0 0 0 clamp(38px,4.2vw,72px)!important;
+        padding-top:clamp(28px,3.4vh,42px)!important;
+        z-index:6!important;
+    }
+    .lnx-auth-kicker{margin-top:16px!important}
+    .lnx-auth-title{margin-top:14px!important}
+    .lnx-auth-caption{margin-top:10px!important}
+    .st-key-lnx_auth_form{
+        margin-top:26px!important;
+        margin-bottom:34px!important;
+    }
+    @media(max-width:1150px){
+        .lnx-auth-head{width:calc(100% - 70px)!important}
+        .st-key-lnx_auth_form{margin-top:24px!important}
+    }
+    @media(max-width:900px){
+        .lnx-auth-head{
+            position:relative!important;
+            left:auto!important;
+            right:auto!important;
+            top:auto!important;
+            width:100%!important;
+            max-width:540px!important;
+            margin:0 auto!important;
+            padding-top:30px!important;
+        }
+        .st-key-lnx_auth_form{
+            width:100%!important;
+            max-width:540px!important;
+            margin:24px auto 34px!important;
+        }
+    }
     </style>
     '''
 
@@ -141,3 +186,4 @@ def render_public_auth(**kwargs) -> None:
     css = _official_brand_css()
     if css:
         st.html(css)
+    st.html(_auth_layout_fix_css())
