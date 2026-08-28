@@ -18,13 +18,11 @@ LEGACY_IMPORTS = (
     "from src.public_auth import render_public_auth",
 )
 
-OLD_PUBLIC_GATE = '''    if "user" not in st.session_state and not st.query_params.get("auth"):
-        render_public_landing(LOGO_PATH)
-        return
-
-'''
-
-PUBLIC_GATE = '''    if "user" not in st.session_state:
+GATE_MARKER = "# PUBLIC_SHELL_GATE_V4"
+PUBLIC_GATE = '''    # PUBLIC_SHELL_GATE_V4
+    # Este gate precisa ser a primeira lógica de main(): impede que a home/login públicos
+    # herdem apply_brand() e impede ?auth=... de cair no login_page() legado.
+    if "user" not in st.session_state:
         if st.query_params.get("auth"):
             render_public_auth(
                 db=db,
@@ -59,17 +57,18 @@ def _replace_imports(source: str) -> tuple[str, bool]:
 
 
 def _install_public_gate(source: str) -> tuple[str, bool]:
-    if PUBLIC_GATE in source:
-        return source, False
-
-    if OLD_PUBLIC_GATE in source:
-        return source.replace(OLD_PUBLIC_GATE, PUBLIC_GATE, 1), True
-
     match = re.search(r"(?m)^def main\(\):\s*$", source)
     if not match:
         raise RuntimeError("def main() não encontrado")
 
     insert_at = match.end()
+    immediate_region = source[insert_at:insert_at + 900]
+
+    # Só considera instalado se o gate V4 estiver imediatamente no início de main().
+    # Gates antigos podem permanecer mais abaixo sem efeito; o V4 retorna antes deles.
+    if GATE_MARKER in immediate_region:
+        return source, False
+
     source = source[:insert_at] + "\n" + PUBLIC_GATE + source[insert_at:]
     return source, True
 
@@ -90,21 +89,21 @@ def main() -> int:
         return 2
 
     if source == original:
-        print("OK: nova home e autenticação pública já estão integradas.")
+        print("OK: gate público V4 já está instalado antes do login legado.")
         return 0
 
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    backup = ROOT / f"app.py.before-home-login-redesign.{stamp}.bak"
+    backup = ROOT / f"app.py.before-public-shell-v4.{stamp}.bak"
     shutil.copy2(APP_PATH, backup)
     APP_PATH.write_text(source, encoding="utf-8")
 
-    print("OK: nova home e autenticação pública integradas.")
+    print("OK: home e login públicos isolados do tema/login legado.")
     print(f"Backup criado: {backup.name}")
     if import_changed:
         print("Import público atualizado para src.public_shell.")
     if gate_changed:
-        print("Gate público atualizado para home e login isolados do tema interno.")
-    print("O restante do app.py foi preservado.")
+        print("Gate V4 inserido como primeira lógica de main().")
+    print("O login antigo permanece no arquivo apenas como fallback interno, mas não recebe mais ?auth=...")
     return 0
 
 
