@@ -25,10 +25,12 @@ def render_public_landing(logo_path=None) -> None:
     .lnx-page,.lnx-page *{{box-sizing:border-box}}
     .lnx-page{{min-height:100vh;color:var(--lnx-text);background:radial-gradient(circle at 78% 15%,rgba(24,90,186,.18),transparent 32%),linear-gradient(180deg,#04162d 0,#031326 100%)}}
     .lnx-top{{height:84px;border-bottom:1px solid rgba(44,93,151,.34);display:flex;align-items:center;background:rgba(2,14,29,.86);backdrop-filter:blur(12px)}}
+    .lnx-page .lnx-top{{background:rgba(2,14,29,.86)!important;border-bottom:1px solid rgba(44,93,151,.34)!important;box-shadow:none!important}}
     .lnx-top-inner{{width:min(1580px,calc(100% - 72px));margin:auto;display:flex;align-items:center;justify-content:space-between}}
     .lnx-brand{{display:flex;align-items:center;height:60px;text-decoration:none}}
     .lnx-brand img{{display:block;max-width:250px;max-height:58px;object-fit:contain}}
     .lnx-brand span{{font-size:28px;font-weight:900;color:#fff}}
+    .lnx-page .lnx-top .lnx-brand{{width:270px!important;height:60px!important;min-height:60px!important;flex:0 0 270px!important;background-color:#fff!important;border-radius:8px!important;background-position:center!important;background-size:235px auto!important;box-shadow:0 5px 18px rgba(0,0,0,.16)!important}}
     .lnx-actions{{display:flex;align-items:center;gap:12px}}
     .lnx-actions a{{height:42px;padding:0 20px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none!important;font-size:14px;font-weight:850}}
     .lnx-login{{border:1px solid #315a8f;color:#fff!important;background:#08203e}}
@@ -93,6 +95,7 @@ def render_public_landing(logo_path=None) -> None:
     }}
     @media(max-width:820px){{
       .lnx-top{{height:72px}}.lnx-top-inner,.lnx-shell{{width:calc(100% - 28px)}}.lnx-brand img{{max-width:180px;max-height:48px}}.lnx-actions{{gap:7px}}.lnx-actions a{{height:38px;padding:0 12px;font-size:12px}}
+      .lnx-page .lnx-top .lnx-brand{{width:205px!important;height:50px!important;min-height:50px!important;flex-basis:205px!important;background-size:180px auto!important}}
       .lnx-shell{{padding-top:18px;gap:18px}}.lnx-left{{display:block}}.lnx-title{{font-size:40px}}.lnx-sub{{font-size:15px}}.lnx-price{{margin-top:22px}}
       .lnx-audience-banner{{height:auto;padding:14px}}.lnx-audience-banner b{{font-size:15px}}
       .lnx-demo{{padding:14px}}.lnx-demo-head{{display:block}}.lnx-example-badge{{display:inline-flex;margin-top:10px}}
@@ -102,6 +105,7 @@ def render_public_landing(logo_path=None) -> None:
     }}
     @media(max-width:520px){{
       .lnx-top-inner{{width:calc(100% - 18px)}}.lnx-brand img{{max-width:150px}}.lnx-actions .lnx-login{{display:none}}.lnx-actions a{{padding:0 10px;font-size:11px}}
+      .lnx-page .lnx-top .lnx-brand{{width:170px!important;height:46px!important;min-height:46px!important;flex-basis:170px!important;background-size:148px auto!important}}
       .lnx-title{{font-size:34px;letter-spacing:-1.1px}}.lnx-buttons{{max-width:none}}.lnx-audience-banner{{align-items:flex-start}}
       .lnx-demo-head h2{{font-size:21px}}.lnx-org{{grid-template-columns:44px 1fr}}.lnx-org-icon{{width:44px;height:44px}}
       .lnx-th,.lnx-tr{{grid-template-columns:28px 1fr 56px}}.lnx-th>div:nth-child(4),.lnx-tr>div:nth-child(4),.lnx-th>div:nth-child(5),.lnx-tr>div:nth-child(5){{display:none}}
