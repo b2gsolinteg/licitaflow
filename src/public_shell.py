@@ -236,6 +236,79 @@ def _commercial_auth_copy_css() -> str:
     '''
 
 
+def _auth_value_panel_html() -> str:
+    """Painel comercial do login sem métricas promocionais ou dados apresentados como ao vivo."""
+    return '''
+    <style>
+    .lnx-auth-art{display:none!important}
+    .lnx-auth-value-panel,.lnx-auth-value-panel *{box-sizing:border-box}
+    .lnx-auth-value-panel{
+        position:fixed;inset:0 0 0 40%;z-index:2;overflow:auto;
+        background:
+          radial-gradient(circle at 76% 12%,rgba(32,110,238,.22),transparent 28%),
+          linear-gradient(145deg,#061a40 0%,#071f4b 48%,#04152f 100%);
+        color:#fff;font-family:Inter,"Segoe UI",Arial,sans-serif;
+        padding:clamp(26px,3.2vw,52px);
+    }
+    .lnx-value-shell{width:min(900px,100%);min-height:100%;margin:auto;display:flex;flex-direction:column;justify-content:center;gap:18px}
+    .lnx-value-audience{display:flex;align-items:center;gap:12px;padding:13px 16px;border:1px solid rgba(247,183,20,.42);border-radius:14px;background:rgba(4,21,51,.54);box-shadow:0 14px 40px rgba(0,0,0,.13)}
+    .lnx-value-audience-icon{width:42px;height:42px;flex:0 0 42px;border-radius:12px;background:linear-gradient(145deg,#1d67d7,#0d43a2);display:grid;place-items:center;font-size:21px}
+    .lnx-value-audience b{display:block;font-size:14px;line-height:1.25}.lnx-value-audience span{display:block;color:#b9c9df;font-size:11px;margin-top:3px;line-height:1.35}
+    .lnx-value-copy{padding:2px 2px 0}.lnx-value-copy h2{margin:0;font-size:clamp(29px,2.45vw,44px);line-height:1.02;letter-spacing:-1.5px;max-width:760px}.lnx-value-copy h2 strong{color:#f7b714}.lnx-value-copy p{margin:10px 0 0;color:#c5d3e7;font-size:14px;line-height:1.5;max-width:720px}
+    .lnx-value-demo{border:1px solid rgba(63,128,226,.34);border-radius:18px;background:linear-gradient(150deg,rgba(8,40,91,.94),rgba(5,24,56,.96));box-shadow:0 22px 55px rgba(0,0,0,.22);overflow:hidden}
+    .lnx-value-demo-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;padding:18px 20px 15px;border-bottom:1px solid rgba(255,255,255,.09)}
+    .lnx-value-demo-head h3{margin:0;font-size:18px}.lnx-value-demo-head p{margin:4px 0 0;color:#acbfd8;font-size:10px}.lnx-demo-badge{white-space:nowrap;border:1px solid rgba(247,183,20,.45);color:#ffd45a;background:rgba(247,183,20,.08);padding:7px 10px;border-radius:999px;font-size:9px;font-weight:900;letter-spacing:.04em}
+    .lnx-value-org{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:15px 20px;background:rgba(10,51,109,.28);border-bottom:1px solid rgba(255,255,255,.08)}
+    .lnx-value-org b{display:block;font-size:13px}.lnx-value-org span{display:block;color:#aec2dc;font-size:9px;margin-top:4px}.lnx-value-org-tag{color:#70a9ff!important;font-weight:800!important;font-size:9px!important;margin:0!important}
+    .lnx-value-table{padding:0 20px 14px}.lnx-value-row{display:grid;grid-template-columns:26px minmax(160px,1fr) 72px 92px;gap:8px;align-items:center;min-height:48px;border-bottom:1px solid rgba(255,255,255,.075);font-size:10px}.lnx-value-row:last-child{border-bottom:0}.lnx-value-row.header{min-height:32px;color:#8fa6c4;font-size:8px;font-weight:850;text-transform:uppercase}.lnx-value-item b{font-size:10px}.lnx-value-item small{display:block;color:#91a8c5;font-size:8px;margin-top:2px}.lnx-value-money{color:#ffd04a;font-weight:900}
+    .lnx-value-benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.lnx-value-benefit{min-height:92px;border:1px solid rgba(63,128,226,.26);border-radius:14px;background:rgba(5,27,63,.76);padding:14px}.lnx-value-benefit i{font-style:normal;color:#f7b714;font-size:20px}.lnx-value-benefit b{display:block;font-size:11px;margin:6px 0 3px}.lnx-value-benefit span{display:block;color:#aebfd5;font-size:9px;line-height:1.4}
+    .lnx-value-price{display:flex;align-items:center;justify-content:space-between;gap:18px;border:1px solid rgba(247,183,20,.48);border-radius:14px;padding:13px 16px;background:linear-gradient(100deg,rgba(247,183,20,.10),rgba(7,31,72,.88) 48%)}
+    .lnx-value-price-main{white-space:nowrap}.lnx-value-price-main strong{font-size:26px;color:#ffd04a}.lnx-value-price-main span{font-size:12px;color:#fff}.lnx-value-price-copy{font-size:10px;color:#c7d5e8;line-height:1.4;text-align:right}.lnx-value-price-copy b{color:#fff}
+    @media(max-width:1150px){
+      .lnx-auth-value-panel{left:46%;padding:24px}.lnx-value-shell{gap:13px}.lnx-value-copy h2{font-size:30px}.lnx-value-copy p{font-size:12px}.lnx-value-audience{padding:11px 13px}.lnx-value-demo-head{padding:14px 15px 12px}.lnx-value-org{padding:12px 15px}.lnx-value-table{padding:0 15px 11px}.lnx-value-row{grid-template-columns:22px minmax(120px,1fr) 56px 72px;font-size:9px;min-height:42px}.lnx-value-item b{font-size:9px}.lnx-value-money{font-size:9px}.lnx-value-benefit{padding:11px;min-height:80px}.lnx-value-price{padding:11px 13px}.lnx-value-price-main strong{font-size:22px}
+    }
+    @media(max-width:900px){.lnx-auth-value-panel{display:none!important}}
+    </style>
+    <section class="lnx-auth-value-panel" aria-label="Demonstração do LicitaNexo">
+      <div class="lnx-value-shell">
+        <div class="lnx-value-audience">
+          <div class="lnx-value-audience-icon">▣</div>
+          <div><b>Feito para MEI, microempresas e EPP</b><span>Uma forma simples e acessível de começar a encontrar oportunidades públicas.</span></div>
+        </div>
+        <div class="lnx-value-copy">
+          <h2>Comece pequeno. <strong>Venda para o governo com mais clareza.</strong></h2>
+          <p>Veja o que está sendo comprado, entenda os itens da oportunidade e concentre seu tempo no que realmente faz sentido para o seu negócio.</p>
+        </div>
+        <div class="lnx-value-demo">
+          <div class="lnx-value-demo-head">
+            <div><h3>Veja a compra por dentro</h3><p>Itens e quantidades organizados antes de você aprofundar a análise do edital.</p></div>
+            <span class="lnx-demo-badge">EXEMPLO DEMONSTRATIVO</span>
+          </div>
+          <div class="lnx-value-org">
+            <div><b>Prefeitura Municipal de Uberlândia/MG</b><span>Pregão eletrônico · exemplo visual de oportunidade pública</span></div>
+            <span class="lnx-value-org-tag">COMPRA PÚBLICA</span>
+          </div>
+          <div class="lnx-value-table">
+            <div class="lnx-value-row header"><div>#</div><div>Item</div><div>Qtd.</div><div>Valor ilustrativo</div></div>
+            <div class="lnx-value-row"><div>01</div><div class="lnx-value-item"><b>Cadeira de rodas adulto</b><small>Equipamento para mobilidade</small></div><div>5 un</div><div class="lnx-value-money">R$ 6.250</div></div>
+            <div class="lnx-value-row"><div>02</div><div class="lnx-value-item"><b>Cama hospitalar manual</b><small>Uso hospitalar</small></div><div>3 un</div><div class="lnx-value-money">R$ 8.970</div></div>
+            <div class="lnx-value-row"><div>03</div><div class="lnx-value-item"><b>Impressora multifuncional</b><small>Equipamento de escritório</small></div><div>10 un</div><div class="lnx-value-money">R$ 3.980</div></div>
+          </div>
+        </div>
+        <div class="lnx-value-benefits">
+          <div class="lnx-value-benefit"><i>⚡</i><b>Comece com pouco</b><span>Ferramenta acessível para quem está dando os primeiros passos nas licitações.</span></div>
+          <div class="lnx-value-benefit"><i>▤</i><b>Veja os itens primeiro</b><span>Entenda rapidamente o que o órgão quer comprar antes de investir mais tempo.</span></div>
+          <div class="lnx-value-benefit"><i>◎</i><b>Foco no que importa</b><span>Organize sua busca e acompanhe oportunidades alinhadas ao seu negócio.</span></div>
+        </div>
+        <div class="lnx-value-price">
+          <div class="lnx-value-price-main"><span>R$ </span><strong>29,90</strong><span>/mês</span></div>
+          <div class="lnx-value-price-copy"><b>7 dias grátis.</b> Preço justo para quem quer começar a vender para o governo.</div>
+        </div>
+      </div>
+    </section>
+    '''
+
+
 def render_public_landing(logo_path=None) -> None:
     _render_public_landing(logo_path or OFFICIAL_LOGO_PATH)
     css = _official_brand_css()
@@ -250,3 +323,4 @@ def render_public_auth(**kwargs) -> None:
         st.html(css)
     st.html(_auth_layout_fix_css())
     st.html(_commercial_auth_copy_css())
+    st.html(_auth_value_panel_html())
