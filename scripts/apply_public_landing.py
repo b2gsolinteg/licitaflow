@@ -12,37 +12,58 @@ APP_PATH = ROOT / "app.py"
 
 IMPORT_ANCHOR = "from src.logging_setup import configure_logging"
 LEGACY_IMPORT = "from src.public_landing import render_public_landing"
-IMPORT_LINE = "from src.public_landing_exact import render_public_landing"
+LANDING_IMPORT = "from src.public_landing_exact import render_public_landing"
+AUTH_IMPORT = "from src.public_auth import render_public_auth"
 
-PUBLIC_GATE = '''    if "user" not in st.session_state and not st.query_params.get("auth"):
+OLD_PUBLIC_GATE = '''    if "user" not in st.session_state and not st.query_params.get("auth"):
         render_public_landing(LOGO_PATH)
         return
 
 '''
 
+PUBLIC_GATE = '''    if "user" not in st.session_state:
+        if st.query_params.get("auth"):
+            render_public_auth(
+                db=db,
+                security=security,
+                conversion=conversion,
+                commercial=commercial,
+                client_ip_getter=_client_ip,
+                motivational_phrases=MOTIVATIONAL_PHRASES,
+            )
+        else:
+            render_public_landing(LOGO_PATH)
+        return
 
-def _replace_import(source: str) -> tuple[str, bool]:
+'''
+
+
+def _replace_imports(source: str) -> tuple[str, bool]:
     changed = False
 
     if LEGACY_IMPORT in source:
-        source = source.replace(LEGACY_IMPORT, IMPORT_LINE, 1)
+        source = source.replace(LEGACY_IMPORT, LANDING_IMPORT, 1)
         changed = True
-    elif IMPORT_LINE not in source:
+    elif LANDING_IMPORT not in source:
         if IMPORT_ANCHOR not in source:
             raise RuntimeError("ponto de importação não encontrado")
-        source = source.replace(
-            IMPORT_ANCHOR,
-            f"{IMPORT_ANCHOR}\n{IMPORT_LINE}",
-            1,
-        )
+        source = source.replace(IMPORT_ANCHOR, f"{IMPORT_ANCHOR}\n{LANDING_IMPORT}", 1)
+        changed = True
+
+    if AUTH_IMPORT not in source:
+        anchor = LANDING_IMPORT if LANDING_IMPORT in source else IMPORT_ANCHOR
+        source = source.replace(anchor, f"{anchor}\n{AUTH_IMPORT}", 1)
         changed = True
 
     return source, changed
 
 
-def _insert_public_gate(source: str) -> tuple[str, bool]:
+def _install_public_gate(source: str) -> tuple[str, bool]:
     if PUBLIC_GATE in source:
         return source, False
+
+    if OLD_PUBLIC_GATE in source:
+        return source.replace(OLD_PUBLIC_GATE, PUBLIC_GATE, 1), True
 
     match = re.search(r"(?m)^def main\(\):\s*$", source)
     if not match:
@@ -62,28 +83,28 @@ def main() -> int:
     source = original
 
     try:
-        source, import_changed = _replace_import(source)
-        source, gate_changed = _insert_public_gate(source)
+        source, import_changed = _replace_imports(source)
+        source, gate_changed = _install_public_gate(source)
     except RuntimeError as error:
         print(f"ERRO: {error}. Nenhuma alteração foi feita.")
         return 2
 
     if source == original:
-        print("OK: integração da landing aprovada já está aplicada.")
+        print("OK: nova home e autenticação pública já estão integradas.")
         return 0
 
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    backup = ROOT / f"app.py.before-public-landing-v3.{stamp}.bak"
+    backup = ROOT / f"app.py.before-home-login-redesign.{stamp}.bak"
     shutil.copy2(APP_PATH, backup)
     APP_PATH.write_text(source, encoding="utf-8")
 
-    print("OK: landing aprovada integrada com isolamento de CSS.")
+    print("OK: nova home e autenticação pública integradas.")
     print(f"Backup criado: {backup.name}")
     if import_changed:
-        print("Import atualizado para src.public_landing_exact.")
+        print("Imports públicos atualizados.")
     if gate_changed:
-        print("Gate público inserido imediatamente após def main().")
-    print("O restante do main() foi preservado sem reescrita.")
+        print("Gate público atualizado para home e login isolados do tema interno.")
+    print("O restante do app.py foi preservado.")
     return 0
 
 
