@@ -16,10 +16,7 @@ OFFICIAL_LOGO_PATH = Path(__file__).resolve().parents[1] / "assets" / "licitanex
 
 
 def _official_logo_data_uri() -> str:
-    """Cria transparência apenas no fundo branco conectado às bordas do PNG oficial.
-
-    A arte, as cores e eventuais áreas brancas internas da marca são preservadas.
-    """
+    """Remove apenas o fundo branco conectado às bordas do PNG oficial."""
     if not OFFICIAL_LOGO_PATH.exists():
         return ""
 
@@ -62,8 +59,7 @@ def _official_logo_data_uri() -> str:
         if y + 1 < height:
             queue.append((x, y + 1))
 
-    alpha = image.getchannel("A")
-    bbox = alpha.getbbox()
+    bbox = image.getchannel("A").getbbox()
     if bbox:
         image = image.crop(bbox)
 
@@ -77,98 +73,48 @@ def _official_brand_css() -> str:
     logo_uri = _official_logo_data_uri()
     if not logo_uri:
         return ""
-
     return f'''
     <style>
-    /* Marca pública: exclusivamente assets/licitanexo-logo.png, com fundo branco removido. */
-    .lnx-top {{
-        background:#FFFFFF!important;
-        border-bottom:1px solid #E7ECF2!important;
-        box-shadow:0 1px 8px rgba(8,29,61,.05)!important;
-    }}
-
     .lnx-top .lnx-brand img,
     .lnx-top .lnx-brand .lnx-mark,
-    .lnx-top .lnx-brand .lnx-name {{ display:none!important; }}
-
+    .lnx-top .lnx-brand .lnx-name {{display:none!important}}
     .lnx-top .lnx-brand {{
-        width:255px!important;
-        height:62px!important;
-        min-height:62px!important;
-        flex:0 0 255px!important;
-        background-image:url("{logo_uri}")!important;
-        background-repeat:no-repeat!important;
-        background-position:left center!important;
-        background-size:245px auto!important;
+        width:255px!important;height:62px!important;min-height:62px!important;flex:0 0 255px!important;
+        background-image:url("{logo_uri}")!important;background-repeat:no-repeat!important;
+        background-position:left center!important;background-size:245px auto!important;
     }}
-
     .lnx-auth-head .lnx-auth-logo img,
     .lnx-auth-head .lnx-brand-mark,
-    .lnx-auth-head .lnx-brand-name {{ display:none!important; }}
-
+    .lnx-auth-head .lnx-brand-name {{display:none!important}}
     .lnx-auth-head .lnx-auth-logo {{
-        display:block!important;
-        width:270px!important;
-        height:68px!important;
-        background-image:url("{logo_uri}")!important;
-        background-repeat:no-repeat!important;
-        background-position:left center!important;
-        background-size:260px auto!important;
+        display:block!important;width:270px!important;height:68px!important;
+        background-image:url("{logo_uri}")!important;background-repeat:no-repeat!important;
+        background-position:left center!important;background-size:260px auto!important;
     }}
-
     @media(max-width:680px) {{
-        .lnx-top .lnx-brand {{
-            width:188px!important;height:48px!important;min-height:48px!important;
-            flex-basis:188px!important;background-size:180px auto!important;
-        }}
-        .lnx-auth-head .lnx-auth-logo {{
-            width:220px!important;height:56px!important;background-size:210px auto!important;
-        }}
+        .lnx-top .lnx-brand {{width:188px!important;height:48px!important;min-height:48px!important;flex-basis:188px!important;background-size:180px auto!important}}
+        .lnx-auth-head .lnx-auth-logo {{width:220px!important;height:56px!important;background-size:210px auto!important}}
     }}
     </style>
     '''
 
 
 def _auth_layout_fix_css() -> str:
-    """Mantém cabeçalho e formulário no fluxo vertical para impedir sobreposição."""
     return '''
     <style>
     .lnx-auth-head{
-        position:relative!important;
-        left:auto!important;
-        top:auto!important;
-        width:calc(100% - 76px)!important;
-        margin:0 0 0 clamp(38px,4.2vw,72px)!important;
-        padding-top:clamp(28px,3.4vh,42px)!important;
-        z-index:6!important;
+        position:relative!important;left:auto!important;top:auto!important;
+        width:calc(100% - 76px)!important;margin:0 0 0 clamp(38px,4.2vw,72px)!important;
+        padding-top:clamp(28px,3.4vh,42px)!important;z-index:6!important;
     }
-    .lnx-auth-kicker{margin-top:16px!important}
-    .lnx-auth-title{margin-top:14px!important}
-    .lnx-auth-caption{margin-top:10px!important}
-    .st-key-lnx_auth_form{
-        margin-top:26px!important;
-        margin-bottom:34px!important;
-    }
+    .lnx-auth-kicker{margin-top:16px!important}.lnx-auth-title{margin-top:14px!important}.lnx-auth-caption{margin-top:10px!important}
+    .st-key-lnx_auth_form{margin-top:26px!important;margin-bottom:34px!important}
     @media(max-width:1150px){
-        .lnx-auth-head{width:calc(100% - 70px)!important}
-        .st-key-lnx_auth_form{margin-top:24px!important}
+        .lnx-auth-head{width:calc(100% - 70px)!important}.st-key-lnx_auth_form{margin-top:24px!important}
     }
     @media(max-width:900px){
-        .lnx-auth-head{
-            position:relative!important;
-            left:auto!important;
-            right:auto!important;
-            top:auto!important;
-            width:100%!important;
-            max-width:540px!important;
-            margin:0 auto!important;
-            padding-top:30px!important;
-        }
-        .st-key-lnx_auth_form{
-            width:100%!important;
-            max-width:540px!important;
-            margin:24px auto 34px!important;
-        }
+        .lnx-auth-head{position:relative!important;left:auto!important;right:auto!important;top:auto!important;width:100%!important;max-width:540px!important;margin:0 auto!important;padding-top:30px!important}
+        .st-key-lnx_auth_form{width:100%!important;max-width:540px!important;margin:24px auto 34px!important}
     }
     </style>
     '''
@@ -197,115 +143,107 @@ def _commercial_auth_copy_css() -> str:
     caption_css = caption.replace('"', '\\"')
     return f'''
     <style>
-    .lnx-auth-title{{font-size:0!important}}
-    .lnx-auth-title strong{{display:none!important}}
-    .lnx-auth-title::after{{
-        content:"{title_css}";
-        display:block;
-        max-width:480px;
-        font-size:clamp(27px,2vw,38px)!important;
-        line-height:1.08;
-        letter-spacing:-1px;
-        font-weight:800;
-        color:#071a3d;
-    }}
+    .lnx-auth-title{{font-size:0!important}}.lnx-auth-title strong{{display:none!important}}
+    .lnx-auth-title::after{{content:"{title_css}";display:block;max-width:480px;font-size:clamp(27px,2vw,38px)!important;line-height:1.08;letter-spacing:-1px;font-weight:800;color:#071a3d}}
     .lnx-auth-caption{{font-size:0!important}}
-    .lnx-auth-caption::after{{
-        content:"{caption_css}";
-        display:block;
-        color:#5e6b80;
-        font-size:14px!important;
-        line-height:1.48;
-        max-width:470px;
-    }}
-    .lnx-login-price-info>div:nth-child(2)>b,
-    .lnx-login-price-info>div:nth-child(2)>span{{font-size:0!important}}
-    .lnx-login-price-info>div:nth-child(2)>b::after{{
-        content:"Preço justo para quem quer começar a vender para o governo";
-        font-size:11px!important;
-        color:#fff;
-        line-height:1.25;
-    }}
-    .lnx-login-price-info>div:nth-child(2)>span::after{{
-        content:"Comece simples, encontre oportunidades e evolua com o seu negócio.";
-        font-size:9px!important;
-        color:#d7e4f5;
-        line-height:1.3;
-    }}
+    .lnx-auth-caption::after{{content:"{caption_css}";display:block;color:#5e6b80;font-size:14px!important;line-height:1.48;max-width:470px}}
+    .lnx-login-price-info>div:nth-child(2)>b,.lnx-login-price-info>div:nth-child(2)>span{{font-size:0!important}}
+    .lnx-login-price-info>div:nth-child(2)>b::after{{content:"Preço justo para quem quer começar a vender para o governo";font-size:11px!important;color:#fff;line-height:1.25}}
+    .lnx-login-price-info>div:nth-child(2)>span::after{{content:"Comece simples, encontre oportunidades e evolua com o seu negócio.";font-size:9px!important;color:#d7e4f5;line-height:1.3}}
     </style>
     '''
 
 
-def _auth_value_panel_html() -> str:
-    """Painel comercial do login sem métricas promocionais ou dados apresentados como ao vivo."""
+def _native_auth_art_css() -> str:
+    """Reutiliza a arte nativa do login, garantindo renderização dentro do viewport desktop."""
     return '''
     <style>
-    .lnx-auth-art{display:none!important}
-    .lnx-auth-value-panel,.lnx-auth-value-panel *{box-sizing:border-box}
-    .lnx-auth-value-panel{
-        position:fixed;inset:0 0 0 40%;z-index:2;overflow:auto;
-        background:
-          radial-gradient(circle at 76% 12%,rgba(32,110,238,.22),transparent 28%),
-          linear-gradient(145deg,#061a40 0%,#071f4b 48%,#04152f 100%);
-        color:#fff;font-family:Inter,"Segoe UI",Arial,sans-serif;
-        padding:clamp(26px,3.2vw,52px);
+    /* Desativa a camada experimental anterior e usa somente o painel que o public_auth já renderiza. */
+    .lnx-auth-value-panel{display:none!important}
+    .lnx-auth-art{
+        display:block!important;position:fixed!important;inset:0 0 0 40%!important;z-index:1!important;
+        overflow:hidden!important;background:
+          radial-gradient(circle at 78% 12%,rgba(36,105,225,.23),transparent 30%),
+          linear-gradient(145deg,#061a40 0%,#082450 48%,#04152f 100%)!important;
     }
-    .lnx-value-shell{width:min(900px,100%);min-height:100%;margin:auto;display:flex;flex-direction:column;justify-content:center;gap:18px}
-    .lnx-value-audience{display:flex;align-items:center;gap:12px;padding:13px 16px;border:1px solid rgba(247,183,20,.42);border-radius:14px;background:rgba(4,21,51,.54);box-shadow:0 14px 40px rgba(0,0,0,.13)}
-    .lnx-value-audience-icon{width:42px;height:42px;flex:0 0 42px;border-radius:12px;background:linear-gradient(145deg,#1d67d7,#0d43a2);display:grid;place-items:center;font-size:21px}
-    .lnx-value-audience b{display:block;font-size:14px;line-height:1.25}.lnx-value-audience span{display:block;color:#b9c9df;font-size:11px;margin-top:3px;line-height:1.35}
-    .lnx-value-copy{padding:2px 2px 0}.lnx-value-copy h2{margin:0;font-size:clamp(29px,2.45vw,44px);line-height:1.02;letter-spacing:-1.5px;max-width:760px}.lnx-value-copy h2 strong{color:#f7b714}.lnx-value-copy p{margin:10px 0 0;color:#c5d3e7;font-size:14px;line-height:1.5;max-width:720px}
-    .lnx-value-demo{border:1px solid rgba(63,128,226,.34);border-radius:18px;background:linear-gradient(150deg,rgba(8,40,91,.94),rgba(5,24,56,.96));box-shadow:0 22px 55px rgba(0,0,0,.22);overflow:hidden}
-    .lnx-value-demo-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;padding:18px 20px 15px;border-bottom:1px solid rgba(255,255,255,.09)}
-    .lnx-value-demo-head h3{margin:0;font-size:18px}.lnx-value-demo-head p{margin:4px 0 0;color:#acbfd8;font-size:10px}.lnx-demo-badge{white-space:nowrap;border:1px solid rgba(247,183,20,.45);color:#ffd45a;background:rgba(247,183,20,.08);padding:7px 10px;border-radius:999px;font-size:9px;font-weight:900;letter-spacing:.04em}
-    .lnx-value-org{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:15px 20px;background:rgba(10,51,109,.28);border-bottom:1px solid rgba(255,255,255,.08)}
-    .lnx-value-org b{display:block;font-size:13px}.lnx-value-org span{display:block;color:#aec2dc;font-size:9px;margin-top:4px}.lnx-value-org-tag{color:#70a9ff!important;font-weight:800!important;font-size:9px!important;margin:0!important}
-    .lnx-value-table{padding:0 20px 14px}.lnx-value-row{display:grid;grid-template-columns:26px minmax(160px,1fr) 72px 92px;gap:8px;align-items:center;min-height:48px;border-bottom:1px solid rgba(255,255,255,.075);font-size:10px}.lnx-value-row:last-child{border-bottom:0}.lnx-value-row.header{min-height:32px;color:#8fa6c4;font-size:8px;font-weight:850;text-transform:uppercase}.lnx-value-item b{font-size:10px}.lnx-value-item small{display:block;color:#91a8c5;font-size:8px;margin-top:2px}.lnx-value-money{color:#ffd04a;font-weight:900}
-    .lnx-value-benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.lnx-value-benefit{min-height:92px;border:1px solid rgba(63,128,226,.26);border-radius:14px;background:rgba(5,27,63,.76);padding:14px}.lnx-value-benefit i{font-style:normal;color:#f7b714;font-size:20px}.lnx-value-benefit b{display:block;font-size:11px;margin:6px 0 3px}.lnx-value-benefit span{display:block;color:#aebfd5;font-size:9px;line-height:1.4}
-    .lnx-value-price{display:flex;align-items:center;justify-content:space-between;gap:18px;border:1px solid rgba(247,183,20,.48);border-radius:14px;padding:13px 16px;background:linear-gradient(100deg,rgba(247,183,20,.10),rgba(7,31,72,.88) 48%)}
-    .lnx-value-price-main{white-space:nowrap}.lnx-value-price-main strong{font-size:26px;color:#ffd04a}.lnx-value-price-main span{font-size:12px;color:#fff}.lnx-value-price-copy{font-size:10px;color:#c7d5e8;line-height:1.4;text-align:right}.lnx-value-price-copy b{color:#fff}
+    .lnx-auth-art .grid{display:block!important;opacity:.16!important;background-size:64px 64px!important}
+    .lnx-auth-art .orbit,.lnx-auth-hub{display:none!important}
+    .lnx-auth-art::before{
+        content:"Comece pequeno. Venda para o governo com mais clareza.";
+        position:absolute;left:6%;right:6%;top:4.5%;z-index:10;color:#fff;
+        font-size:clamp(27px,2.25vw,43px);line-height:1.02;letter-spacing:-1.4px;font-weight:850;
+    }
+    .lnx-auth-art::after{
+        content:"Feito para MEI, microempresas e EPP — encontre oportunidades, veja os itens e decida onde vale competir.";
+        position:absolute;left:6%;right:8%;top:14%;z-index:10;color:#b8cbe3;
+        font-size:clamp(11px,.9vw,15px);line-height:1.45;
+    }
+    .lnx-auth-node,.lnx-product-card,.lnx-opportunities{
+        position:absolute!important;z-index:6!important;border:1px solid rgba(69,129,215,.36)!important;
+        border-radius:14px!important;background:linear-gradient(145deg,rgba(8,39,86,.96),rgba(5,25,58,.98))!important;
+        box-shadow:0 15px 36px rgba(0,0,0,.22)!important;color:#fff!important;
+    }
+    .lnx-auth-node strong{display:none!important}
+
+    /* Público-alvo */
+    .lnx-auth-node.a1{left:6%!important;right:6%!important;top:20%!important;width:auto!important;min-height:72px!important;padding:14px 16px!important;border-color:rgba(247,183,20,.48)!important}
+    .lnx-auth-node.a1 b,.lnx-auth-node.a1 span{font-size:0!important}
+    .lnx-auth-node.a1 b::after{content:"Ideal para MEI, microempresas e EPP";font-size:15px!important;font-weight:900;color:#fff}
+    .lnx-auth-node.a1 span::after{content:"Uma forma simples e acessível de começar a vender para o governo.";font-size:10px!important;color:#c1d1e6;line-height:1.4}
+
+    /* Cabeçalho da demonstração */
+    .lnx-auth-node.a2{left:6%!important;right:6%!important;top:30%!important;width:auto!important;min-height:68px!important;padding:13px 16px!important}
+    .lnx-auth-node.a2 b,.lnx-auth-node.a2 span{font-size:0!important}
+    .lnx-auth-node.a2 b::after{content:"Veja a compra por dentro";font-size:16px!important;font-weight:900;color:#fff}
+    .lnx-auth-node.a2 span::after{content:"Prefeitura Municipal de Uberlândia/MG · exemplo demonstrativo de compra pública";font-size:10px!important;color:#9fc0eb;line-height:1.4}
+
+    /* Linhas de itens: reutilizam os cards que já renderizam de forma confiável. */
+    .lnx-product-card{left:6%!important;right:6%!important;width:auto!important;height:78px!important;padding:12px 15px!important;display:grid!important;grid-template-columns:minmax(170px,1fr) 112px 108px!important;grid-template-rows:auto auto!important;column-gap:14px!important;align-items:center!important}
+    .lnx-product-card.p1{top:40%!important;bottom:auto!important}.lnx-product-card.p2{top:50.5%!important;bottom:auto!important}.lnx-product-card.p3{top:61%!important;bottom:auto!important}
+    .lnx-product-card .p-title{grid-column:1;grid-row:1;font-size:12px!important;font-weight:900!important;margin:0!important}
+    .lnx-product-card .p-org{grid-column:1;grid-row:2;font-size:0!important;min-height:0!important;color:#9fb4cf!important}
+    .lnx-product-card .p-org::after{content:"Prefeitura Municipal de Uberlândia/MG · exemplo";font-size:8px!important;color:#9fb4cf!important}
+    .lnx-product-card .p-row{grid-column:2;grid-row:1 / span 2;margin:0!important;display:block!important;font-size:0!important;color:#dbe7f6!important}
+    .lnx-product-card .p-row span,.lnx-product-card .p-row b{display:block!important}
+    .lnx-product-card .p-row span::after{content:"Quantidade";font-size:8px!important;color:#9db2cd!important}
+    .lnx-product-card .p-row b{font-size:10px!important;margin-top:4px!important}
+    .lnx-product-card .p-price{grid-column:3;grid-row:1;font-size:17px!important;color:#f7bd21!important;font-weight:900!important;margin:0!important;text-align:right!important}
+    .lnx-product-card .p-status{grid-column:3;grid-row:2;font-size:0!important;color:#76d9a4!important;text-align:right!important;margin:0!important}
+    .lnx-product-card .p-status::after{content:"Exemplo demonstrativo";font-size:8px!important;color:#76d9a4!important;font-weight:800}
+
+    /* Benefícios */
+    .lnx-auth-node.a3,.lnx-auth-node.a4{top:72.5%!important;width:42%!important;min-height:82px!important;padding:13px 15px!important}
+    .lnx-auth-node.a3{left:6%!important}.lnx-auth-node.a4{right:6%!important;left:auto!important}
+    .lnx-auth-node.a3 b,.lnx-auth-node.a3 span,.lnx-auth-node.a4 b,.lnx-auth-node.a4 span{font-size:0!important}
+    .lnx-auth-node.a3 b::after{content:"Veja os itens primeiro";font-size:12px!important;color:#fff;font-weight:900}
+    .lnx-auth-node.a3 span::after{content:"Entenda rapidamente o que está sendo comprado antes de investir mais tempo.";font-size:9px!important;color:#b6c8df;line-height:1.4}
+    .lnx-auth-node.a4 b::after{content:"Foco no que faz sentido";font-size:12px!important;color:#fff;font-weight:900}
+    .lnx-auth-node.a4 span::after{content:"Organize sua busca e concentre esforço nas oportunidades mais alinhadas ao seu negócio.";font-size:9px!important;color:#b6c8df;line-height:1.4}
+
+    /* Preço: substitui a antiga caixa de categorias/números fictícios. */
+    .lnx-opportunities{left:6%!important;right:6%!important;bottom:4.5%!important;width:auto!important;min-height:72px!important;padding:13px 16px!important;border-color:rgba(247,183,20,.50)!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:18px!important;background:linear-gradient(100deg,rgba(247,183,20,.10),rgba(7,31,72,.94) 48%)!important}
+    .lnx-opportunities>div{display:none!important}.lnx-opportunities b{font-size:0!important;margin:0!important}
+    .lnx-opportunities b::after{content:"R$ 29,90/mês";font-size:24px!important;color:#ffd04a;font-weight:950}
+    .lnx-opportunities::after{content:"7 dias grátis · Preço justo para quem quer começar a vender para o governo.";max-width:360px;text-align:right;font-size:10px;color:#c8d6e8;line-height:1.4}
+
+    /* 1366x768 / notebooks: compacta sem cortar a arte. */
+    @media(max-width:1500px), (max-height:820px){
+      .lnx-auth-art::before{top:3.5%;font-size:30px}.lnx-auth-art::after{top:12.5%;font-size:11px}
+      .lnx-auth-node.a1{top:18%!important;min-height:62px!important;padding:10px 13px!important}
+      .lnx-auth-node.a2{top:27%!important;min-height:58px!important;padding:10px 13px!important}
+      .lnx-product-card{height:65px!important;padding:9px 12px!important;grid-template-columns:minmax(145px,1fr) 94px 95px!important}
+      .lnx-product-card.p1{top:36%!important}.lnx-product-card.p2{top:45.5%!important}.lnx-product-card.p3{top:55%!important}
+      .lnx-auth-node.a3,.lnx-auth-node.a4{top:65%!important;min-height:70px!important;padding:10px 12px!important}
+      .lnx-opportunities{bottom:4%!important;min-height:62px!important;padding:10px 13px!important}
+      .lnx-opportunities b::after{font-size:21px!important}
+    }
     @media(max-width:1150px){
-      .lnx-auth-value-panel{left:46%;padding:24px}.lnx-value-shell{gap:13px}.lnx-value-copy h2{font-size:30px}.lnx-value-copy p{font-size:12px}.lnx-value-audience{padding:11px 13px}.lnx-value-demo-head{padding:14px 15px 12px}.lnx-value-org{padding:12px 15px}.lnx-value-table{padding:0 15px 11px}.lnx-value-row{grid-template-columns:22px minmax(120px,1fr) 56px 72px;font-size:9px;min-height:42px}.lnx-value-item b{font-size:9px}.lnx-value-money{font-size:9px}.lnx-value-benefit{padding:11px;min-height:80px}.lnx-value-price{padding:11px 13px}.lnx-value-price-main strong{font-size:22px}
+      .lnx-auth-art{left:46%!important}.lnx-auth-art::before{font-size:26px}.lnx-auth-art::after{font-size:10px}
+      .lnx-product-card{grid-template-columns:minmax(120px,1fr) 78px 80px!important}.lnx-product-card .p-price{font-size:14px!important}
+      .lnx-auth-node.a3,.lnx-auth-node.a4{width:42%!important}.lnx-opportunities::after{max-width:230px;font-size:9px}
     }
-    @media(max-width:900px){.lnx-auth-value-panel{display:none!important}}
+    @media(max-width:900px){.lnx-auth-art{display:none!important}}
     </style>
-    <section class="lnx-auth-value-panel" aria-label="Demonstração do LicitaNexo">
-      <div class="lnx-value-shell">
-        <div class="lnx-value-audience">
-          <div class="lnx-value-audience-icon">▣</div>
-          <div><b>Feito para MEI, microempresas e EPP</b><span>Uma forma simples e acessível de começar a encontrar oportunidades públicas.</span></div>
-        </div>
-        <div class="lnx-value-copy">
-          <h2>Comece pequeno. <strong>Venda para o governo com mais clareza.</strong></h2>
-          <p>Veja o que está sendo comprado, entenda os itens da oportunidade e concentre seu tempo no que realmente faz sentido para o seu negócio.</p>
-        </div>
-        <div class="lnx-value-demo">
-          <div class="lnx-value-demo-head">
-            <div><h3>Veja a compra por dentro</h3><p>Itens e quantidades organizados antes de você aprofundar a análise do edital.</p></div>
-            <span class="lnx-demo-badge">EXEMPLO DEMONSTRATIVO</span>
-          </div>
-          <div class="lnx-value-org">
-            <div><b>Prefeitura Municipal de Uberlândia/MG</b><span>Pregão eletrônico · exemplo visual de oportunidade pública</span></div>
-            <span class="lnx-value-org-tag">COMPRA PÚBLICA</span>
-          </div>
-          <div class="lnx-value-table">
-            <div class="lnx-value-row header"><div>#</div><div>Item</div><div>Qtd.</div><div>Valor ilustrativo</div></div>
-            <div class="lnx-value-row"><div>01</div><div class="lnx-value-item"><b>Cadeira de rodas adulto</b><small>Equipamento para mobilidade</small></div><div>5 un</div><div class="lnx-value-money">R$ 6.250</div></div>
-            <div class="lnx-value-row"><div>02</div><div class="lnx-value-item"><b>Cama hospitalar manual</b><small>Uso hospitalar</small></div><div>3 un</div><div class="lnx-value-money">R$ 8.970</div></div>
-            <div class="lnx-value-row"><div>03</div><div class="lnx-value-item"><b>Impressora multifuncional</b><small>Equipamento de escritório</small></div><div>10 un</div><div class="lnx-value-money">R$ 3.980</div></div>
-          </div>
-        </div>
-        <div class="lnx-value-benefits">
-          <div class="lnx-value-benefit"><i>⚡</i><b>Comece com pouco</b><span>Ferramenta acessível para quem está dando os primeiros passos nas licitações.</span></div>
-          <div class="lnx-value-benefit"><i>▤</i><b>Veja os itens primeiro</b><span>Entenda rapidamente o que o órgão quer comprar antes de investir mais tempo.</span></div>
-          <div class="lnx-value-benefit"><i>◎</i><b>Foco no que importa</b><span>Organize sua busca e acompanhe oportunidades alinhadas ao seu negócio.</span></div>
-        </div>
-        <div class="lnx-value-price">
-          <div class="lnx-value-price-main"><span>R$ </span><strong>29,90</strong><span>/mês</span></div>
-          <div class="lnx-value-price-copy"><b>7 dias grátis.</b> Preço justo para quem quer começar a vender para o governo.</div>
-        </div>
-      </div>
-    </section>
     '''
 
 
@@ -323,4 +261,4 @@ def render_public_auth(**kwargs) -> None:
         st.html(css)
     st.html(_auth_layout_fix_css())
     st.html(_commercial_auth_copy_css())
-    st.html(_auth_value_panel_html())
+    st.html(_native_auth_art_css())
