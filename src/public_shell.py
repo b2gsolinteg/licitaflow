@@ -110,5 +110,6 @@ def render_public_landing(logo_path=None) -> None:
 
 
 def render_public_auth(**kwargs) -> None:
-    # O login é autocontido em src/public_auth.py; não aplique CSS externo aqui.
+    # O login é autocontido em src/public_auth.py; sem os overrides visuais antigos.
     _render_public_auth(**kwargs)
+    st.html("<style>.lnx-login-price-info>div>div{display:block!important;grid-template-columns:none!important}</style>")
