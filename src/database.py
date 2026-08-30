@@ -901,6 +901,179 @@ class Database:
                 ORDER BY u.created_at DESC LIMIT ?
             """,(int(limit),)).fetchall()]
 
+    def register_trial_self_service(
+        self, company_name, cnpj, name, email, whatsapp, password,
+        segment="", client_ip=""
+    ):
+        """Cria conta e trial imediatamente, sem aprova??o administrativa.
+
+        E-mail e CNPJ j? utilizados s?o bloqueios fortes.
+        Reutiliza??o de IP ? registrada como sinal de risco, mas n?o bloqueia
+        sozinha a cria??o da conta.
+        """
+        from datetime import timedelta
+
+        company_name = str(company_name or "").strip()
+        name = str(name or "").strip()
+        normalized_email = str(email or "").strip().lower()
+        whatsapp = str(whatsapp or "").strip()
+        password = str(password or "")
+
+        if not all((company_name, name, normalized_email, whatsapp)):
+            raise ValueError(
+                "Preencha empresa, CNPJ, nome, e-mail e WhatsApp."
+            )
+        if "@" not in normalized_email or "." not in normalized_email.split("@")[-1]:
+            raise ValueError("Informe um e-mail v?lido.")
+        if len(password) < 8:
+            raise ValueError("A senha deve ter pelo menos 8 caracteres.")
+
+        risk = self.assess_trial_request(
+            normalized_email, cnpj, client_ip
+        )
+
+        # Registra inclusive tentativas bloqueadas.
+        with self.connect() as conn:
+            self._record_trial_attempt(
+                conn,
+                normalized_email,
+                risk["cnpj"],
+                client_ip,
+                risk["outcome"],
+                risk["score"],
+                risk["reasons"],
+            )
+
+        if risk["outcome"] == "blocked":
+            raise ValueError(
+                "Este e-mail ou CNPJ j? possui conta ou per?odo gratuito "
+                "no LicitaNexo."
+            )
+
+        company_id = str(uuid.uuid4())
+        user_id = str(uuid.uuid4())
+        request_id = str(uuid.uuid4())
+
+        trial_started = datetime.utcnow().replace(microsecond=0)
+        trial_ends = trial_started + timedelta(days=TRIAL_DAYS)
+        trial_started_value = trial_started.isoformat(sep=" ")
+        trial_ends_value = trial_ends.isoformat(sep=" ")
+
+        with self.connect() as conn:
+            # Segunda verifica??o dentro da transa??o.
+            if conn.execute(
+                "SELECT 1 FROM users WHERE email=? LIMIT 1",
+                (normalized_email,),
+            ).fetchone():
+                raise ValueError(
+                    "Este e-mail j? possui uma conta no LicitaNexo."
+                )
+
+            if conn.execute(
+                "SELECT 1 FROM companies WHERE cnpj=? AND cnpj<>'' LIMIT 1",
+                (risk["cnpj"],),
+            ).fetchone():
+                raise ValueError(
+                    "Este CNPJ j? possui uma conta ou per?odo gratuito "
+                    "no LicitaNexo."
+                )
+
+            conn.execute(
+                """
+                INSERT INTO companies(
+                    id, name, cnpj, billing_email,
+                    subscription_status, trial_started_at, trial_ends_at
+                ) VALUES (?, ?, ?, ?, 'trialing', ?, ?)
+                """,
+                (
+                    company_id,
+                    company_name,
+                    risk["cnpj"],
+                    normalized_email,
+                    trial_started_value,
+                    trial_ends_value,
+                ),
+            )
+
+            conn.execute(
+                """
+                INSERT INTO users(
+                    id, company_id, name, email, password_hash, role
+                ) VALUES (?, ?, ?, ?, ?, 'owner')
+                """,
+                (
+                    user_id,
+                    company_id,
+                    name,
+                    normalized_email,
+                    hash_password(password),
+                ),
+            )
+
+            # Mant?m os dados comerciais/WhatsApp no hist?rico administrativo,
+            # mas j? marca como ativado: n?o existe aprova??o pendente.
+            conn.execute(
+                """
+                INSERT INTO access_requests(
+                    id, company_name, name, email, whatsapp, segment, cnpj,
+                    status, activated_at,
+                    request_ip_hash, request_ip_masked,
+                    risk_score, risk_status, risk_reasons,
+                    approved_trial_days, updated_at
+                )
+                VALUES (
+                    ?, ?, ?, ?, ?, ?, ?,
+                    'activated', CURRENT_TIMESTAMP,
+                    ?, ?, ?, ?, ?, ?,
+                    CURRENT_TIMESTAMP
+                )
+                ON CONFLICT(email) DO UPDATE SET
+                    company_name=excluded.company_name,
+                    name=excluded.name,
+                    whatsapp=excluded.whatsapp,
+                    segment=excluded.segment,
+                    cnpj=excluded.cnpj,
+                    status='activated',
+                    activated_at=CURRENT_TIMESTAMP,
+                    invitation_hash='',
+                    request_ip_hash=excluded.request_ip_hash,
+                    request_ip_masked=excluded.request_ip_masked,
+                    risk_score=excluded.risk_score,
+                    risk_status=excluded.risk_status,
+                    risk_reasons=excluded.risk_reasons,
+                    approved_trial_days=excluded.approved_trial_days,
+                    updated_at=CURRENT_TIMESTAMP
+                """,
+                (
+                    request_id,
+                    company_name,
+                    name,
+                    normalized_email,
+                    whatsapp,
+                    str(segment or "").strip(),
+                    risk["cnpj"],
+                    risk["ip_hash"],
+                    risk["ip_masked"],
+                    int(risk["score"] or 0),
+                    risk["outcome"],
+                    " | ".join(risk["reasons"])[:1200],
+                    int(TRIAL_DAYS),
+                ),
+            )
+
+        self.record_audit(
+            "self_service_trial_created",
+            "company",
+            company_id,
+            (
+                f"CNPJ {risk['cnpj']} ? risco {risk['score']} ? "
+                f"{risk['outcome']}"
+            ),
+            actor="public",
+        )
+
+        return self.authenticate(normalized_email, password)
+
     def register(self, company_name, name, email, password):
         if not all(str(value).strip() for value in (company_name, name, email)):
             raise ValueError("Preencha empresa, nome e e-mail.")
@@ -1112,23 +1285,68 @@ class Database:
         return None
 
     def request_password_reset(self, email):
-        """Register a recovery request without revealing whether the e-mail exists."""
+        """Cria e envia recupera??o sem revelar publicamente se o e-mail existe."""
         normalized_email = str(email or "").strip().lower()
+
         if not normalized_email:
             raise ValueError("Informe seu e-mail.")
+
         with self.connect() as conn:
-            user = conn.execute("SELECT id FROM users WHERE email=?", (normalized_email,)).fetchone()
+            user = conn.execute(
+                "SELECT id, name FROM users WHERE email=?",
+                (normalized_email,),
+            ).fetchone()
+
             if not user:
-                return
+                return None
+
             conn.execute(
-                "UPDATE password_reset_requests SET status='superseded', code_hash='' "
+                "UPDATE password_reset_requests "
+                "SET status='superseded', code_hash='' "
                 "WHERE user_id=? AND status IN ('requested', 'code_generated')",
                 (user["id"],),
             )
+
+            request_id = str(uuid.uuid4())
+
             conn.execute(
                 "INSERT INTO password_reset_requests(id, user_id) VALUES (?, ?)",
-                (str(uuid.uuid4()), user["id"]),
+                (request_id, user["id"]),
             )
+
+            user_name = str(user["name"] or "").strip()
+
+        recovery_code = self.generate_password_reset_code(request_id)
+
+        try:
+            from .mailer import send_recovery_code
+
+            send_recovery_code(
+                normalized_email,
+                user_name or "Usuario",
+                recovery_code,
+            )
+
+            self.record_email_event(
+                "password_recovery",
+                normalized_email,
+                "sent",
+            )
+
+        except Exception as error:
+            self.record_email_event(
+                "password_recovery",
+                normalized_email,
+                "error",
+                str(error),
+            )
+
+        return {
+            "id": request_id,
+            "email": normalized_email,
+            "name": user_name,
+        }
+
 
     def list_password_reset_requests(self):
         with self.connect() as conn:

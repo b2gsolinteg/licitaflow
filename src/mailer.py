@@ -1,6 +1,8 @@
 import os
 import smtplib
 import ssl
+import tomllib
+from pathlib import Path
 from email.message import EmailMessage
 
 
@@ -8,16 +10,31 @@ class MailError(RuntimeError):
     pass
 
 
+def _get_setting(name, default=""):
+    value = os.getenv(name)
+    if value not in (None, ""):
+        return str(value)
+
+    secrets_path = Path(__file__).resolve().parents[1] / ".streamlit" / "secrets.toml"
+    try:
+        with secrets_path.open("rb") as file:
+            secrets = tomllib.load(file)
+        value = secrets.get(name, default)
+        return str(value) if value is not None else str(default)
+    except (OSError, tomllib.TOMLDecodeError):
+        return str(default)
+
+
 def mail_config():
     return {
-        "host": os.getenv("LICITANEXO_SMTP_HOST", "").strip(),
-        "port": int(os.getenv("LICITANEXO_SMTP_PORT", "587") or 587),
-        "user": os.getenv("LICITANEXO_SMTP_USER", "").strip(),
-        "password": os.getenv("LICITANEXO_SMTP_PASSWORD", ""),
-        "from_email": os.getenv("LICITANEXO_FROM_EMAIL", "").strip(),
-        "from_name": os.getenv("LICITANEXO_FROM_NAME", "B2G SaaS").strip() or "B2G SaaS",
-        "use_tls": os.getenv("LICITANEXO_SMTP_TLS", "1").strip().lower() in {"1", "true", "yes", "sim"},
-        "app_url": os.getenv("LICITANEXO_APP_URL", "").strip().rstrip("/"),
+        "host": _get_setting("LICITANEXO_SMTP_HOST", "").strip(),
+        "port": int(_get_setting("LICITANEXO_SMTP_PORT", "587") or 587),
+        "user": _get_setting("LICITANEXO_SMTP_USER", "").strip(),
+        "password": _get_setting("LICITANEXO_SMTP_PASSWORD", ""),
+        "from_email": _get_setting("LICITANEXO_FROM_EMAIL", "").strip(),
+        "from_name": _get_setting("LICITANEXO_FROM_NAME", "B2G SaaS").strip() or "B2G SaaS",
+        "use_tls": _get_setting("LICITANEXO_SMTP_TLS", "1").strip().lower() in {"1", "true", "yes", "sim"},
+        "app_url": _get_setting("LICITANEXO_APP_URL", "").strip().rstrip("/"),
     }
 
 

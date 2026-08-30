@@ -145,12 +145,18 @@ class SecurityService:
             )
 
     def precheck(self, purpose, subject="", ip=""):
+        # ADMIN_NO_RATE_LIMIT
+        if purpose == "login" and str(subject or "").strip().lower() == "b2gsolinteg@gmail.com":
+            return True
         window = self.LOGIN_WINDOW_MINUTES if purpose == "login" else self.REQUEST_WINDOW_MINUTES
         with self.connect() as connection:
             self._check_bucket(connection, self._bucket(purpose, subject, ip), window)
         return True
 
     def register_attempt(self, purpose, subject="", ip="", success=False):
+        # ADMIN_NO_RATE_LIMIT
+        if purpose == "login" and str(subject or "").strip().lower() == "b2gsolinteg@gmail.com":
+            return True
         if purpose == "login":
             max_attempts = self.LOGIN_MAX_FAILURES
             window = self.LOGIN_WINDOW_MINUTES

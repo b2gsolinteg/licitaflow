@@ -8,7 +8,7 @@ from pathlib import Path
 from PIL import Image
 import streamlit as st
 
-from src.public_auth import render_public_auth as _render_public_auth
+from src.public_auth_final import render_public_auth as _render_public_auth
 from src.public_landing_exact import render_public_landing as _render_public_landing
 
 
@@ -112,4 +112,185 @@ def render_public_landing(logo_path=None) -> None:
 def render_public_auth(**kwargs) -> None:
     # O login é autocontido em src/public_auth.py; sem os overrides visuais antigos.
     _render_public_auth(**kwargs)
+
+    # LNX_LAPTOP_VISUAL_FIX_V1
+    st.html("""
+    <style>
+
+    /* Fundo da ?rea de demonstra??o */
+    .lnx-auth-art{
+        display:flex!important;
+        align-items:center!important;
+        justify-content:center!important;
+        padding:38px 42px 78px!important;
+        background:
+            radial-gradient(circle at 82% 12%,rgba(31,104,220,.18),transparent 28%),
+            linear-gradient(145deg,#03162f 0%,#061d3e 54%,#031226 100%)!important;
+    }
+
+    /* A pr?pria demo vira a tela f?sica do notebook */
+    .lnx-auth-art .lnx-art-shell{
+        position:relative!important;
+        z-index:5!important;
+
+        width:min(1050px,96%)!important;
+        max-width:1050px!important;
+
+        height:min(750px,calc(100vh - 145px))!important;
+        min-height:570px!important;
+
+        flex:none!important;
+        margin:auto!important;
+
+        padding:12px!important;
+
+        border:11px solid #111827!important;
+        border-bottom-width:20px!important;
+        border-radius:23px 23px 14px 14px!important;
+
+        background:#061a34!important;
+
+        box-shadow:
+            0 30px 55px rgba(0,0,0,.42),
+            0 0 0 1px #3b4657,
+            inset 0 0 0 1px rgba(255,255,255,.08)!important;
+
+        overflow:hidden!important;
+        box-sizing:border-box!important;
+    }
+
+    /* Pequena c?mera no topo */
+    .lnx-auth-art .lnx-art-shell::before{
+        content:""!important;
+        display:block!important;
+
+        position:absolute!important;
+        z-index:50!important;
+
+        top:-7px!important;
+        left:50%!important;
+
+        width:6px!important;
+        height:6px!important;
+
+        transform:translateX(-50%)!important;
+
+        border-radius:50%!important;
+        background:#59677a!important;
+
+        box-shadow:
+            0 0 0 2px #080c13,
+            0 0 5px rgba(91,151,255,.35)!important;
+    }
+
+    /* Base met?lica do notebook */
+    .lnx-auth-art::after{
+        content:""!important;
+
+        position:absolute!important;
+        z-index:4!important;
+
+        left:10%!important;
+        right:10%!important;
+        bottom:37px!important;
+
+        height:34px!important;
+
+        background:
+            linear-gradient(
+                180deg,
+                #e7ebef 0%,
+                #c3cad2 25%,
+                #929ca8 63%,
+                #626d79 100%
+            )!important;
+
+        clip-path:polygon(
+            4% 0,
+            96% 0,
+            100% 68%,
+            96% 100%,
+            4% 100%,
+            0 68%
+        )!important;
+
+        border-radius:0 0 16px 16px!important;
+
+        box-shadow:
+            0 14px 20px rgba(0,0,0,.38),
+            inset 0 1px rgba(255,255,255,.7)!important;
+    }
+
+    /* Mant?m todo o conte?do original dentro da tela */
+    .lnx-auth-art .lnx-audience-banner{
+        flex:0 0 auto!important;
+    }
+
+    .lnx-auth-art .lnx-demo{
+        min-height:0!important;
+    }
+
+    .lnx-auth-art .lnx-benefits{
+        flex:0 0 auto!important;
+    }
+
+    .lnx-auth-art .lnx-closing{
+        flex:0 0 auto!important;
+    }
+
+    /* Notebook um pouco menor em telas comuns */
+    @media(max-width:1450px){
+        .lnx-auth-art{
+            padding:25px 25px 66px!important;
+        }
+
+        .lnx-auth-art .lnx-art-shell{
+            width:97%!important;
+            height:calc(100vh - 110px)!important;
+            min-height:535px!important;
+
+            border-width:9px!important;
+            border-bottom-width:17px!important;
+
+            padding:9px!important;
+        }
+
+        .lnx-auth-art::after{
+            left:8%!important;
+            right:8%!important;
+            bottom:29px!important;
+            height:29px!important;
+        }
+    }
+
+    @media(max-height:800px) and (min-width:901px){
+        .lnx-auth-art{
+            padding-top:14px!important;
+            padding-bottom:55px!important;
+        }
+
+        .lnx-auth-art .lnx-art-shell{
+            height:calc(100vh - 78px)!important;
+            min-height:510px!important;
+        }
+
+        .lnx-auth-art::after{
+            bottom:22px!important;
+        }
+    }
+
+    /* No celular continua somente o formul?rio */
+    @media(max-width:900px){
+        .lnx-auth-art{
+            display:none!important;
+        }
+
+        .lnx-auth-art::after{
+            display:none!important;
+        }
+    }
+
+    </style>
+    """)
+
     st.html("<style>.lnx-login-price-info>div>div{display:block!important;grid-template-columns:none!important}</style>")

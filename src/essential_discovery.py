@@ -158,10 +158,10 @@ def _render_back_button(key: str) -> None:
 
 def _shortcut_illustration(target: str) -> str:
     figures = {
-        "Por Estado": '''<div class="ln-shortcut-figure ln-shortcut-state"><svg viewBox="0 0 240 92" xmlns="http://www.w3.org/2000/svg"><rect width="240" height="92" rx="12" fill="#EAF3FF"/><path d="M56 15l22 7 16-4 18 14 18 4 2 16-13 9-8 18-17-4-9 9-15-11-18-1-8-17 8-12-4-13z" fill="#63A4FF"/><circle cx="78" cy="43" r="4" fill="#fff"/><circle cx="99" cy="61" r="4" fill="#fff"/><circle cx="64" cy="59" r="4" fill="#fff"/><rect x="149" y="26" width="62" height="8" rx="4" fill="#9EC7FF"/><rect x="149" y="43" width="48" height="8" rx="4" fill="#BED9FF"/><rect x="149" y="60" width="56" height="8" rx="4" fill="#BED9FF"/></svg></div>''',
-        "Por Cidade": '''<div class="ln-shortcut-figure ln-shortcut-city"><svg viewBox="0 0 240 92" xmlns="http://www.w3.org/2000/svg"><rect width="240" height="92" rx="12" fill="#ECF9F5"/><path d="M42 73h156" stroke="#A9DCCC" stroke-width="5" stroke-linecap="round"/><rect x="59" y="42" width="30" height="31" rx="3" fill="#6DC7AB"/><rect x="96" y="28" width="37" height="45" rx="3" fill="#3BA986"/><rect x="141" y="37" width="34" height="36" rx="3" fill="#83D4BA"/><path d="M116 15c8 0 14 6 14 14 0 11-14 24-14 24s-14-13-14-24c0-8 6-14 14-14z" fill="#2467E8"/><circle cx="116" cy="29" r="5" fill="#fff"/></svg></div>''',
-        "Por Modalidade": '''<div class="ln-shortcut-figure ln-shortcut-modality"><svg viewBox="0 0 240 92" xmlns="http://www.w3.org/2000/svg"><rect width="240" height="92" rx="12" fill="#F4EEFF"/><rect x="50" y="19" width="58" height="57" rx="6" fill="#fff" stroke="#D9CAF9"/><rect x="61" y="31" width="34" height="6" rx="3" fill="#B79BEF"/><rect x="61" y="44" width="25" height="6" rx="3" fill="#D0BEF5"/><rect x="61" y="57" width="30" height="6" rx="3" fill="#D0BEF5"/><g transform="rotate(-32 157 47)"><rect x="148" y="27" width="42" height="13" rx="5" fill="#6D4DE3"/><rect x="145" y="42" width="48" height="10" rx="5" fill="#8A6CF0"/><rect x="164" y="51" width="9" height="29" rx="4" fill="#5D42C8"/></g><rect x="138" y="75" width="50" height="7" rx="3" fill="#A98FF0"/></svg></div>''',
-        "Por site de disputa": '''<div class="ln-shortcut-figure ln-shortcut-site"><svg viewBox="0 0 240 92" xmlns="http://www.w3.org/2000/svg"><rect width="240" height="92" rx="12" fill="#EDF3FF"/><rect x="55" y="18" width="130" height="58" rx="7" fill="#174B9E"/><rect x="62" y="25" width="116" height="43" rx="3" fill="#fff"/><circle cx="120" cy="46" r="15" fill="none" stroke="#2D5FE8" stroke-width="4"/><path d="M105 46h30M120 31c-6 7-6 23 0 30M120 31c6 7 6 23 0 30" stroke="#2D5FE8" stroke-width="3" fill="none"/><rect x="91" y="77" width="58" height="5" rx="2.5" fill="#7EA7EA"/></svg></div>''',
+        "Por Estado": '''<div class="ln-shortcut-figure ln-shortcut-state"><svg viewBox="0 0 260 112" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mapa do Brasil dividido por estados"><defs><filter id="s1" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#2E64B7" flood-opacity=".16"/></filter></defs><rect width="260" height="112" rx="14" fill="#EFF6FF"/><g filter="url(#s1)" transform="translate(25 7)"><path d="M62 4l27 9 20-3 14 14 23 5 4 17-12 9 1 14-15 4-7 18-20-3-10 11-16-10-18 4-9-15-15-5 4-18-11-12 11-14 7-17z" fill="#FFFFFF" stroke="#3475DC" stroke-width="2.4" stroke-linejoin="round"/><path d="M43 21l26 17 38-24M69 38l-5 45M69 38l28 18 39-18M97 56l-8 31M97 56l25 18M122 30l0 44M43 55l54 1M35 72l54 11M122 74l17-5" fill="none" stroke="#79A8ED" stroke-width="1.6" stroke-linecap="round"/><circle cx="70" cy="38" r="2.7" fill="#2163CC"/><circle cx="97" cy="56" r="2.7" fill="#2163CC"/><circle cx="122" cy="74" r="2.7" fill="#2163CC"/></g><text x="172" y="43" font-family="Inter,Segoe UI,Arial" font-size="12" font-weight="800" fill="#174C91">BRASIL</text><text x="172" y="60" font-family="Inter,Segoe UI,Arial" font-size="9" font-weight="650" fill="#6786A8">26 estados + DF</text><path d="M172 72h52" stroke="#A8C4EA" stroke-width="3" stroke-linecap="round"/><path d="M172 81h40" stroke="#C4D7F0" stroke-width="3" stroke-linecap="round"/></svg></div>''',
+        "Por Cidade": '''<div class="ln-shortcut-figure ln-shortcut-city"><svg viewBox="0 0 260 112" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mapa do estado de SÃ£o Paulo com cidades em destaque"><rect width="260" height="112" rx="14" fill="#ECF9F5"/><g transform="translate(17 14)"><path d="M10 42l19-17 35 3 22-11 32 12 31-4 24 18-16 17-31 5-20 16-35-4-29 8-20-14-20-7z" fill="#D9F1E8" stroke="#15916E" stroke-width="2.2" stroke-linejoin="round"/><path d="M25 57l41-19 46 24 41-17M66 38l15 34M112 62l14-31" fill="none" stroke="#8BCDB7" stroke-width="1.2"/><g fill="#087F61" stroke="#fff" stroke-width="2"><circle cx="120" cy="62" r="5"/><circle cx="78" cy="47" r="4.5"/><circle cx="147" cy="48" r="4.5"/><circle cx="134" cy="75" r="4.5"/><circle cx="56" cy="58" r="4.5"/></g><g font-family="Inter,Segoe UI,Arial" fill="#246A5A"><text x="126" y="61" font-size="8" font-weight="800">SÃ£o Paulo</text><text x="63" y="42" font-size="7" font-weight="700">Campinas</text><text x="151" y="45" font-size="7" font-weight="700">S. J. Campos</text><text x="139" y="86" font-size="7" font-weight="700">Santos</text><text x="31" y="67" font-size="7" font-weight="700">RibeirÃ£o</text></g></g><text x="185" y="93" font-family="Inter,Segoe UI,Arial" font-size="9" font-weight="750" fill="#5C8D7F">BUSCA POR CIDADE</text></svg></div>''',
+        "Por Modalidade": '''<div class="ln-shortcut-figure ln-shortcut-modality"><svg viewBox="0 0 260 112" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Martelo de licitaÃ§Ã£o estilizado"><defs><filter id="g1" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#6444B7" flood-opacity=".20"/></filter></defs><rect width="260" height="112" rx="14" fill="#F5F0FF"/><g filter="url(#g1)" transform="translate(36 12) rotate(-20 82 45)"><rect x="60" y="20" width="70" height="20" rx="8" fill="#714FE0"/><rect x="54" y="41" width="82" height="13" rx="6" fill="#9475ED"/><rect x="91" y="50" width="14" height="48" rx="7" fill="#5C3FC1"/></g><rect x="48" y="87" width="104" height="9" rx="4.5" fill="#B69FF4"/><g font-family="Inter,Segoe UI,Arial"><rect x="167" y="23" width="66" height="20" rx="10" fill="#FFFFFF" stroke="#DED2FA"/><text x="200" y="36" text-anchor="middle" font-size="8" font-weight="800" fill="#6C54B7">PREGÃƒO</text><rect x="167" y="49" width="66" height="20" rx="10" fill="#FFFFFF" stroke="#DED2FA"/><text x="200" y="62" text-anchor="middle" font-size="8" font-weight="800" fill="#6C54B7">DISPENSA</text><rect x="167" y="75" width="66" height="20" rx="10" fill="#FFFFFF" stroke="#DED2FA"/><text x="200" y="88" text-anchor="middle" font-size="8" font-weight="800" fill="#6C54B7">CONCORRÃŠNCIA</text></g></svg></div>''',
+        "Por site de disputa": '''<div class="ln-shortcut-figure ln-shortcut-site"><svg viewBox="0 0 260 112" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tela de computador com endereÃ§o de portal de compras"><rect width="260" height="112" rx="14" fill="#EEF4FF"/><g transform="translate(24 12)"><rect x="16" y="5" width="180" height="76" rx="9" fill="#164A99"/><rect x="23" y="12" width="166" height="60" rx="5" fill="#FFFFFF"/><rect x="30" y="20" width="152" height="16" rx="8" fill="#EEF3F9"/><circle cx="40" cy="28" r="3" fill="#79A1DF"/><text x="50" y="31" font-family="Inter,Segoe UI,Arial" font-size="8.5" font-weight="700" fill="#466A9B">www.compras...</text><circle cx="105" cy="53" r="13" fill="#E8F0FF" stroke="#2D63C8" stroke-width="2"/><path d="M92 53h26M105 40c-5 6-5 20 0 26M105 40c5 6 5 20 0 26" fill="none" stroke="#2D63C8" stroke-width="2"/><rect x="79" y="83" width="54" height="6" rx="3" fill="#80A5DF"/><rect x="64" y="89" width="84" height="5" rx="2.5" fill="#AFC5E8"/></g></svg></div>''',
     }
     return figures.get(target, "")
 
@@ -459,100 +459,254 @@ def _render_items(opportunity: dict, pack: dict) -> None:
 
 def _render_card(db, user: dict, item: dict, pack: dict) -> None:
     company_id = user["company_id"]
-    modality = str(item.get("modality") or "Licitação")
+    modality = str(item.get("modality") or "Licitação").strip()
     control = str(item.get("pncp_control_number") or "").strip()
-    city = str(item.get("city") or "Município não informado")
-    state = str(item.get("state") or "--")
-    agency = str(item.get("agency") or "Órgão não informado")
-    reference = agency
-    estimated_value = item.get("estimated_value")
-    value = format_brl(estimated_value) if estimated_value not in (None, "") else "Não informado"
-    opening = item.get("opening_at") or item.get("closing_at")
-    deadline = item.get("closing_at")
-    opening_text = _datetime_text(opening)
-    published_text = _datetime_text(item.get("published_at"))
-    countdown = _countdown(deadline)
+    city = str(item.get("city") or "Município não informado").strip()
+    state = str(item.get("state") or "--").strip()
+    agency = str(item.get("agency") or "Órgão não informado").strip()
     obj = str(item.get("object") or "Objeto não informado").strip()
+
+    estimated_value = item.get("estimated_value")
+    value = format_brl(estimated_value) if estimated_value not in (None, "") else "Valor não informado"
 
     source_name, portal = opportunity_source_and_portal(
         item.get("source_name"), item.get("source_channel"), item.get("source_url")
     )
-    access = portal_access_info(portal)
+    portal_label = str(portal or source_name or "Site não informado").strip()
+    if portal_label in {"", "Não informado", "Não identificado"}:
+        portal_label = "Site não informado"
+
     source_url = str(item.get("source_url") or "").strip()
     has_site = source_url.startswith(("http://", "https://"))
-    portal_text = escape(portal if portal not in {"", "Não informado"} else "Não identificado")
-    if portal_text == "Não identificado":
-        portal_help = "Consultar edital."
-    elif has_site:
-        safe_url = escape(source_url, quote=True)
-        portal_text = f'<a class="ln-meta-link" href="{safe_url}" target="_blank" rel="noopener noreferrer">{portal_text}</a>'
-        portal_help = "Clique no nome para abrir o site."
-    else:
-        portal_help = "Consultar edital para confirmar o endereço."
+
+    item_key = str(item.get("id") or control or "item")
+    show_items_key = f"essential_show_items_{item_key}"
+    show_items = bool(st.session_state.get(show_items_key, False))
+
+    count_known = bool(pack.get("count_known"))
+    item_count = int(pack.get("item_count") or 0) if count_known else 0
+    items_label = (
+        f"{item_count} item"
+        if item_count == 1
+        else (f"{item_count} itens" if count_known else "Itens sob demanda")
+    )
 
     with st.container(border=True):
-        st.markdown(f'<span class="ln-modality-badge">{escape(modality)}</span>', unsafe_allow_html=True)
-        st.markdown(f'<div class="ln-reference">{escape(reference)}</div>', unsafe_allow_html=True)
-        extra = f'<div class="ln-info-extra">{escape(countdown)}</div>' if countdown else ""
-        st.markdown(
-            '<div class="ln-info-grid">'
-            f'<div class="ln-info-box"><div class="ln-info-label">Cidade</div><div class="ln-info-value">{escape(city)} — {escape(state)}</div></div>'
-            f'<div class="ln-info-box"><div class="ln-info-label">Valor</div><div class="ln-info-value">{escape(value)}</div></div>'
-            f'<div class="ln-info-box"><div class="ln-info-label">Data e prazo</div><div class="ln-info-value">{escape(opening_text)}</div>{extra}</div>'
-            f'<div class="ln-info-box"><div class="ln-info-label">Publicado em</div><div class="ln-info-value">{escape(published_text)}</div></div>'
-            '</div>', unsafe_allow_html=True,
-        )
-        st.markdown('<div class="ln-object-label">O que o governo quer comprar ou contratar</div>', unsafe_allow_html=True)
-        st.write(obj)
-        st.markdown(
-            '<div class="ln-meta-grid">'
-            f'<div class="ln-meta-box"><div class="ln-meta-label">Onde participar</div><div class="ln-meta-value">{portal_text}</div><div class="ln-meta-help">{escape(portal_help)}</div></div>'
-            f'<div class="ln-meta-box"><div class="ln-meta-label">Custo do acesso</div><div class="ln-meta-value">{escape(access["label"])}</div><div class="ln-meta-help">{escape(access["detail"])}</div></div>'
-            '</div>', unsafe_allow_html=True,
-        )
-        _render_items(item, pack)
+        st.markdown('<span class="ln39-result-marker"></span>', unsafe_allow_html=True)
+        info_col, action_col = st.columns([0.73, 0.27], vertical_alignment="center")
 
-        official = pncp_official_url(control)
-        primary_url = official or (source_url if has_site else "")
-        a1, a2 = st.columns(2)
-        if primary_url:
-            a1.link_button("Acessar edital", primary_url, width="stretch")
-        else:
-            a1.button("Acessar edital", disabled=True, width="stretch", key=f"no_link_{item['id']}")
-        if a2.button("Salvar na lista", key=f"save_list_{item['id']}", width="stretch"):
-            try:
-                _save_to_list(db, company_id, item["id"])
-            except Exception as exc:
-                st.error(f"Não foi possível salvar este edital: {exc}")
+        with info_col:
+            st.markdown(
+                f'<div class="ln39-result-title">{escape(modality)}</div>'
+                f'<div class="ln39-result-agency">{escape(agency)}</div>'
+                f'<div class="ln39-result-object">{escape(obj)}</div>'
+                f'<div class="ln39-result-meta">'
+                f'<span class="ln39-result-chip"><b>Local</b> {escape(city)} - {escape(state)}</span>'
+                f'<span class="ln39-result-chip"><b>Site</b> {escape(portal_label)}</span>'
+                f'<span class="ln39-result-chip"><b>Valor</b> {escape(value)}</span>'
+                f'<span class="ln39-result-chip"><b>Itens</b> {escape(items_label)}</span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
+        with action_col:
+            if st.button(
+                "Ocultar itens da compra" if show_items else "Ver itens da compra",
+                icon=":material/inventory_2:",
+                key=f"essential_items_toggle_{item_key}",
+                width="stretch",
+            ):
+                st.session_state[show_items_key] = not show_items
+                st.rerun()
+
+            official = pncp_official_url(control)
+            primary_url = official or (source_url if has_site else "")
+            a1, a2 = st.columns(2)
+
+            if primary_url:
+                a1.link_button("Acessar edital", primary_url, width="stretch")
+            else:
+                a1.button(
+                    "Acessar edital",
+                    disabled=True,
+                    width="stretch",
+                    key=f"no_link_{item_key}",
+                )
+
+            if a2.button("Salvar", key=f"save_list_{item_key}", width="stretch"):
+                try:
+                    _save_to_list(db, company_id, item["id"])
+                except Exception as exc:
+                    st.error(f"Não foi possível salvar este edital: {exc}")
+
+        if show_items:
+            lazy_pack = pack
+            if control and not list(pack.get("items") or []):
+                try:
+                    with st.spinner("Carregando itens da compra..."):
+                        loaded_items = _cached_full_items(control)
+                    lazy_pack = {
+                        "items": loaded_items[:20],
+                        "item_count": len(loaded_items),
+                        "count_known": True,
+                        "has_more": len(loaded_items) > 20,
+                        "items_error": "",
+                    }
+                except PncpItemsError as exc:
+                    lazy_pack = {
+                        "items": [],
+                        "item_count": 0,
+                        "count_known": False,
+                        "has_more": False,
+                        "items_error": str(exc),
+                    }
+            _render_items(item, lazy_pack)
 
 
-def _render_results(db, user: dict, items: list[dict], *, page_key: str, per_page: int = 6) -> None:
+def _render_results(db, user: dict, items: list[dict], *, page_key: str, per_page: int = 8) -> None:
+    st.markdown(
+        """
+        <style>
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln39-result-marker) {
+            background:#FFFFFF !important;
+            border:1px solid #DCE5EC !important;
+            border-left:3px solid #E0A20B !important;
+            border-radius:10px !important;
+            box-shadow:0 4px 13px rgba(16,42,67,.045) !important;
+            margin-bottom:.62rem !important;
+        }
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln39-result-marker) > div {
+            padding:.78rem .92rem !important;
+        }
+        .ln39-result-marker {display:none !important;}
+        .ln39-result-title {
+            margin:0 0 .14rem;
+            color:#102D4C;
+            font-size:1.10rem;
+            line-height:1.22;
+            font-weight:850 !important;
+            text-transform:uppercase;
+        }
+        .ln39-result-agency {
+            margin:0 0 .30rem;
+            color:#42607B;
+            font-size:.86rem;
+            line-height:1.3;
+            font-weight:750 !important;
+            text-transform:uppercase;
+        }
+        .ln39-result-object {
+            margin:0 0 .48rem;
+            color:#5B7084;
+            font-size:.91rem;
+            line-height:1.44;
+            display:-webkit-box;
+            -webkit-line-clamp:3;
+            -webkit-box-orient:vertical;
+            overflow:hidden;
+        }
+        .ln39-result-meta {
+            display:flex;
+            flex-wrap:wrap;
+            gap:.34rem .48rem;
+            align-items:center;
+        }
+        .ln39-result-chip {
+            display:inline-flex;
+            align-items:center;
+            gap:.24rem;
+            min-height:27px;
+            padding:.17rem .46rem;
+            border:1px solid #E1E7EC;
+            border-radius:999px;
+            background:#F8FAFC;
+            color:#496278;
+            font-size:.73rem;
+            line-height:1.2;
+            font-weight:650 !important;
+        }
+        .ln39-result-chip b {
+            color:#9D6D00;
+            font-weight:850 !important;
+        }
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln39-result-marker) .stButton button,
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln39-result-marker) .stLinkButton a {
+            min-height:37px !important;
+            border-radius:8px !important;
+            font-size:.79rem !important;
+        }
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln39-result-marker)
+        div[class*="st-key-essential_items_toggle_"] button {
+            background:#FFFFFF !important;
+            color:#A36F00 !important;
+            border:1px solid #DDA20C !important;
+            box-shadow:none !important;
+            font-weight:850 !important;
+        }
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln39-result-marker)
+        div[class*="st-key-essential_items_toggle_"] button * {
+            color:#A36F00 !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
     if not items:
         st.info("Nenhum edital aberto foi encontrado. Tente retirar um filtro ou pesquisar outra palavra.")
         return
-    st.caption(f"{len(items):,} editais abertos para participação".replace(",", "."))
-    total_pages = max((len(items) + per_page - 1) // per_page, 1)
+
+    total = len(items)
+    total_pages = max((total + per_page - 1) // per_page, 1)
     current = min(max(int(st.session_state.get(page_key, 1)), 1), total_pages)
     start = (current - 1) * per_page
     visible = items[start:start + per_page]
-    controls = tuple(
-        str(row.get("pncp_control_number") or "").strip()
-        for row in visible if str(row.get("pncp_control_number") or "").strip()
+    end = min(start + len(visible), total)
+
+    st.markdown(
+        f'<div style="margin:.18rem 0 .55rem;color:#17344F">'
+        f'<strong>{total:,} editais encontrados</strong>'
+        f'<span style="display:block;color:#718397;font-size:.78rem;margin-top:.10rem">'
+        f'Mostrando {start + 1} a {end} de {total:,}</span></div>'.replace(",", "."),
+        unsafe_allow_html=True,
     )
-    packs = _cached_item_summaries(controls)
+
+    empty_pack = {
+        "items": [],
+        "item_count": 0,
+        "count_known": False,
+        "has_more": False,
+        "items_error": "",
+    }
+
     for item in visible:
-        control = str(item.get("pncp_control_number") or "").strip()
-        _render_card(db, user, item, packs.get(control, {
-            "items": [], "item_count": 0, "count_known": False, "has_more": False, "items_error": "",
-        }))
+        _render_card(db, user, item, empty_pack)
 
     if total_pages > 1:
         n1, n2, n3 = st.columns([1, 1, 1])
-        if n1.button("Anterior", icon=":material/chevron_left:", disabled=current <= 1, key=f"{page_key}_prev", width="stretch"):
+
+        if n1.button(
+            "Anterior",
+            icon=":material/chevron_left:",
+            disabled=current <= 1,
+            key=f"{page_key}_prev",
+            width="stretch",
+        ):
             st.session_state[page_key] = current - 1
             st.rerun()
-        n2.markdown(f"<div style='text-align:center;padding:.7rem;color:#52657C'>Página {current} de {total_pages}</div>", unsafe_allow_html=True)
-        if n3.button("Próxima", icon=":material/chevron_right:", disabled=current >= total_pages, key=f"{page_key}_next", width="stretch"):
+
+        n2.markdown(
+            f"<div style='text-align:center;padding:.7rem;color:#52657C'>Página {current} de {total_pages}</div>",
+            unsafe_allow_html=True,
+        )
+
+        if n3.button(
+            "Próxima",
+            icon=":material/chevron_right:",
+            disabled=current >= total_pages,
+            key=f"{page_key}_next",
+            width="stretch",
+        ):
             st.session_state[page_key] = current + 1
             st.rerun()
 
@@ -630,49 +784,160 @@ def search_page(db, user: dict, usage=None) -> None:
     company_id = user["company_id"]
     defaults = _profile_defaults(db, company_id)
     current = st.session_state.get("essential_search_criteria") or {}
-    _page_header("ENCONTRE OPORTUNIDADES", "Buscar licitações", "Escolha só o que fizer sentido. Campos vazios deixam a busca mais ampla.")
+
+    _page_header(
+        "",
+        "Buscar licitações",
+        "Encontre oportunidades em todo o Brasil.",
+    )
+
     with st.form("essential_quick_search", clear_on_submit=False, enter_to_submit=False):
-        keyword = st.text_input("O que você procura?", value=str(current.get("keyword") if "keyword" in current else defaults["keyword"]), placeholder="Ex.: papel A4, pneus, medicamentos, manutenção...")
-        g1, g2, g3 = st.columns([1, 1.2, 1.2])
+        st.markdown('<div class="ln-search-form-title">Filtros de busca</div>', unsafe_allow_html=True)
+
+        r1 = st.columns([2.0, 1.0, 1.15, 1.2])
+        keyword = r1[0].text_input(
+            "Palavra-chave",
+            value=str(current.get("keyword") if "keyword" in current else defaults["keyword"]),
+            placeholder="Ex.: papel A4, limpeza, uniforme, medicamentos...",
+        )
+
         current_region = str(current.get("region") or "Brasil inteiro")
-        region = g1.selectbox("Região", REGION_OPTIONS, index=REGION_OPTIONS.index(current_region) if current_region in REGION_OPTIONS else 0)
-        states = g2.multiselect("Estado (opcional)", list(BRAZIL_STATES), default=list(current.get("states") if "states" in current else defaults["states"]), placeholder="Todos da região")
-        city = g3.text_input("Cidade (opcional)", value=str(current.get("city") or ""), placeholder="Ex.: Londrina")
-        f1, f2, f3 = st.columns(3)
+        region = r1[1].selectbox(
+            "Região",
+            REGION_OPTIONS,
+            index=REGION_OPTIONS.index(current_region) if current_region in REGION_OPTIONS else 0,
+        )
+
+        states = r1[2].multiselect(
+            "UF",
+            list(BRAZIL_STATES),
+            default=list(current.get("states") if "states" in current else defaults["states"]),
+            placeholder="Todas",
+        )
+
+        city = r1[3].text_input(
+            "Município",
+            value=str(current.get("city") or ""),
+            placeholder="Ex.: Londrina",
+        )
+
+        r2 = st.columns([1.0, 1.15, 1.25, 1.6])
         current_nature = str(current.get("nature") if "nature" in current else defaults["nature"])
-        nature = f1.selectbox("O que procura", NATURE_OPTIONS, index=NATURE_OPTIONS.index(current_nature) if current_nature in NATURE_OPTIONS else 0)
+        nature = r2[0].selectbox(
+            "Tipo da contratação",
+            NATURE_OPTIONS,
+            index=NATURE_OPTIONS.index(current_nature) if current_nature in NATURE_OPTIONS else 0,
+        )
+
         current_srp = str(current.get("srp") if "srp" in current else defaults["srp"])
-        srp = f2.selectbox("Registro de preços", SRP_OPTIONS, index=SRP_OPTIONS.index(current_srp) if current_srp in SRP_OPTIONS else 0)
+        srp = r2[1].selectbox(
+            "Registro de preços",
+            SRP_OPTIONS,
+            index=SRP_OPTIONS.index(current_srp) if current_srp in SRP_OPTIONS else 0,
+        )
+
         current_portal = str(current.get("portal") or "Todos os sites")
-        portal = f3.selectbox("Site da disputa", PORTAL_OPTIONS, index=PORTAL_OPTIONS.index(current_portal) if current_portal in PORTAL_OPTIONS else 0)
-        modalities = st.multiselect("Modalidade", list(MODALITIES.keys()), default=list(current.get("modalities") if "modalities" in current else defaults["modalities"]), placeholder="Todas")
-        v1, v2 = st.columns(2)
+        portal = r2[2].selectbox(
+            "Site da disputa",
+            PORTAL_OPTIONS,
+            index=PORTAL_OPTIONS.index(current_portal) if current_portal in PORTAL_OPTIONS else 0,
+        )
+
+        modalities = r2[3].multiselect(
+            "Modalidade",
+            list(MODALITIES.keys()),
+            default=list(current.get("modalities") if "modalities" in current else defaults["modalities"]),
+            placeholder="Todas",
+        )
+
+        r3 = st.columns([1.0, 1.0, 1.35])
         min_default = current.get("minimum") if "minimum" in current else defaults["minimum"]
         max_default = current.get("maximum") if "maximum" in current else defaults["maximum"]
-        minimum_text = v1.text_input("Valor mínimo", value="" if min_default in (None, "") else str(min_default), placeholder="Sem mínimo")
-        maximum_text = v2.text_input("Valor máximo", value="" if max_default in (None, "") else str(max_default), placeholder="Sem máximo")
-        submitted = st.form_submit_button("Buscar licitações", type="primary", width="stretch")
+
+        minimum_text = r3[0].text_input(
+            "Valor mínimo",
+            value="" if min_default in (None, "") else str(min_default),
+            placeholder="Sem mínimo",
+        )
+        maximum_text = r3[1].text_input(
+            "Valor máximo",
+            value="" if max_default in (None, "") else str(max_default),
+            placeholder="Sem máximo",
+        )
+        with r3[2]:
+            submitted = st.form_submit_button(
+                "Buscar licitações",
+                type="primary",
+                icon=":material/search:",
+                width="stretch",
+            )
+
+    c1, _ = st.columns([0.22, 0.78])
+    if c1.button(
+        "Limpar filtros",
+        icon=":material/refresh:",
+        key="essential_clear_search_filters",
+        width="stretch",
+    ):
+        st.session_state["essential_search_criteria"] = {}
+        st.session_state["essential_search_page"] = 1
+        st.rerun()
+
     if submitted:
         minimum = parse_brl(minimum_text) if minimum_text.strip() else None
         maximum = parse_brl(maximum_text) if maximum_text.strip() else None
         if minimum_text.strip() and minimum is None:
-            st.error("Confira o valor mínimo digitado."); return
+            st.error("Confira o valor mínimo digitado.")
+            return
         if maximum_text.strip() and maximum is None:
-            st.error("Confira o valor máximo digitado."); return
-        current = _criteria(keyword=keyword.strip(), city=city.strip(), region=region, states=states, nature=nature, srp=srp, modalities=modalities, minimum=minimum, maximum=maximum, portal=portal)
+            st.error("Confira o valor máximo digitado.")
+            return
+
+        current = _criteria(
+            keyword=keyword.strip(),
+            city=city.strip(),
+            region=region,
+            states=states,
+            nature=nature,
+            srp=srp,
+            modalities=modalities,
+            minimum=minimum,
+            maximum=maximum,
+            portal=portal,
+        )
         st.session_state["essential_search_criteria"] = current
         st.session_state["essential_search_page"] = 1
+
         if usage is not None:
             usage.record_search(company_id, user.get("id", ""), keyword.strip())
-        db.save_company_profile(company_id, search_keyword=keyword.strip(), search_nature=nature, service_states=", ".join(states), search_modalities="|".join(modalities), search_srp=_srp_profile_value(srp), search_minimum=minimum, search_maximum=maximum, search_order="Mais recentes")
+
+        db.save_company_profile(
+            company_id,
+            search_keyword=keyword.strip(),
+            search_nature=nature,
+            service_states=", ".join(states),
+            search_modalities="|".join(modalities),
+            search_srp=_srp_profile_value(srp),
+            search_minimum=minimum,
+            search_maximum=maximum,
+            search_order="Mais recentes",
+        )
+
     if not current:
-        st.info("Digite uma palavra ou escolha um filtro para começar."); return
+        st.info("Digite uma palavra ou escolha um filtro para começar.")
+        return
+
     if str(current.get("region") or "Brasil inteiro") != "Brasil inteiro":
-        st.caption(f"Região: {current['region']} · UFs consideradas: {', '.join(_effective_states(current)) or 'nenhuma'}")
+        st.caption(
+            f"Região: {current['region']} · UFs consideradas: "
+            f"{', '.join(_effective_states(current)) or 'nenhuma'}"
+        )
+
     with st.spinner("Buscando editais abertos..."):
         items = _query_catalog(db, current)
-    st.markdown("### Editais abertos para participação")
-    _render_results(db, user, items, page_key="essential_search_page", per_page=6)
+
+    _render_results(db, user, items, page_key="essential_search_page", per_page=8)
+
 
 def state_page(db, user: dict) -> None:
     _apply_styles()
@@ -794,7 +1059,7 @@ def top50_page(db, user: dict) -> None:
     items = db.list_global_catalog(
         closing_from=date.today().isoformat(), limit=50, order_by="recent"
     )
-    _render_results(db, user, items, page_key="essential_top50_page", per_page=5)
+    _render_results(db, user, items, page_key="essential_top50_page", per_page=8)
 
 
 def my_list_page(db, user: dict) -> None:
@@ -927,4 +1192,4 @@ def radar_page(db, user: dict) -> None:
     items = _query_catalog(db, criteria, limit=500)
     if defaults["keyword"]:
         st.caption(f"Você acompanha: {defaults['keyword']}")
-    _render_results(db, user, items, page_key="essential_radar_page", per_page=6)
+    _render_results(db, user, items, page_key="essential_radar_page", per_page=8)

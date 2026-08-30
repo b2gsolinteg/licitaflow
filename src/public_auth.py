@@ -176,19 +176,116 @@ def render_public_auth(*, db, security, conversion, commercial, client_ip_getter
             st.html(_login_footer_html()); st.html(_login_price_html()); st.html(_security_note_html())
 
         elif mode == "request":
-            with st.form("access_request", clear_on_submit=False, enter_to_submit=False):
-                company = st.text_input("Empresa / Razão social"); cnpj = st.text_input("CNPJ", placeholder="00.000.000/0000-00"); name = st.text_input("Seu nome"); email = st.text_input("E-mail profissional", key="request_email"); whatsapp = st.text_input("WhatsApp", placeholder="(00) 00000-0000"); segment = st.text_input("Segmento da empresa", placeholder="Ex.: materiais hospitalares"); campaign_code = st.text_input("Código de indicação ou cupom (opcional)")
-                if st.form_submit_button("Solicitar acesso", width="stretch"):
+            with st.form(
+                "self_service_signup",
+                clear_on_submit=False,
+                enter_to_submit=False,
+            ):
+                company = st.text_input("Empresa / Raz?o social")
+                cnpj = st.text_input(
+                    "CNPJ",
+                    placeholder="00.000.000/0000-00",
+                )
+                name = st.text_input("Seu nome")
+                email = st.text_input(
+                    "E-mail profissional",
+                    key="request_email",
+                )
+                whatsapp = st.text_input(
+                    "WhatsApp",
+                    placeholder="(00) 00000-0000",
+                )
+                segment = st.text_input(
+                    "Segmento da empresa (opcional)",
+                    placeholder="Ex.: materiais hospitalares",
+                )
+                password = st.text_input(
+                    "Crie sua senha",
+                    type="password",
+                    placeholder="M?nimo de 8 caracteres",
+                )
+                password_confirmation = st.text_input(
+                    "Confirme sua senha",
+                    type="password",
+                )
+
+                if st.form_submit_button(
+                    "Criar minha conta gr?tis",
+                    width="stretch",
+                ):
+                    normalized_email = str(email or "").strip().lower()
                     client_ip = client_ip_getter()
+
                     try:
-                        security.precheck("access_request", email, client_ip); decision = commercial.evaluate_trial(cnpj, email, client_ip)
-                        if not decision.allowed:
-                            commercial.record_trial_request(cnpj, email, client_ip, decision.outcome, decision.risk_score); raise ValueError(decision.message)
-                        risk = db.request_access(company, name, email, whatsapp, segment, cnpj=cnpj, client_ip=client_ip, campaign_code=campaign_code)
-                        final_outcome = "review" if (decision.outcome == "review" or risk.get("outcome") == "review") else "allowed"
-                        commercial.record_trial_request(cnpj, email, client_ip, final_outcome, max(decision.risk_score, int(risk.get("risk_score") or 0))); security.register_attempt("access_request", email, client_ip, success=True); st.success("Solicitação recebida. Seu teste é de 7 dias, sem cartão.")
-                    except Exception as error: st.warning(str(error))
-            st.html('<div class="lnx-auth-bottom"><a href="?auth=login">Já possui acesso? Entrar</a><a class="lnx-auth-back" href="?">Voltar para a página inicial</a></div>')
+                        if len(str(password or "")) < 8:
+                            raise ValueError(
+                                "A senha deve ter pelo menos 8 caracteres."
+                            )
+                        if password != password_confirmation:
+                            raise ValueError("As senhas n?o coincidem.")
+
+                        security.precheck(
+                            "access_request",
+                            normalized_email,
+                            client_ip,
+                        )
+
+                        user = db.register_trial_self_service(
+                            company,
+                            cnpj,
+                            name,
+                            normalized_email,
+                            whatsapp,
+                            password,
+                            segment=segment,
+                            client_ip=client_ip,
+                        )
+
+                        security.register_attempt(
+                            "access_request",
+                            normalized_email,
+                            client_ip,
+                            success=True,
+                        )
+
+                        conversion.record_event(
+                            "trial_started",
+                            user.get("company_id", ""),
+                            user.get("id", ""),
+                            {"email": user.get("email", "")},
+                        )
+
+                        token = security.create_session(
+                            user.get("company_id", ""),
+                            user.get("id", ""),
+                        )
+
+                        st.session_state.user = user
+                        st.session_state.security_session_token = token
+                        st.session_state.motivational_phrase = random.choice(
+                            tuple(motivational_phrases)
+                        )
+                        st.session_state.just_logged_in = True
+                        st.rerun()
+
+                    except Exception as error:
+                        try:
+                            security.register_attempt(
+                                "access_request",
+                                normalized_email,
+                                client_ip,
+                                success=False,
+                            )
+                        except Exception:
+                            pass
+                        st.warning(str(error))
+
+            st.html(
+                '<div class="lnx-auth-bottom">'
+                '<a href="?auth=login">J? possui uma conta? Entrar</a>'
+                '<a class="lnx-auth-back" href="?">'
+                'Voltar para a p?gina inicial</a></div>'
+            )
 
         elif mode == "invite":
             with st.form("activate_invitation", clear_on_submit=False, enter_to_submit=False):

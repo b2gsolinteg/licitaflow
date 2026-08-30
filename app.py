@@ -16,6 +16,13 @@ from src.usage import UsageService
 from src.account_admin import AccountAdminService, AccountAdminError
 from src.support import SupportService, SupportError
 from src.billing import BillingService, BillingError
+import src.billing as billing_module
+
+# RC31.43 · Login 3 colunas integrado em tela cheia, colado às bordas.
+# Mantemos a cobrança mensal coerente com a comunicação pública: R$ 29,90/mês.
+# Os ciclos legados permanecem disponíveis internamente até a política comercial
+# deles ser revisada; a área do cliente oferece somente o mensal nesta versão.
+billing_module.CYCLES["monthly"] = ("Mensal", 1, 2990)
 from src.commercial import CommercialFoundation
 from src.config import (
     APP_NAME, APP_POSITIONING, APP_TAGLINE, APP_VERSION, COMPANY_SIGNATURE, ENVIRONMENT, LEGAL_VERSION,
@@ -50,9 +57,11 @@ from src.essential_discovery import (
     preferences_page as essential_preferences_page,
     radar_page as essential_radar_page,
 )
+import src.essential_discovery as essential_discovery_module
 from src.company_intelligence import profile_search_ready, rank_opportunities
 from src.sources import source_label, opportunity_source_and_portal, pncp_official_url
 from src.logging_setup import configure_logging
+from src.public_shell import render_public_landing, render_public_auth
 def render_sidebar_guides(page: str) -> None:
     """Carrega a ajuda sob demanda; falha do PDF nunca derruba o app."""
     try:
@@ -527,322 +536,1638 @@ def brand_header(compact=False):
 
 
 def login_page():
-    """Tela pública de entrada — RC31.11: valor do Essential e linguagem para iniciantes."""
+    raw_mode = st.query_params.get("auth", "login")
+    if isinstance(raw_mode, list):
+        raw_mode = raw_mode[0] if raw_mode else "login"
+    mode = str(raw_mode or "login").strip().lower()
+    if mode not in {"login", "request", "invite", "recovery"}:
+        mode = "login"
+
+    # RC32.16
+    # A área comercial e a prévia do produto são HTML/CSS demonstrativos.
+    # O login permanece nativo do Streamlit e ligado à autenticação Python.
+    # A marca visual usa o arquivo oficial assets/licitanexo-logo.png.
+    logo_html = '<div class="nx14-brand-fallback">LicitaNexo</div>'
+    try:
+        if LOGO_PATH.exists():
+            logo_b64 = base64.b64encode(LOGO_PATH.read_bytes()).decode("ascii")
+            logo_html = (
+                '<img class="nx14-brand-logo" '
+                'src="data:image/png;base64,' + logo_b64 + '" '
+                'alt="LicitaNexo">'
+            )
+    except OSError:
+        pass
+
     st.markdown(
-        """<style>
-        html, body, [data-testid="stAppViewContainer"], .stApp {margin:0 !important;padding:0 !important;background:#F4F7FA !important;min-height:100vh !important;color:#172B3A !important;overflow:auto !important;font-family:Inter,"Segoe UI",Arial,sans-serif !important;}
-        header[data-testid="stHeader"],[data-testid="stToolbar"],[data-testid="stDecoration"],#MainMenu,footer{display:none !important;height:0 !important;}
-        .block-container{max-width:1180px !important;width:100% !important;margin:0 auto !important;padding:3.4rem 2rem !important;}
-        [data-testid="stAppViewContainer"] *{font-weight:400 !important;}
-        div[data-testid="stHorizontalBlock"]{gap:3rem !important;align-items:center !important;}
-        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]{background:transparent !important;padding:0 !important;}
-        .ln-login-eyebrow{display:inline-flex;align-items:center;background:#E5F4EF;color:#23715D;border:1px solid #CDE8DE;border-radius:999px;padding:.28rem .58rem;font-size:.70rem;font-weight:750 !important;letter-spacing:.07em;margin:.75rem 0 .7rem}.ln-login-intro{color:#152B3B;font-size:2.2rem;line-height:1.14;margin:.2rem 0 .75rem;font-weight:750 !important;letter-spacing:-.025em;}
-        .ln-login-copy{color:#667786;font-size:1rem;line-height:1.55;max-width:32rem;}
-        .ln-login-value{margin:1.15rem 0 0;display:grid;gap:.55rem;max-width:31rem;}
-        .ln-login-value-item{display:flex;align-items:center;gap:.65rem;color:#526371;font-size:.9rem;}
-        .ln-login-value-dot{width:1.75rem;height:1.75rem;border-radius:8px;background:#EAF3EF;color:#4F846E;display:flex;align-items:center;justify-content:center;font-size:.72rem;}
-        .ln-price{text-align:left;line-height:1.15;margin:0 0 1rem;}
-        .ln-price span{display:inline;color:#667786;font-size:.82rem;margin-right:.35rem;}
-        .ln-price strong,.ln-price small{color:#486F74;font-size:1rem;font-weight:400 !important;}
-        .st-key-auth_card{width:100% !important;max-width:560px !important;margin:0 auto !important;padding:1.45rem 1.55rem 1.55rem !important;background:#FFFFFF !important;border:1px solid #DCE5EB !important;border-radius:18px !important;box-shadow:0 18px 45px rgba(25,45,61,.08) !important;}
-        .st-key-auth_card > div,.st-key-auth_card [data-testid="stVerticalBlock"]{background:transparent !important;}
-        .ln-auth-nav{display:grid !important;grid-template-columns:repeat(4,minmax(0,1fr)) !important;width:100% !important;gap:.25rem !important;margin:0 0 1rem !important;}
-        .ln-auth-nav a{display:flex !important;align-items:center !important;justify-content:center !important;min-height:2.7rem !important;padding:.35rem .1rem !important;color:#526371 !important;font-size:.76rem !important;text-align:center !important;text-decoration:none !important;border:1px solid #DCE3E8 !important;border-radius:8px !important;background:#FFFFFF !important;}
-        .ln-auth-nav a.active{color:#0C625D !important;border-color:#B7D8D4 !important;background:#EDF7F5 !important;font-weight:650 !important;}
-        .st-key-auth_card label,.st-key-auth_card label p,.st-key-auth_card p,.st-key-auth_card span{color:#293746 !important;}
-        .st-key-auth_card [data-baseweb="input"],.st-key-auth_card [data-baseweb="base-input"],.st-key-auth_card [data-testid="stTextInput"] > div > div{background:#FFFFFF !important;border-color:#C8D3DB !important;color:#293746 !important;border-radius:9px !important;}
-        .st-key-auth_card input{background:#FFFFFF !important;color:#293746 !important;min-height:3rem !important;caret-color:#293746 !important;-webkit-text-fill-color:#293746 !important;}
-        .st-key-auth_card input::placeholder{color:#8A98A5 !important;-webkit-text-fill-color:#8A98A5 !important;opacity:1 !important;}
-        .st-key-auth_card [data-testid="stForm"]{background:#FFFFFF !important;border:0 !important;padding:0 !important;}
-        .st-key-auth_card .stFormSubmitButton button{min-height:3.15rem !important;border-radius:11px !important;background:#0E7C75 !important;color:#FFFFFF !important;border:1px solid #0E7C75 !important;box-shadow:0 4px 12px rgba(14,124,117,.14) !important;font-size:.95rem !important;font-weight:650 !important;}
-        .ln-forgot{text-align:right;margin-top:-2rem;margin-bottom:1rem;padding-right:.1rem;font-size:.78rem;color:#486F74;position:relative;z-index:4;}
-        .ln-forgot a{color:#486F74 !important;text-decoration:none !important;}
-        .ln-login-footer{width:100%;max-width:560px;margin:1rem auto 0;color:#667786;text-align:center;font-size:.82rem;line-height:1.5;}
-        .ln-login-footer strong{color:#486F74 !important;font-weight:400 !important;}
-        .ln-trial-seal{width:100%;margin:.1rem auto .75rem;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;background:transparent;border:0;box-shadow:none;padding:0;}
-        .ln-trial-seal .seal-badge{width:auto;height:auto;display:block;border-radius:8px;color:#526371;background:#F4F7F9;border:1px solid #DCE3E8;box-shadow:none;font-weight:400 !important;line-height:1.3;margin-bottom:.5rem;padding:.45rem .7rem;}
-        .ln-trial-seal .seal-badge::before,.ln-trial-seal .seal-badge::after,.ln-trial-seal .seal-stars{display:none !important;}
-        .ln-trial-seal .seal-days,.ln-trial-seal .seal-free{display:inline;font-size:.9rem;letter-spacing:0;color:#526371;background:transparent;padding:0;margin:0 .1rem;border-radius:0;}
-        .ln-trial-seal .seal-copy{color:#667786;font-size:.88rem;line-height:1.4;text-align:center;}
-        .ln-trial-seal .seal-copy strong{color:#486F74;font-size:.88rem;font-weight:400 !important;}
-        .ln-login-footer .dev{margin-top:.15rem;padding-top:.6rem;border-top:1px solid #E3E8ED;}
-        @media(max-width:800px){.block-container{padding:1.5rem 1rem !important;}div[data-testid="stHorizontalBlock"]{display:block !important;}.ln-login-intro,.ln-login-copy{text-align:center;margin-left:auto;margin-right:auto;}.ln-price{text-align:center;margin-top:1rem;}.st-key-auth_card,.ln-login-footer{max-width:560px !important;margin-left:auto !important;margin-right:auto !important;}.ln-auth-nav{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}}
-        </style>""",
+        " ".join(line.strip() for line in r"""
+<style>
+:root {
+    --nx14-navy-0: #031326;
+    --nx14-navy-1: #061d37;
+    --nx14-navy-2: #0b3159;
+    --nx14-gold: #f3b713;
+    --nx14-gold-2: #ffc928;
+    --nx14-blue: #236fce;
+    --nx14-text: #102d4b;
+    --nx14-muted: #64798b;
+    --nx14-line: #dce5ec;
+
+    --nx14-frame-top: 8px;
+    --nx14-frame-w: min(
+        98vw,
+        1680px,
+        calc((100vh - 22px) * 1.7777778)
+    );
+}
+
+* {
+    box-sizing: border-box !important;
+}
+
+html,
+body,
+.stApp,
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"] {
+    width: 100% !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    font-family: Inter, "Segoe UI", Arial, sans-serif !important;
+    background: #031326 !important;
+}
+
+[data-testid="stAppViewContainer"] {
+    background:
+        radial-gradient(
+            circle at 50% 18%,
+            rgba(34, 109, 177, .56) 0%,
+            rgba(8, 53, 96, .52) 31%,
+            rgba(4, 31, 58, .86) 63%,
+            #031326 100%
+        ) !important;
+}
+
+[data-testid="stMain"],
+[data-testid="stMainBlockContainer"],
+[data-testid="stMain"] .block-container,
+.main .block-container {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+header[data-testid="stHeader"],
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+#MainMenu,
+footer,
+[data-testid="stSidebar"] {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* =========================================================
+   JANELA PREMIUM DO PRODUTO
+   ========================================================= */
+
+.nx14-stage {
+    position: fixed;
+    inset: 0;
+    z-index: 900000;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.nx14-frame {
+    position: absolute;
+    top: var(--nx14-frame-top);
+    left: 50%;
+
+    width: var(--nx14-frame-w);
+    aspect-ratio: 16 / 9;
+
+    transform: translateX(-50%);
+
+    display: grid;
+    grid-template-columns: 41% 35% 24%;
+
+    overflow: hidden;
+
+    border: 8px solid #111a23;
+    border-radius: 24px;
+
+    background: #f3f6f9;
+
+    box-shadow:
+        0 34px 90px rgba(0, 0, 0, .42),
+        0 8px 24px rgba(0, 0, 0, .23),
+        inset 0 1px 0 rgba(255,255,255,.12);
+}
+
+/* Borda superior sutil de produto, sem simular usuário logado. */
+.nx14-frame::before {
+    content: "";
+    position: absolute;
+    z-index: 20;
+    top: 8px;
+    left: 50%;
+
+    width: 46px;
+    height: 5px;
+
+    transform: translateX(-50%);
+
+    border-radius: 999px;
+
+    background: rgba(255,255,255,.18);
+}
+
+/* =========================================================
+   1 — PROPOSTA DE VALOR
+   ========================================================= */
+
+.nx14-sales {
+    min-width: 0;
+    height: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: clamp(28px, 3.0vw, 52px)
+             clamp(28px, 3.15vw, 56px)
+             clamp(25px, 2.7vw, 48px);
+
+    color: #fff;
+
+    background:
+        radial-gradient(
+            circle at 10% 3%,
+            rgba(30, 114, 193, .33),
+            transparent 31%
+        ),
+        linear-gradient(
+            155deg,
+            #082442 0%,
+            #051a32 56%,
+            #031326 100%
+        );
+}
+
+.nx14-brand {
+    display: flex;
+    align-items: center;
+
+    min-height: 52px;
+
+    margin-bottom: clamp(24px, 2.7vw, 45px);
+}
+
+.nx14-brand-logo {
+    display: block;
+
+    width: auto;
+    height: auto;
+
+    max-width: clamp(170px, 15vw, 270px);
+    max-height: clamp(42px, 3.4vw, 62px);
+
+    object-fit: contain;
+    object-position: left center;
+
+    /* O arquivo oficial é preservado sem redesenhar a marca. */
+    filter: none !important;
+}
+
+.nx14-brand-fallback {
+    color: #ffffff;
+
+    font-size: clamp(22px, 1.8vw, 32px);
+    line-height: 1;
+
+    font-weight: 900;
+    letter-spacing: -.04em;
+}
+
+.nx14-headline {
+    max-width: 610px;
+
+    margin: 0 0 17px !important;
+
+    color: #fff !important;
+
+    font-size: clamp(34px, 3.0vw, 54px) !important;
+    line-height: .98 !important;
+
+    font-weight: 950 !important;
+    letter-spacing: -.052em !important;
+}
+
+.nx14-headline span {
+    color: var(--nx14-gold);
+}
+
+.nx14-lead {
+    max-width: 560px;
+
+    margin: 0 0 clamp(24px, 2.2vw, 36px);
+
+    color: #c9d9e6;
+
+    font-size: clamp(12px, .95vw, 16px);
+    line-height: 1.5;
+
+    font-weight: 500;
+}
+
+.nx14-benefits {
+    display: grid;
+    gap: clamp(15px, 1.45vw, 24px);
+}
+
+.nx14-benefit {
+    display: grid;
+    grid-template-columns: 55px minmax(0, 1fr);
+
+    align-items: center;
+    gap: 15px;
+}
+
+.nx14-benefit-icon {
+    width: 52px;
+    height: 52px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid rgba(27, 137, 229, .48);
+    border-radius: 13px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(8, 79, 139, .98),
+            rgba(3, 40, 75, .98)
+        );
+
+    box-shadow:
+        inset 0 0 24px rgba(20, 145, 245, .08);
+}
+
+.nx14-benefit-icon svg {
+    width: 29px;
+    height: 29px;
+
+    fill: none;
+    stroke: var(--nx14-gold);
+
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.nx14-benefit strong {
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: #fff;
+
+    font-size: clamp(13px, 1vw, 17px);
+    line-height: 1.2;
+
+    font-weight: 850;
+}
+
+.nx14-benefit p {
+    max-width: 410px;
+
+    margin: 0;
+
+    color: #afc4d4;
+
+    font-size: clamp(10px, .78vw, 13px);
+    line-height: 1.42;
+}
+
+.nx14-price {
+    width: 100%;
+
+    margin-top: auto;
+
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 42%;
+    gap: 14px;
+
+    align-items: center;
+
+    padding: 17px 19px;
+
+    border: 1px solid rgba(255, 222, 109, .66);
+    border-radius: 15px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #f5b70d 0%,
+            #e2a100 100%
+        );
+
+    color: #082b4d;
+
+    box-shadow: 0 16px 32px rgba(0,0,0,.19);
+}
+
+.nx14-price-label {
+    color: #23465f;
+
+    font-size: 10px;
+    font-weight: 850;
+}
+
+.nx14-price-value {
+    margin-top: 1px;
+
+    color: #082b4d;
+
+    font-size: clamp(28px, 2.35vw, 41px);
+    line-height: .98;
+
+    font-weight: 950;
+    letter-spacing: -.04em;
+}
+
+.nx14-price-value small {
+    font-size: 42%;
+    font-weight: 850;
+}
+
+.nx14-price-copy {
+    color: #24465e;
+
+    font-size: clamp(9px, .72vw, 12px);
+    line-height: 1.42;
+
+    font-weight: 650;
+}
+
+/* =========================================================
+   2 — PRÉVIA DEMONSTRATIVA
+   ========================================================= */
+
+.nx14-preview {
+    min-width: 0;
+    height: 100%;
+
+    padding:
+        clamp(29px, 2.4vw, 42px)
+        clamp(18px, 1.6vw, 28px)
+        24px;
+
+    overflow: hidden;
+
+    background:
+        linear-gradient(
+            180deg,
+            #f7f9fb 0%,
+            #eef3f7 100%
+        );
+
+    border-right: 1px solid #dbe4ea;
+}
+
+.nx14-preview-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    margin-bottom: 7px;
+
+    color: #1f6db2;
+
+    font-size: clamp(8px, .58vw, 10px);
+    font-weight: 900;
+
+    letter-spacing: .10em;
+    text-transform: uppercase;
+}
+
+.nx14-preview-kicker::before {
+    content: "";
+
+    width: 7px;
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: var(--nx14-gold);
+}
+
+.nx14-preview-title {
+    margin-bottom: 5px;
+
+    color: #112f4b;
+
+    font-size: clamp(20px, 1.55vw, 27px);
+    line-height: 1.08;
+
+    font-weight: 930;
+    letter-spacing: -.035em;
+}
+
+.nx14-preview-copy {
+    margin-bottom: 18px;
+
+    color: #718596;
+
+    font-size: clamp(9px, .68vw, 12px);
+    line-height: 1.45;
+}
+
+.nx14-search {
+    height: 39px;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    margin-bottom: 16px;
+    padding: 0 12px;
+
+    border: 1px solid #d6e0e7;
+    border-radius: 10px;
+
+    background: #fff;
+
+    color: #8696a4;
+
+    font-size: clamp(9px, .67vw, 11px);
+
+    box-shadow: 0 4px 14px rgba(26, 55, 78, .045);
+}
+
+.nx14-search svg {
+    width: 17px;
+    height: 17px;
+
+    fill: none;
+    stroke: #5e7e98;
+
+    stroke-width: 2;
+}
+
+.nx14-card {
+    margin-bottom: 13px;
+    padding: 15px 15px 13px;
+
+    border: 1px solid #dce5eb;
+    border-left: 4px solid #e5a700;
+    border-radius: 12px;
+
+    background: #fff;
+
+    box-shadow: 0 6px 18px rgba(18, 48, 72, .055);
+}
+
+.nx14-badge {
+    display: inline-flex;
+
+    padding: 4px 7px;
+
+    margin-bottom: 7px;
+
+    border-radius: 5px;
+
+    background: #e7f2fc;
+
+    color: #145b94;
+
+    font-size: clamp(7px, .52vw, 9px);
+
+    font-weight: 900;
+    letter-spacing: .02em;
+
+    text-transform: uppercase;
+}
+
+.nx14-org {
+    margin-bottom: 4px;
+
+    color: #718596;
+
+    font-size: clamp(8px, .58vw, 10px);
+    font-weight: 850;
+
+    text-transform: uppercase;
+}
+
+.nx14-card-title {
+    margin-bottom: 10px;
+
+    color: #15324c;
+
+    font-size: clamp(11px, .82vw, 14px);
+    line-height: 1.32;
+
+    font-weight: 850;
+}
+
+.nx14-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 6px 9px;
+
+    margin-bottom: 10px;
+}
+
+.nx14-chip {
+    padding: 5px 7px;
+
+    border: 1px solid #e2e9ee;
+    border-radius: 7px;
+
+    background: #f8fafb;
+
+    color: #617486;
+
+    font-size: clamp(7px, .51vw, 9px);
+}
+
+.nx14-chip b {
+    color: #1b3d59;
+    font-weight: 900;
+}
+
+.nx14-items {
+    padding-top: 8px;
+
+    border-top: 1px dashed #e3e9ee;
+
+    color: #566f82;
+
+    font-size: clamp(7px, .53vw, 9px);
+    line-height: 1.5;
+}
+
+.nx14-items strong {
+    color: #1e405b;
+}
+
+.nx14-preview-note {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    margin-top: 6px;
+
+    color: #7a8d9d;
+
+    font-size: clamp(7px, .52vw, 9px);
+}
+
+.nx14-preview-note span {
+    width: 7px;
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: #27a06f;
+}
+
+/* =========================================================
+   3 — SLOT DE LOGIN
+   O formulário real do Streamlit ocupa esta área.
+   ========================================================= */
+
+.nx14-login-slot {
+    min-width: 0;
+    height: 100%;
+
+    background:
+        radial-gradient(
+            circle at 90% 10%,
+            rgba(35, 111, 206, .06),
+            transparent 28%
+        ),
+        #ffffff;
+}
+
+/* =========================================================
+   LOGIN FUNCIONAL DO STREAMLIT
+   ========================================================= */
+
+.st-key-nx14_auth_panel {
+    position: fixed !important;
+    z-index: 950000 !important;
+
+    top: calc(var(--nx14-frame-top) + clamp(54px, 6vh, 76px)) !important;
+    right: calc(
+        (100vw - var(--nx14-frame-w)) / 2
+        + clamp(18px, 1.45vw, 28px)
+    ) !important;
+
+    width: clamp(286px, 20.2vw, 360px) !important;
+    max-width: 360px !important;
+    max-height: calc(100vh - 108px) !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+
+    pointer-events: auto !important;
+
+    border: 0 !important;
+    border-radius: 0 !important;
+
+    background: transparent !important;
+    box-shadow: none !important;
+
+    scrollbar-width: thin !important;
+}
+
+.st-key-nx14_auth_panel,
+.st-key-nx14_auth_panel > div,
+.st-key-nx14_auth_panel > div > div,
+.st-key-nx14_auth_panel [data-testid="stVerticalBlock"],
+.st-key-nx14_auth_panel [data-testid="stVerticalBlockBorderWrapper"],
+.st-key-nx14_auth_panel [data-testid="stElementContainer"],
+.st-key-nx14_auth_panel .stElementContainer,
+.st-key-nx14_auth_panel [data-testid="stMarkdownContainer"] {
+    width: 100% !important;
+    max-width: none !important;
+
+    margin: 0 !important;
+
+    border: 0 !important;
+
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.st-key-nx14_auth_panel > div,
+.st-key-nx14_auth_panel > div > div,
+.st-key-nx14_auth_panel [data-testid="stVerticalBlock"],
+.st-key-nx14_auth_panel [data-testid="stVerticalBlockBorderWrapper"] {
+    padding: 0 !important;
+}
+
+.st-key-nx14_auth_panel [data-testid="stForm"] {
+    width: 100% !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    border: 0 !important;
+    border-radius: 0 !important;
+
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.st-key-nx14_auth_panel .nx09-auth-title {
+    margin: 0 0 8px !important;
+
+    color: #102e49 !important;
+
+    font-size: clamp(25px, 1.65vw, 31px) !important;
+    line-height: 1.06 !important;
+
+    font-weight: 950 !important;
+    letter-spacing: -.038em !important;
+}
+
+.st-key-nx14_auth_panel .nx09-auth-copy {
+    margin: 0 0 23px !important;
+
+    color: #718596 !important;
+
+    font-size: clamp(11px, .80vw, 14px) !important;
+    line-height: 1.46 !important;
+}
+
+.st-key-nx14_auth_panel .nx09-mode-links {
+    margin: -10px 0 18px !important;
+}
+
+.st-key-nx14_auth_panel .nx09-mode-links a {
+    color: #1f67a5 !important;
+
+    font-size: 10px !important;
+    font-weight: 750 !important;
+
+    text-decoration: none !important;
+}
+
+.st-key-nx14_auth_panel [data-testid="stTextInput"] {
+    width: 100% !important;
+
+    margin-bottom: 10px !important;
+}
+
+.st-key-nx14_auth_panel label,
+.st-key-nx14_auth_panel label p {
+    color: #29465e !important;
+
+    font-size: 11.5px !important;
+    font-weight: 800 !important;
+}
+
+.st-key-nx14_auth_panel [data-baseweb="input"],
+.st-key-nx14_auth_panel [data-baseweb="base-input"] {
+    width: 100% !important;
+    min-height: 49px !important;
+
+    border: 1px solid #d2dde5 !important;
+    border-radius: 9px !important;
+
+    background: #fff !important;
+
+    box-shadow: none !important;
+}
+
+.st-key-nx14_auth_panel [data-baseweb="input"]:focus-within,
+.st-key-nx14_auth_panel [data-baseweb="base-input"]:focus-within {
+    border-color: #3f80bd !important;
+
+    box-shadow:
+        0 0 0 3px rgba(63, 128, 189, .10) !important;
+}
+
+.st-key-nx14_auth_panel input {
+    min-height: 47px !important;
+
+    color: #29465e !important;
+    -webkit-text-fill-color: #29465e !important;
+
+    font-size: 12.5px !important;
+}
+
+.st-key-nx14_auth_panel .nx09-forgot {
+    margin: -1px 0 16px !important;
+
+    text-align: right !important;
+}
+
+.st-key-nx14_auth_panel .nx09-forgot a {
+    color: #1c67a8 !important;
+
+    font-size: 10.5px !important;
+    font-weight: 750 !important;
+
+    text-decoration: none !important;
+}
+
+/* CTA primário: único amarelo da área de ações. */
+html body [data-testid="stMain"]
+.st-key-nx14_auth_panel
+div[data-testid="stFormSubmitButton"] button,
+html body [data-testid="stMain"]
+.st-key-nx14_auth_panel
+div[data-testid="stFormSubmitButton"] button[kind="primary"] {
+    width: 100% !important;
+    min-height: 51px !important;
+
+    border: 1px solid #dca100 !important;
+    border-radius: 9px !important;
+
+    background:
+        linear-gradient(
+            90deg,
+            #efa800 0%,
+            #ffc823 100%
+        ) !important;
+
+    color: #082b4d !important;
+    -webkit-text-fill-color: #082b4d !important;
+
+    box-shadow:
+        0 8px 18px rgba(223, 165, 0, .18) !important;
+
+    font-size: 13.5px !important;
+    font-weight: 950 !important;
+}
+
+html body [data-testid="stMain"]
+.st-key-nx14_auth_panel
+div[data-testid="stFormSubmitButton"] button *,
+html body [data-testid="stMain"]
+.st-key-nx14_auth_panel
+div[data-testid="stFormSubmitButton"] button[kind="primary"] * {
+    color: #082b4d !important;
+    -webkit-text-fill-color: #082b4d !important;
+
+    font-size: 13.5px !important;
+    font-weight: 950 !important;
+}
+
+.st-key-nx14_auth_panel .nx09-divider {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+
+    margin: 17px 0 14px !important;
+
+    color: #91a0ac !important;
+
+    font-size: 10px !important;
+}
+
+.st-key-nx14_auth_panel .nx09-divider::before,
+.st-key-nx14_auth_panel .nx09-divider::after {
+    content: "" !important;
+
+    flex: 1 !important;
+
+    height: 1px !important;
+
+    background: #dfe6eb !important;
+}
+
+.st-key-nx14_auth_panel .nx09-trial {
+    width: 100% !important;
+    min-height: 48px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    border: 1px solid #4384c5 !important;
+    border-radius: 9px !important;
+
+    background: #f2f7fd !important;
+
+    color: #185b9f !important;
+
+    font-size: 12.5px !important;
+    font-weight: 900 !important;
+
+    text-decoration: none !important;
+}
+
+.st-key-nx14_auth_panel .nx09-mini-links {
+    margin-top: 13px !important;
+
+    text-align: center !important;
+}
+
+.st-key-nx14_auth_panel .nx09-mini-links a {
+    color: #527187 !important;
+
+    font-size: 9.5px !important;
+    font-weight: 700 !important;
+
+    text-decoration: none !important;
+}
+
+.st-key-nx14_auth_panel .nx09-trust {
+    margin-top: 17px !important;
+
+    color: #98a6b0 !important;
+
+    text-align: center !important;
+
+    font-size: 9px !important;
+    line-height: 1.35 !important;
+}
+
+.st-key-nx14_auth_panel [data-testid="stCaptionContainer"],
+.st-key-nx14_auth_panel [data-testid="stCaptionContainer"] p,
+.st-key-nx14_auth_panel .stCaption,
+.st-key-nx14_auth_panel .stCaption p {
+    color: #7f909d !important;
+
+    font-size: 9.5px !important;
+    line-height: 1.38 !important;
+}
+
+.st-key-nx14_auth_panel [data-testid="stAlert"] {
+    border-radius: 9px !important;
+
+    font-size: 10px !important;
+}
+
+.st-key-nx14_auth_panel [data-testid="stExpander"] {
+    border-radius: 9px !important;
+}
+
+/* O elemento que contém o HTML estático não deve ocupar espaço. */
+[data-testid="stMarkdownContainer"]:has(.nx14-stage) {
+    width: 0 !important;
+    height: 0 !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    overflow: visible !important;
+}
+
+/* =========================================================
+   RESPONSIVIDADE
+   ========================================================= */
+
+@media (max-width: 1180px) {
+    .nx14-frame {
+        grid-template-columns: 40% 36% 24%;
+    }
+
+    .nx14-sales {
+        padding: 28px 29px 24px;
+    }
+
+    .nx14-headline {
+        font-size: clamp(31px, 3vw, 42px) !important;
+    }
+
+    .nx14-lead {
+        margin-bottom: 23px;
+        font-size: 11px;
+    }
+
+    .nx14-benefits {
+        gap: 14px;
+    }
+
+    .nx14-benefit {
+        grid-template-columns: 47px minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .nx14-benefit-icon {
+        width: 44px;
+        height: 44px;
+    }
+
+    .nx14-benefit-icon svg {
+        width: 25px;
+        height: 25px;
+    }
+
+    .nx14-benefit strong {
+        font-size: 12px;
+    }
+
+    .nx14-benefit p {
+        font-size: 9.5px;
+    }
+
+    .nx14-price {
+        padding: 13px 14px;
+    }
+
+    .nx14-price-value {
+        font-size: 28px;
+    }
+
+    .nx14-preview {
+        padding: 28px 15px 18px;
+    }
+
+    .nx14-card {
+        padding: 11px 12px 10px;
+        margin-bottom: 9px;
+    }
+
+    .nx14-card-title {
+        font-size: 10px;
+    }
+
+    .nx14-chip,
+    .nx14-items {
+        font-size: 7px;
+    }
+
+    .st-key-nx14_auth_panel {
+        width: min(21vw, 315px) !important;
+    }
+
+    .st-key-nx14_auth_panel .nx09-auth-title {
+        font-size: 23px !important;
+    }
+
+    .st-key-nx14_auth_panel .nx09-auth-copy {
+        font-size: 10.5px !important;
+        margin-bottom: 17px !important;
+    }
+
+    .st-key-nx14_auth_panel [data-baseweb="input"],
+    .st-key-nx14_auth_panel [data-baseweb="base-input"] {
+        min-height: 44px !important;
+    }
+
+    .st-key-nx14_auth_panel input {
+        min-height: 42px !important;
+        font-size: 11.5px !important;
+    }
+
+    html body [data-testid="stMain"]
+    .st-key-nx14_auth_panel
+    div[data-testid="stFormSubmitButton"] button,
+    .st-key-nx14_auth_panel .nx09-trial {
+        min-height: 45px !important;
+    }
+}
+
+/* =========================================================
+   RC32.16 — BLINDAGEM DO LOGIN NA COLUNA DIREITA
+   Impede o Streamlit de expandir o formulário pela página.
+   ========================================================= */
+
+/* O elemento pai que o Streamlit cria para o container não pode
+   participar do fluxo e ocupar 100% da largura. */
+html body [data-testid="stMain"]
+div[data-testid="stElementContainer"]:has(.st-key-nx14_auth_panel) {
+    position: static !important;
+
+    width: 0 !important;
+    max-width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    overflow: visible !important;
+}
+
+/* Em algumas renderizações há um wrapper vertical adicional. */
+html body [data-testid="stMain"]
+div[data-testid="stVerticalBlock"]:has(> div[data-testid="stElementContainer"] > .st-key-nx14_auth_panel) {
+    overflow: visible !important;
+}
+
+/* O único elemento posicionado é o container do login. */
+html body [data-testid="stMain"] .st-key-nx14_auth_panel {
+    position: fixed !important;
+    z-index: 950000 !important;
+
+    top: calc(var(--nx14-frame-top) + clamp(54px, 6vh, 76px)) !important;
+    right: calc(
+        (100vw - var(--nx14-frame-w)) / 2
+        + clamp(18px, 1.45vw, 28px)
+    ) !important;
+
+    left: auto !important;
+    bottom: auto !important;
+
+    width: clamp(286px, 20.2vw, 360px) !important;
+    min-width: 0 !important;
+    max-width: 360px !important;
+
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: calc(100vh - 108px) !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    transform: none !important;
+
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+
+    border: 0 !important;
+    border-radius: 0 !important;
+
+    background: transparent !important;
+    box-shadow: none !important;
+
+    pointer-events: auto !important;
+}
+
+/* Neutraliza regras globais antigas aplicadas aos wrappers internos. */
+html body [data-testid="stMain"] .st-key-nx14_auth_panel > div,
+html body [data-testid="stMain"] .st-key-nx14_auth_panel > div > div,
+html body [data-testid="stMain"] .st-key-nx14_auth_panel [data-testid="stVerticalBlock"],
+html body [data-testid="stMain"] .st-key-nx14_auth_panel [data-testid="stVerticalBlockBorderWrapper"],
+html body [data-testid="stMain"] .st-key-nx14_auth_panel [data-testid="stElementContainer"],
+html body [data-testid="stMain"] .st-key-nx14_auth_panel [data-testid="stForm"] {
+    position: static !important;
+
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+
+    height: auto !important;
+    min-height: 0 !important;
+
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+
+    transform: none !important;
+
+    border: 0 !important;
+
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Inputs e ações não podem herdar largura baseada no viewport. */
+html body [data-testid="stMain"] .st-key-nx14_auth_panel [data-testid="stTextInput"],
+html body [data-testid="stMain"] .st-key-nx14_auth_panel [data-baseweb="input"],
+html body [data-testid="stMain"] .st-key-nx14_auth_panel [data-baseweb="base-input"],
+html body [data-testid="stMain"] .st-key-nx14_auth_panel input,
+html body [data-testid="stMain"] .st-key-nx14_auth_panel div[data-testid="stFormSubmitButton"],
+html body [data-testid="stMain"] .st-key-nx14_auth_panel div[data-testid="stFormSubmitButton"] button,
+html body [data-testid="stMain"] .st-key-nx14_auth_panel .nx09-trial {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Segurança extra contra um form global absoluto/fixed. */
+html body [data-testid="stMain"] .st-key-nx14_auth_panel form,
+html body [data-testid="stMain"] .st-key-nx14_auth_panel [data-testid="stForm"] {
+    position: relative !important;
+
+    inset: auto !important;
+
+    width: 100% !important;
+    max-width: 100% !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    transform: none !important;
+}
+
+/* Mantém a coluna de login visualmente limpa. */
+.nx14-login-slot {
+    position: relative !important;
+    z-index: 1 !important;
+
+    background:
+        radial-gradient(
+            circle at 86% 8%,
+            rgba(35,111,206,.055),
+            transparent 25%
+        ),
+        linear-gradient(
+            180deg,
+            #ffffff 0%,
+            #fbfcfd 100%
+        ) !important;
+}
+
+@media (max-width: 1180px) {
+    html body [data-testid="stMain"] .st-key-nx14_auth_panel {
+        width: min(21vw, 315px) !important;
+        max-width: 315px !important;
+    }
+}
+
+</style>
+
+<div class="nx14-stage">
+    <div class="nx14-frame">
+
+        <!-- 1. PROPOSTA DE VALOR -->
+        <section class="nx14-sales">
+            <div class="nx14-brand">
+                __NX14_OFFICIAL_LOGO__
+            </div>
+
+            <h1 class="nx14-headline">
+                Encontre oportunidades públicas
+                <span>sem perder horas</span>
+                lendo edital por edital.
+            </h1>
+
+            <p class="nx14-lead">
+                Veja o que o governo está comprando, compare oportunidades
+                e acompanhe suas participações em um só lugar.
+            </p>
+
+            <div class="nx14-benefits">
+
+                <div class="nx14-benefit">
+                    <div class="nx14-benefit-icon">
+                        <svg viewBox="0 0 32 32">
+                            <rect x="5" y="6" width="18" height="14" rx="2"></rect>
+                            <path d="M9 10h10M9 14h7"></path>
+                            <circle cx="22" cy="22" r="5"></circle>
+                            <path d="M26 26l3 3"></path>
+                        </svg>
+                    </div>
+
+                    <div>
+                        <strong>Produtos e serviços direto na tela</strong>
+                        <p>
+                            Veja o que o governo está comprando
+                            sem abrir edital por edital.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="nx14-benefit">
+                    <div class="nx14-benefit-icon">
+                        <svg viewBox="0 0 32 32">
+                            <circle cx="15" cy="17" r="9"></circle>
+                            <path d="M15 12v6l4 2M11 4h8M24 8l3-3"></path>
+                        </svg>
+                    </div>
+
+                    <div>
+                        <strong>Mais tempo para avaliar</strong>
+                        <p>
+                            Compare mais oportunidades antes de decidir
+                            onde aprofundar.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="nx14-benefit">
+                    <div class="nx14-benefit-icon">
+                        <svg viewBox="0 0 32 32">
+                            <rect x="7" y="5" width="18" height="23" rx="2"></rect>
+                            <path d="M11 11h10M11 16h7M11 21h5"></path>
+                            <circle cx="23" cy="23" r="5"></circle>
+                            <path d="M20.5 23l1.6 1.6 3-3.4"></path>
+                        </svg>
+                    </div>
+
+                    <div>
+                        <strong>Controle fácil das participações</strong>
+                        <p>
+                            Salve editais e acompanhe suas participações.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="nx14-price">
+                <div>
+                    <div class="nx14-price-label">Acesso completo</div>
+                    <div class="nx14-price-value">
+                        R$ 29,90<small>/mês</small>
+                    </div>
+                </div>
+
+                <div class="nx14-price-copy">
+                    Acesso completo ao LicitaNexo para encontrar
+                    oportunidades e decidir com mais agilidade.
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. PRÉVIA DEMONSTRATIVA -->
+        <section class="nx14-preview">
+
+            <div class="nx14-preview-kicker">
+                Prévia do LicitaNexo
+            </div>
+
+            <div class="nx14-preview-title">
+                Veja como funciona
+            </div>
+
+            <div class="nx14-preview-copy">
+                Uma visão rápida do que você encontra depois de entrar.
+            </div>
+
+            <div class="nx14-search">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="6"></circle>
+                    <path d="M16 16l4 4"></path>
+                </svg>
+                Buscar produtos ou serviços
+            </div>
+
+            <article class="nx14-card">
+                <div class="nx14-badge">
+                    Dispensa de Licitação
+                </div>
+
+                <div class="nx14-org">
+                    Câmara Municipal de Três Corações
+                </div>
+
+                <div class="nx14-card-title">
+                    Confecção e fornecimento de placa institucional
+                    em aço inox escovado.
+                </div>
+
+                <div class="nx14-meta">
+                    <div class="nx14-chip">
+                        <b>Local</b> Três Corações · MG
+                    </div>
+
+                    <div class="nx14-chip">
+                        <b>Site</b> Portal de Compras
+                    </div>
+
+                    <div class="nx14-chip">
+                        <b>Valor</b> R$ 2.093,00
+                    </div>
+
+                    <div class="nx14-chip">
+                        <b>Itens</b> Sob demanda
+                    </div>
+                </div>
+
+                <div class="nx14-items">
+                    <strong>Produtos e serviços</strong><br>
+                    1 · Placa institucional em aço inox escovado<br>
+                    2 · Quadro institucional
+                </div>
+            </article>
+
+            <article class="nx14-card">
+                <div class="nx14-badge">
+                    Dispensa de Licitação
+                </div>
+
+                <div class="nx14-org">
+                    Fundação Municipal de Saúde
+                </div>
+
+                <div class="nx14-card-title">
+                    Aquisição de materiais hospitalares
+                    e itens de consumo.
+                </div>
+
+                <div class="nx14-meta">
+                    <div class="nx14-chip">
+                        <b>Local</b> Curitiba · PR
+                    </div>
+
+                    <div class="nx14-chip">
+                        <b>Site</b> Compras Públicas
+                    </div>
+
+                    <div class="nx14-chip">
+                        <b>Valor</b> R$ 42.780,00
+                    </div>
+
+                    <div class="nx14-chip">
+                        <b>Itens</b> Sob demanda
+                    </div>
+                </div>
+
+                <div class="nx14-items">
+                    <strong>Produtos e serviços</strong><br>
+                    1 · Materiais descartáveis hospitalares<br>
+                    2 · Insumos para atendimento ambulatorial
+                </div>
+            </article>
+
+            <div class="nx14-preview-note">
+                <span></span>
+                Prévia demonstrativa do ambiente LicitaNexo
+            </div>
+
+        </section>
+
+        <!-- 3. ÁREA RESERVADA AO LOGIN REAL -->
+        <aside class="nx14-login-slot"></aside>
+
+    </div>
+</div>
+""".splitlines()).replace("__NX14_OFFICIAL_LOGO__", logo_html),
         unsafe_allow_html=True,
     )
 
-    left, right = st.columns([1, 1], gap="large")
+    # =========================================================
+    # PAINEL FUNCIONAL. Ele fica visualmente sobre o notebook,
+    # mas continua usando os mecanismos seguros de sessão Python.
+    # =========================================================
+    with st.container(key="nx14_auth_panel"):
+        if mode == "login":
+            st.markdown(
+                '<div class="nx09-auth-title">Bem-vindo de volta</div>'
+                '<div class="nx09-auth-copy">Entre para acessar oportunidades em todo o Brasil.</div>',
+                unsafe_allow_html=True,
+            )
 
-    with left:
-        if LOGO_PATH.exists():
-            st.image(str(LOGO_PATH), width=300)
-        st.markdown('<div class="ln-login-eyebrow">LICITANEXO ESSENTIAL</div>', unsafe_allow_html=True)
-        st.markdown('<div class="ln-login-intro">Encontre oportunidades para vender ao governo.</div>', unsafe_allow_html=True)
-        st.markdown('<div class="ln-login-copy">Você não precisa adivinhar o que vender. Veja primeiro o que o governo está comprando e encontre oportunidades de forma simples.</div>', unsafe_allow_html=True)
-        st.markdown(
-            '<div class="ln-login-value">'
-            '<div class="ln-login-value-item"><span class="ln-login-value-dot">01</span><span>Editais com os itens da compra já abertos na busca</span></div>'
-            '<div class="ln-login-value-item"><span class="ln-login-value-dot">02</span><span>Pesquisa simples em todo o Brasil</span></div>'
-            '<div class="ln-login-value-item"><span class="ln-login-value-dot">03</span><span>Salve as oportunidades e organize os certames</span></div>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-
-    with right:
-        st.markdown(
-            '<div class="ln-price"><span>Planos a partir de</span>'
-            '<strong>R$ 29,90</strong><small>/mês</small></div>',
-            unsafe_allow_html=True,
-        )
-
-        raw_mode = st.query_params.get("auth", "login")
-        if isinstance(raw_mode, list):
-            raw_mode = raw_mode[0] if raw_mode else "login"
-        mode = str(raw_mode or "login").strip().lower()
-        if mode not in {"login", "request", "invite", "recovery"}:
-            mode = "login"
-
-        nav_items = [
-            ("login", "Entrar"),
-            ("request", "Solicitar acesso"),
-            ("invite", "Ativar convite"),
-            ("recovery", "Recuperar senha"),
-        ]
-        nav_html = '<div class="ln-auth-nav">' + ''.join(
-            f'<a class="{"active" if key == mode else ""}" href="?auth={key}">{label}</a>'
-            for key, label in nav_items
-        ) + '</div>'
-
-        with st.container(border=False, key="auth_card"):
-            st.markdown(nav_html, unsafe_allow_html=True)
-
-            if mode == "login":
-                with st.form("login", clear_on_submit=False, enter_to_submit=False):
-                    email = st.text_input("E-mail", placeholder="seu@email.com")
-                    password = st.text_input("Senha", type="password", placeholder="Sua senha")
-                    st.markdown('<div class="ln-forgot"><a href="?auth=recovery">Esqueceu a senha?</a></div>', unsafe_allow_html=True)
-                    if st.form_submit_button("→  Entrar no LicitaNexo", width="stretch"):
-                        client_ip = _client_ip()
-                        try:
-                            security.precheck("login", email, client_ip)
-                            user = db.authenticate(email, password)
-                            if user:
-                                security.register_attempt("login", email, client_ip, success=True)
-                                token = security.create_session(user.get("company_id",""), user.get("id",""))
-                                conversion.record_event("login", user.get("company_id",""), user.get("id",""), {"email":user.get("email","")})
-                                st.session_state.user = user
-                                st.session_state.security_session_token = token
-                                st.session_state.motivational_phrase = random.choice(MOTIVATIONAL_PHRASES)
-                                st.session_state.just_logged_in = True
-                                st.rerun()
-                            security.register_attempt("login", email, client_ip, success=False)
-                            st.error("E-mail ou senha inválidos.")
-                        except RateLimitError as error:
-                            st.warning(str(error))
-
-            elif mode == "request":
-                st.caption("Comece com 7 dias grátis, sem cartão. Depois, escolha sua forma de contratação.")
-                with st.form("access_request", clear_on_submit=False, enter_to_submit=False):
-                    company = st.text_input("Empresa / Razão social")
-                    cnpj = st.text_input("CNPJ", placeholder="00.000.000/0000-00")
-                    name = st.text_input("Seu nome")
-                    email = st.text_input("E-mail profissional", key="request_email")
-                    whatsapp = st.text_input("WhatsApp", placeholder="(00) 00000-0000")
-                    segment = st.text_input("Segmento da empresa", placeholder="Ex.: materiais hospitalares")
-                    campaign_code = st.text_input(
-                        "Código de indicação ou cupom (opcional)",
-                        placeholder="Ex.: JOSE10 ou B2GSP",
-                    )
-                    if st.form_submit_button("Solicitar acesso", width="stretch"):
-                        try:
-                            client_ip = ""
-                            try:
-                                client_ip = str(getattr(st.context, "ip_address", "") or "")
-                                if not client_ip:
-                                    headers = getattr(st.context, "headers", {}) or {}
-                                    client_ip = str(headers.get("X-Forwarded-For") or headers.get("X-Real-IP") or "").split(",")[0].strip()
-                            except Exception:
-                                client_ip = ""
-                            security.precheck("access_request", email, client_ip)
-                            decision = commercial.evaluate_trial(cnpj, email, client_ip)
-                            if not decision.allowed:
-                                commercial.record_trial_request(cnpj, email, client_ip, decision.outcome, decision.risk_score)
-                                raise ValueError(decision.message)
-                            risk = db.request_access(
-                                company, name, email, whatsapp, segment,
-                                cnpj=cnpj, client_ip=client_ip, campaign_code=campaign_code,
-                            )
-                            final_outcome = "review" if (decision.outcome == "review" or risk.get("outcome") == "review") else "allowed"
-                            commercial.record_trial_request(cnpj, email, client_ip, final_outcome, max(decision.risk_score, int(risk.get("risk_score") or 0)))
-                            security.register_attempt("access_request", email, client_ip, success=True)
-                            if risk.get("outcome") == "review":
-                                st.success(
-                                    "Solicitação recebida. Para sua segurança, a liberação passará "
-                                    "por uma validação rápida da equipe B2G SaaS."
-                                )
-                            else:
-                                st.success(
-                                    "Solicitação recebida. Seu teste é de 7 dias, sem cartão. "
-                                    "A equipe B2G SaaS fará o contato."
-                                )
-                        except RateLimitError as error:
-                            st.warning(str(error))
-                        except ValueError as error:
-                            st.warning(str(error))
-
-            elif mode == "invite":
-                st.caption("Recebeu um convite? Informe o código enviado pela B2G SaaS.")
-                with st.form("activate_invitation", clear_on_submit=False, enter_to_submit=False):
-                    email = st.text_input(
-                        "E-mail do convite",
-                        placeholder="seu@email.com",
-                    )
-                    invitation_code = st.text_input(
-                        "Código de acesso",
-                        placeholder="NX-XXXXXXXX",
-                    )
-                    password = st.text_input(
-                        "Crie sua senha",
-                        type="password",
-                        placeholder="Mínimo de 8 caracteres",
-                    )
-                    password_confirmation = st.text_input(
-                        "Confirme sua senha",
-                        type="password",
-                    )
-                    if st.form_submit_button("→  Ativar convite", width="stretch"):
-                        client_ip = _client_ip()
-                        normalized_email = str(email or "").strip().lower()
-                        try:
-                            if not normalized_email or not str(invitation_code or "").strip():
-                                raise ValueError("Informe o e-mail e o código de acesso do convite.")
-                            if len(str(password or "")) < 8:
-                                raise ValueError("A senha deve ter pelo menos 8 caracteres.")
-                            if password != password_confirmation:
-                                raise ValueError("As senhas não coincidem.")
-
-                            security.precheck("invitation_activation", normalized_email, client_ip)
-                            user = db.activate_invitation(
-                                normalized_email,
-                                invitation_code,
-                                password,
-                            )
-                            if not user:
-                                raise ValueError("Não foi possível ativar o convite.")
-
-                            security.register_attempt(
-                                "invitation_activation",
-                                normalized_email,
-                                client_ip,
-                                success=True,
-                            )
+            with st.form("login", clear_on_submit=False, enter_to_submit=True):
+                email = st.text_input("E-mail", placeholder="seu@email.com")
+                password = st.text_input("Senha", type="password", placeholder="Sua senha")
+                st.markdown(
+                    '<div class="nx09-forgot"><a href="?auth=recovery">Esqueceu a senha?</a></div>',
+                    unsafe_allow_html=True,
+                )
+                if st.form_submit_button("Entrar no LicitaNexo", width="stretch"):
+                    client_ip = _client_ip()
+                    try:
+                        security.precheck("login", email, client_ip)
+                        user = db.authenticate(email, password)
+                        if user:
+                            security.register_attempt("login", email, client_ip, success=True)
                             token = security.create_session(
                                 user.get("company_id", ""),
                                 user.get("id", ""),
+                            )
+                            conversion.record_event(
+                                "login",
+                                user.get("company_id", ""),
+                                user.get("id", ""),
+                                {"email": user.get("email", "")},
                             )
                             st.session_state.user = user
                             st.session_state.security_session_token = token
                             st.session_state.motivational_phrase = random.choice(MOTIVATIONAL_PHRASES)
                             st.session_state.just_logged_in = True
                             st.rerun()
+                        security.register_attempt("login", email, client_ip, success=False)
+                        st.error("E-mail ou senha inválidos.")
+                    except RateLimitError as error:
+                        st.warning(str(error))
+
+            st.markdown(
+                '<div class="nx09-divider">ou</div>'
+                '<a class="nx09-trial" href="?auth=request">Começar 7 dias grátis</a>'
+                '<div class="nx09-mini-links">'
+                '<a href="?auth=invite">Ativar convite</a>'
+                '</div>'
+                '<div class="nx09-trust">Ambiente seguro · 100% online</div>',
+                unsafe_allow_html=True,
+            )
+
+        elif mode == "request":
+            st.markdown(
+                '<div class="nx09-auth-title">7 dias grátis</div>'
+                '<div class="nx09-auth-copy">Solicite seu acesso. Não pedimos cartão para iniciar o teste.</div>'
+                '<div class="nx09-mode-links"><a href="?auth=login">← Voltar ao login</a></div>',
+                unsafe_allow_html=True,
+            )
+            with st.form("access_request", clear_on_submit=False, enter_to_submit=False):
+                company = st.text_input("Empresa / Razão social")
+                cnpj = st.text_input("CNPJ", placeholder="00.000.000/0000-00")
+                name = st.text_input("Seu nome")
+                email = st.text_input("E-mail profissional", key="request_email")
+                whatsapp = st.text_input("WhatsApp", placeholder="(00) 00000-0000")
+                segment = st.text_input("Segmento da empresa", placeholder="Ex.: materiais hospitalares")
+                campaign_code = st.text_input(
+                    "Código de indicação ou cupom (opcional)",
+                    placeholder="Ex.: JOSE10 ou B2GSP",
+                )
+                if st.form_submit_button("Solicitar acesso", width="stretch"):
+                    try:
+                        client_ip = _client_ip()
+                        security.precheck("access_request", email, client_ip)
+                        decision = commercial.evaluate_trial(cnpj, email, client_ip)
+                        if not decision.allowed:
+                            commercial.record_trial_request(
+                                cnpj, email, client_ip, decision.outcome, decision.risk_score,
+                            )
+                            raise ValueError(decision.message)
+                        risk = db.request_access(
+                            company,
+                            name,
+                            email,
+                            whatsapp,
+                            segment,
+                            cnpj=cnpj,
+                            client_ip=client_ip,
+                            campaign_code=campaign_code,
+                        )
+                        final_outcome = (
+                            "review"
+                            if decision.outcome == "review" or risk.get("outcome") == "review"
+                            else "allowed"
+                        )
+                        commercial.record_trial_request(
+                            cnpj,
+                            email,
+                            client_ip,
+                            final_outcome,
+                            max(decision.risk_score, int(risk.get("risk_score") or 0)),
+                        )
+                        security.register_attempt("access_request", email, client_ip, success=True)
+                        if risk.get("outcome") == "review":
+                            st.success("Solicitação recebida. A liberação passará por uma validação rápida da equipe B2G SaaS.")
+                        else:
+                            st.success("Solicitação recebida. Seu teste é de 7 dias, sem cartão. A equipe B2G SaaS fará o contato.")
+                    except RateLimitError as error:
+                        st.warning(str(error))
+                    except ValueError as error:
+                        st.warning(str(error))
+
+        elif mode == "invite":
+            st.markdown(
+                '<div class="nx09-auth-title">Ativar convite</div>'
+                '<div class="nx09-auth-copy">Informe o código enviado pela B2G SaaS e crie sua senha.</div>'
+                '<div class="nx09-mode-links"><a href="?auth=login">← Voltar ao login</a></div>',
+                unsafe_allow_html=True,
+            )
+            with st.form("activate_invitation", clear_on_submit=False, enter_to_submit=False):
+                email = st.text_input("E-mail do convite", placeholder="seu@email.com")
+                invitation_code = st.text_input("Código de acesso", placeholder="NX-XXXXXXXX")
+                password = st.text_input("Crie sua senha", type="password", placeholder="Mínimo de 8 caracteres")
+                password_confirmation = st.text_input("Confirme sua senha", type="password")
+                if st.form_submit_button("Ativar convite", width="stretch"):
+                    client_ip = _client_ip()
+                    normalized_email = str(email or "").strip().lower()
+                    try:
+                        if not normalized_email or not str(invitation_code or "").strip():
+                            raise ValueError("Informe o e-mail e o código de acesso do convite.")
+                        if len(str(password or "")) < 8:
+                            raise ValueError("A senha deve ter pelo menos 8 caracteres.")
+                        if password != password_confirmation:
+                            raise ValueError("As senhas não coincidem.")
+
+                        security.precheck("invitation_activation", normalized_email, client_ip)
+                        user = db.activate_invitation(normalized_email, invitation_code, password)
+                        if not user:
+                            raise ValueError("Não foi possível ativar o convite.")
+
+                        security.register_attempt(
+                            "invitation_activation", normalized_email, client_ip, success=True,
+                        )
+                        token = security.create_session(
+                            user.get("company_id", ""), user.get("id", ""),
+                        )
+                        st.session_state.user = user
+                        st.session_state.security_session_token = token
+                        st.session_state.motivational_phrase = random.choice(MOTIVATIONAL_PHRASES)
+                        st.session_state.just_logged_in = True
+                        st.rerun()
+                    except RateLimitError as error:
+                        st.warning(str(error))
+                    except ValueError as error:
+                        security.register_attempt(
+                            "invitation_activation", normalized_email, client_ip, success=False,
+                        )
+                        st.warning(str(error))
+
+        else:
+            st.markdown(
+                '<div class="nx09-auth-title">Recuperar senha</div>'
+                '<div class="nx09-auth-copy">Solicite um código e depois defina uma nova senha.</div>'
+                '<div class="nx09-mode-links"><a href="?auth=login">← Voltar ao login</a></div>',
+                unsafe_allow_html=True,
+            )
+
+            with st.expander("1. Solicitar código", expanded=True):
+                with st.form("password_recovery_request", clear_on_submit=False, enter_to_submit=False):
+                    recovery_email = st.text_input(
+                        "E-mail cadastrado",
+                        placeholder="seu@email.com",
+                        key="password_recovery_request_email",
+                    )
+                    if st.form_submit_button("Solicitar recuperação", width="stretch"):
+                        normalized_email = str(recovery_email or "").strip().lower()
+                        client_ip = _client_ip()
+                        try:
+                            security.precheck("password_recovery_request", normalized_email, client_ip)
+                            db.request_password_reset(normalized_email)
+                            security.register_attempt(
+                                "password_recovery_request", normalized_email, client_ip, success=True,
+                            )
+                            st.success(
+                                "Solicitação registrada. Se o e-mail estiver cadastrado, a equipe de suporte poderá gerar seu código de recuperação."
+                            )
+                        except RateLimitError as error:
+                            st.warning(str(error))
+                        except ValueError as error:
+                            st.warning(str(error))
+
+            with st.expander("2. Redefinir senha", expanded=False):
+                with st.form("password_recovery_reset", clear_on_submit=False, enter_to_submit=False):
+                    reset_email = st.text_input(
+                        "E-mail cadastrado",
+                        placeholder="seu@email.com",
+                        key="password_recovery_reset_email",
+                    )
+                    recovery_code = st.text_input("Código de recuperação", placeholder="NX-R-XXXXXXXX")
+                    new_password = st.text_input("Nova senha", type="password", placeholder="Mínimo de 8 caracteres")
+                    new_password_confirmation = st.text_input("Confirme a nova senha", type="password")
+                    if st.form_submit_button("Redefinir senha", width="stretch"):
+                        normalized_email = str(reset_email or "").strip().lower()
+                        client_ip = _client_ip()
+                        try:
+                            if not normalized_email or not str(recovery_code or "").strip():
+                                raise ValueError("Informe o e-mail e o código de recuperação.")
+                            if len(str(new_password or "")) < 8:
+                                raise ValueError("A senha deve ter pelo menos 8 caracteres.")
+                            if new_password != new_password_confirmation:
+                                raise ValueError("As senhas não coincidem.")
+                            security.precheck("password_recovery_reset", normalized_email, client_ip)
+                            db.reset_password(normalized_email, recovery_code, new_password)
+                            security.register_attempt(
+                                "password_recovery_reset", normalized_email, client_ip, success=True,
+                            )
+                            st.success("Senha alterada. Volte ao login e use sua nova senha.")
                         except RateLimitError as error:
                             st.warning(str(error))
                         except ValueError as error:
                             security.register_attempt(
-                                "invitation_activation",
-                                normalized_email,
-                                client_ip,
-                                success=False,
+                                "password_recovery_reset", normalized_email, client_ip, success=False,
                             )
                             st.warning(str(error))
-
-            else:
-                st.caption("Solicite um código e depois crie uma nova senha.")
-                with st.expander("1. Solicitar código de recuperação", expanded=True):
-                    with st.form("password_recovery_request", clear_on_submit=False, enter_to_submit=False):
-                        recovery_email = st.text_input(
-                            "E-mail cadastrado",
-                            placeholder="seu@email.com",
-                            key="password_recovery_request_email",
-                        )
-                        if st.form_submit_button("Solicitar recuperação", width="stretch"):
-                            normalized_email = str(recovery_email or "").strip().lower()
-                            client_ip = _client_ip()
-                            try:
-                                security.precheck("password_recovery_request", normalized_email, client_ip)
-                                db.request_password_reset(normalized_email)
-                                security.register_attempt(
-                                    "password_recovery_request", normalized_email, client_ip, success=True,
-                                )
-                                st.success(
-                                    "Solicitação registrada. Se o e-mail estiver cadastrado, "
-                                    "a equipe de suporte poderá gerar seu código de recuperação."
-                                )
-                            except RateLimitError as error:
-                                st.warning(str(error))
-                            except ValueError as error:
-                                st.warning(str(error))
-
-                with st.expander("2. Usar código e redefinir senha", expanded=False):
-                    with st.form("password_recovery_reset", clear_on_submit=False, enter_to_submit=False):
-                        reset_email = st.text_input(
-                            "E-mail cadastrado",
-                            placeholder="seu@email.com",
-                            key="password_recovery_reset_email",
-                        )
-                        recovery_code = st.text_input(
-                            "Código de recuperação",
-                            placeholder="NX-R-XXXXXXXX",
-                        )
-                        new_password = st.text_input(
-                            "Nova senha", type="password", placeholder="Mínimo de 8 caracteres",
-                        )
-                        new_password_confirmation = st.text_input(
-                            "Confirme a nova senha", type="password",
-                        )
-                        if st.form_submit_button("Redefinir senha", width="stretch"):
-                            normalized_email = str(reset_email or "").strip().lower()
-                            client_ip = _client_ip()
-                            try:
-                                if not normalized_email or not str(recovery_code or "").strip():
-                                    raise ValueError("Informe o e-mail e o código de recuperação.")
-                                if len(str(new_password or "")) < 8:
-                                    raise ValueError("A senha deve ter pelo menos 8 caracteres.")
-                                if new_password != new_password_confirmation:
-                                    raise ValueError("As senhas não coincidem.")
-                                security.precheck("password_recovery_reset", normalized_email, client_ip)
-                                db.reset_password(normalized_email, recovery_code, new_password)
-                                security.register_attempt(
-                                    "password_recovery_reset", normalized_email, client_ip, success=True,
-                                )
-                                st.success("Senha alterada. Volte à aba Entrar e use sua nova senha.")
-                            except RateLimitError as error:
-                                st.warning(str(error))
-                            except ValueError as error:
-                                security.register_attempt(
-                                    "password_recovery_reset", normalized_email, client_ip, success=False,
-                                )
-                                st.warning(str(error))
-
-        st.markdown(
-            """
-            <div class="ln-login-footer">
-                <div class="ln-trial-seal">
-                    <div class="seal-badge">
-                        <div class="seal-stars">★ ★ ★</div>
-                        <div class="seal-days">7 DIAS</div>
-                        <div class="seal-free">GRÁTIS</div>
-                    </div>
-                    <div class="seal-copy">
-                        Teste nosso sistema por <strong>7 dias grátis</strong><br>
-                        e comprove antes de assinar.
-                    </div>
-                </div>
-                <div class="dev">◉ &nbsp; Desenvolvido por <strong>B2G SaaS</strong></div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
 
 def legal_acceptance_page(user):
     brand_header(compact=True)
@@ -875,13 +2200,20 @@ def _date_text(value):
 
 def account_page(user):
     allowed, message, account = db.subscription_access(user["company_id"])
+    status = str(account.get("subscription_status") or "").strip().lower()
+
     st.header("Minha conta")
     st.caption("Seu plano, acesso e informações da empresa em um só lugar.")
+
     c1, c2, c3 = st.columns(3)
-    c1.metric("Plano", account["plan"])
+    c1.metric("Plano", account.get("plan") or "Essential")
     c2.metric("Situação", message)
-    c3.metric("Fim do teste", _date_text(account["trial_ends_at"]))
-    if str(account.get("subscription_status") or "").lower() == "trialing" and account.get("trial_ends_at"):
+    if status in {"active", "grace"}:
+        c3.metric("Mensalidade", "R$ 29,90/mês")
+    else:
+        c3.metric("Fim do teste", _date_text(account.get("trial_ends_at")))
+
+    if status == "trialing" and account.get("trial_ends_at"):
         try:
             _trial_end = datetime.fromisoformat(str(account["trial_ends_at"]).replace("Z", "+00:00"))
             _trial_today = _local_now().date()
@@ -889,15 +2221,17 @@ def account_page(user):
             _trial_message = conversion.trial_message(_trial_days_left)
             if _trial_message:
                 if _trial_days_left <= 2:
-                    st.warning(_trial_message + " Se o LicitaNexo já está ajudando sua operação, escolha seu período de assinatura abaixo.")
+                    st.warning(_trial_message + " Se o LicitaNexo já está ajudando sua operação, assine o Essential por R$ 29,90/mês.")
                 else:
                     st.info(_trial_message)
         except (TypeError, ValueError):
             pass
+
     with st.container(border=True):
         st.subheader(user["company_name"])
         st.write(f'**Usuário:** {user["name"]}')
         st.write(f'**E-mail:** {user["email"]}')
+
     if not allowed:
         st.warning(
             f"O acesso operacional está pausado: {message}. "
@@ -906,53 +2240,53 @@ def account_page(user):
 
     st.divider()
     st.subheader("Assinatura")
-    st.caption("Escolha o período. O checkout é processado pelo Mercado Pago; o LicitaNexo não armazena dados do cartão.")
-    cycles = billing.cycles()
-    labels = {
-        x["code"]: (f'{x["label"]} · R$ {x["amount"]:,.2f}').replace(",", "X").replace(".", ",").replace("X", ".")
-        for x in cycles
-    }
-    a, b = st.columns([2, 1])
-    cycle = a.selectbox("Período de contratação", [x["code"] for x in cycles], format_func=labels.get, key="account_billing_cycle")
-    selected = next(x for x in cycles if x["code"] == cycle)
-    b.metric("Equivale a", ("R$ {:,.2f}/mês".format(selected["monthly_equivalent"])).replace(",", "X").replace(".", ",").replace("X", "."))
 
-    if billing.gateway_configured:
-        if st.button("Gerar checkout seguro", type="primary", width="stretch", key="billing_create"):
-            try:
-                checkout = billing.create_checkout(user["company_id"], user["email"], cycle)
-                conversion.record_event(
-                    "checkout_created", user["company_id"], user.get("id", ""),
-                    {"cycle": cycle, "checkout_id": checkout["id"]},
-                )
-                st.session_state.billing_checkout_url = checkout["init_point"]
-                st.session_state.billing_checkout_id = checkout["id"]
-                st.rerun()
-            except BillingError as error:
-                st.error(str(error))
-        if st.session_state.get("billing_checkout_url"):
-            st.link_button("Abrir pagamento no Mercado Pago", st.session_state.billing_checkout_url, type="primary", width="stretch")
-        if st.session_state.get("billing_checkout_id") and st.button("Já paguei · verificar agora", width="stretch", key="billing_sync"):
-            try:
-                result = billing.sync_checkout(st.session_state.billing_checkout_id)
-                if result["local_status"] == "active":
-                    conversion.record_event(
-                        "subscription_active", user["company_id"], user.get("id", ""),
-                        {"checkout_id": st.session_state.billing_checkout_id},
-                    )
-                    st.success("Pagamento confirmado. Assinatura ativa.")
-                    st.rerun()
-                elif result["local_status"] == "pending":
-                    st.info("Pagamento ainda aguardando confirmação.")
-                else:
-                    st.warning(f'Situação: {result["local_status"]}.')
-            except BillingError as error:
-                st.error(str(error))
+    if status in {"active", "grace"}:
+        st.success("Plano Essential ativo · R$ 29,90/mês")
+        st.caption("Seu acesso está liberado. O LicitaNexo não armazena dados de cartão.")
     else:
-        st.info("Checkout online preparado. Para ativá-lo no servidor, configure as credenciais do Mercado Pago e a URL pública.")
+        st.caption("Plano Essential · R$ 29,90/mês. O pagamento é processado pelo Mercado Pago; o LicitaNexo não armazena dados do cartão.")
+        p1, p2 = st.columns([2, 1])
+        p1.metric("Plano", "Essential")
+        p2.metric("Mensalidade", "R$ 29,90/mês")
+
+        if billing.gateway_configured:
+            if st.button("Gerar checkout seguro", type="primary", width="stretch", key="billing_create"):
+                try:
+                    checkout = billing.create_checkout(user["company_id"], user["email"], "monthly")
+                    conversion.record_event(
+                        "checkout_created", user["company_id"], user.get("id", ""),
+                        {"cycle": "monthly", "checkout_id": checkout["id"]},
+                    )
+                    st.session_state.billing_checkout_url = checkout["init_point"]
+                    st.session_state.billing_checkout_id = checkout["id"]
+                    st.rerun()
+                except BillingError as error:
+                    st.error(str(error))
+            if st.session_state.get("billing_checkout_url"):
+                st.link_button("Abrir pagamento seguro", st.session_state.billing_checkout_url, type="primary", width="stretch")
+            if st.session_state.get("billing_checkout_id") and st.button("Já paguei · verificar agora", width="stretch", key="billing_sync"):
+                try:
+                    result = billing.sync_checkout(st.session_state.billing_checkout_id)
+                    if result["local_status"] == "active":
+                        conversion.record_event(
+                            "subscription_active", user["company_id"], user.get("id", ""),
+                            {"checkout_id": st.session_state.billing_checkout_id},
+                        )
+                        st.success("Pagamento confirmado. Assinatura ativa.")
+                        st.rerun()
+                    elif result["local_status"] == "pending":
+                        st.info("Pagamento ainda aguardando confirmação.")
+                    else:
+                        st.warning(f'Situação: {result["local_status"]}.')
+                except BillingError as error:
+                    st.error(str(error))
+        else:
+            st.info("Pagamento online temporariamente indisponível. Para contratar ou renovar, fale com o suporte.")
 
     history = billing.list_company(user["company_id"], 10)
     if history:
+        labels = {"monthly": "Mensal · R$ 29,90"}
         with st.expander("Histórico de cobranças", expanded=False):
             st.dataframe(pd.DataFrame([{
                 "Data": r.get("created_at"),
@@ -961,10 +2295,14 @@ def account_page(user):
                 "Situação": r.get("local_status"),
             } for r in history]), hide_index=True, width="stretch")
 
-
 def support_page(user):
     st.header("Suporte LicitaNexo")
     st.caption("Converse com nossa equipe dentro do aplicativo. As respostas ficam salvas no seu histórico.")
+
+    tour_col, _ = st.columns([1, 3])
+    if tour_col.button("Fazer tour guiado", icon=":material/tour:", key="support_guided_tour", width="stretch"):
+        _guided_tour_start(user, manual=True)
+        st.rerun()
 
     with st.expander("Abrir novo atendimento", expanded=False):
         with st.form("support_new_conversation", clear_on_submit=True):
@@ -1778,7 +3116,7 @@ def admin_page(user, admin_section="Visão geral"):
                 sync_options={f'{r["payer_email"]} · {r["billing_cycle"]} · {r["local_status"]}':r["id"] for r in online if r.get("provider_id")}
                 if sync_options:
                     sync_label=st.selectbox("Sincronizar cobrança", list(sync_options), key="admin_billing_select")
-                    if st.button("Sincronizar Mercado Pago", key="admin_billing_sync"):
+                    if st.button("Sincronizar pagamento", key="admin_billing_sync"):
                         try:
                             result=billing.sync_checkout(sync_options[sync_label])
                             st.success(f'Gateway: {result["provider_status"]} · LicitaNexo: {result["local_status"]}')
@@ -1801,7 +3139,7 @@ def admin_page(user, admin_section="Visão geral"):
                 company_map = {f'{c["name"]} · {c.get("cnpj") or "sem CNPJ"}': c["id"] for c in companies_for_payment}
                 with st.form("admin_payment_record"):
                     company_label = st.selectbox("Empresa", list(company_map))
-                    amount = st.number_input("Valor", min_value=0.0, value=49.90, step=10.0)
+                    amount = st.number_input("Valor", min_value=0.0, value=29.90, step=10.0)
                     method = st.selectbox("Forma", ["PIX", "Cartão", "Boleto", "Transferência"])
                     cycle = st.selectbox("Período", ["Mensal", "Trimestral", "Semestral", "Anual"])
                     pay_status = st.selectbox("Status", ["pending", "paid", "failed", "refunded", "canceled"])
@@ -2913,10 +4251,2313 @@ def calendar_page(user):
                         st.rerun()
 
 
+
+def apply_rc31_21_global_overrides() -> None:
+    """RC31.21: melhora legibilidade, contraste e densidade sem alterar regras de negócio."""
+    st.markdown(
+        r"""
+        <style>
+        /* RC31.21 · legibilidade e contraste */
+        html body [data-testid="stMain"] .block-container{
+            max-width:1160px !important;
+            padding-top:.82rem !important;
+            padding-bottom:2rem !important;
+        }
+
+        /* Tipografia principal */
+        html body [data-testid="stMain"] h1{
+            font-size:1.82rem !important;
+            line-height:1.18 !important;
+            font-weight:800 !important;
+        }
+        html body [data-testid="stMain"] h2{
+            font-size:1.5rem !important;
+            line-height:1.22 !important;
+            font-weight:800 !important;
+        }
+        html body [data-testid="stMain"] h3{
+            font-size:1.18rem !important;
+            line-height:1.28 !important;
+            font-weight:750 !important;
+        }
+        html body [data-testid="stMain"] p,
+        html body [data-testid="stMain"] label p,
+        html body [data-testid="stMain"] .stCaption p,
+        html body [data-testid="stMain"] [data-testid="stMarkdownContainer"] p{
+            font-size:.95rem !important;
+            line-height:1.48 !important;
+        }
+
+        /* Cabeçalhos das páginas de descoberta */
+        html body [data-testid="stMain"] .ln-page-kicker{
+            font-size:.68rem !important;
+            padding:.2rem .5rem !important;
+            font-weight:800 !important;
+            margin-bottom:.36rem !important;
+        }
+        html body [data-testid="stMain"] .ln-discovery-title{
+            font-size:1.72rem !important;
+            line-height:1.16 !important;
+            font-weight:800 !important;
+            margin:0 0 .22rem !important;
+            color:#13283A !important;
+        }
+        html body [data-testid="stMain"] .ln-discovery-sub{
+            font-size:.98rem !important;
+            line-height:1.5 !important;
+            color:#5D6F7D !important;
+            margin:0 0 .9rem !important;
+            max-width:64rem !important;
+        }
+        html body [data-testid="stMain"] .ln-home-count{
+            font-size:2rem !important;
+            line-height:1.08 !important;
+            font-weight:800 !important;
+        }
+        html body [data-testid="stMain"] .ln-home-value{
+            background:#FFFFFF !important;
+            font-size:.96rem !important;
+            line-height:1.5 !important;
+            border:1px solid #DCE5EC !important;
+            border-left:4px solid #20A878 !important;
+            box-shadow:0 4px 14px rgba(18,38,63,.05) !important;
+        }
+        html body [data-testid="stMain"] .ln-home-section,
+        html body [data-testid="stMain"] .ln-state-grid-title{
+            font-size:.74rem !important;
+            font-weight:800 !important;
+        }
+        html body [data-testid="stMain"] .ln-shortcut-copy{
+            font-size:.88rem !important;
+            line-height:1.45 !important;
+        }
+
+        /* Cards: branco real para destacar do fundo */
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"],
+        html body [data-testid="stMain"] div[data-testid="stMetric"]{
+            background:#FFFFFF !important;
+            border:1px solid #D8E2EA !important;
+            border-radius:14px !important;
+            box-shadow:0 5px 16px rgba(20,38,60,.065) !important;
+        }
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"] > div,
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"] > div > div,
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"]{
+            background:#FFFFFF !important;
+        }
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-state-name),
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-modality-name),
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-portal-name){
+            background:#FFFFFF !important;
+            border:1px solid #D8E2EA !important;
+            border-radius:14px !important;
+            box-shadow:0 5px 16px rgba(20,38,60,.065) !important;
+        }
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-state-name) > div,
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-modality-name) > div,
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-portal-name) > div{
+            background:#FFFFFF !important;
+            padding:.9rem .95rem .95rem !important;
+        }
+        html body [data-testid="stMain"] .ln-state-name,
+        html body [data-testid="stMain"] .ln-modality-name,
+        html body [data-testid="stMain"] .ln-portal-name{
+            font-size:1.02rem !important;
+            line-height:1.25 !important;
+            font-weight:800 !important;
+            color:#142535 !important;
+        }
+        html body [data-testid="stMain"] .ln-state-code{
+            font-size:.78rem !important;
+            font-weight:700 !important;
+        }
+        html body [data-testid="stMain"] .ln-state-count,
+        html body [data-testid="stMain"] .ln-card-count{
+            font-size:1.75rem !important;
+            line-height:1 !important;
+            font-weight:800 !important;
+            color:#0B4773 !important;
+            margin:.58rem 0 .1rem !important;
+        }
+        html body [data-testid="stMain"] .ln-state-label,
+        html body [data-testid="stMain"] .ln-card-caption{
+            font-size:.85rem !important;
+            line-height:1.4 !important;
+            color:#6D7E8C !important;
+        }
+
+        /* Formulários e campos */
+        html body [data-testid="stMain"] [data-testid="stForm"]{
+            background:#FFFFFF !important;
+            border:1px solid #D8E2EA !important;
+            border-radius:14px !important;
+            padding:1rem 1.05rem .95rem !important;
+            box-shadow:0 5px 16px rgba(20,38,60,.055) !important;
+        }
+        html body [data-testid="stMain"] input,
+        html body [data-testid="stMain"] textarea,
+        html body [data-testid="stMain"] [data-baseweb="select"] > div{
+            font-size:.94rem !important;
+            min-height:2.65rem !important;
+        }
+        html body [data-testid="stMain"] label p{
+            font-size:.9rem !important;
+            font-weight:600 !important;
+        }
+        html body [data-testid="stMain"] .stButton > button,
+        html body [data-testid="stMain"] .stDownloadButton > button,
+        html body [data-testid="stMain"] div[data-testid="stFormSubmitButton"] button{
+            min-height:2.65rem !important;
+            font-size:.9rem !important;
+            font-weight:700 !important;
+            border-radius:9px !important;
+        }
+
+        /* O botão Voltar genérico é redundante com a navegação lateral. */
+        html body [data-testid="stMain"] .ln-back-row,
+        html body [data-testid="stMain"] .stElementContainer:has(.ln-back-row),
+        html body [data-testid="stMain"] div:has(> .ln-back-row){
+            display:none !important;
+            height:0 !important;
+            min-height:0 !important;
+            margin:0 !important;
+            padding:0 !important;
+        }
+
+        /* Sidebar: leitura maior, alinhada à esquerda, ícones mais presentes. */
+        html body [data-testid="stSidebar"] .stButton{
+            margin:0 0 .2rem !important;
+        }
+        html body [data-testid="stSidebar"] .stButton button{
+            min-height:3.22rem !important;
+            padding:.28rem .42rem !important;
+            gap:.72rem !important;
+            justify-content:flex-start !important;
+            text-align:left !important;
+            font-size:1rem !important;
+            font-weight:750 !important;
+        }
+        html body [data-testid="stSidebar"] .stButton button p{
+            font-size:1rem !important;
+            line-height:1.2 !important;
+            font-weight:750 !important;
+            text-align:left !important;
+        }
+        html body [data-testid="stSidebar"] .stButton [data-testid="stIconMaterial"]{
+            flex:0 0 2.48rem !important;
+            width:2.48rem !important;
+            height:2.48rem !important;
+            border-radius:11px !important;
+            font-size:1.22rem !important;
+        }
+        html body [data-testid="stSidebar"] [data-testid="stCaptionContainer"] p,
+        html body [data-testid="stSidebar"] .stCaption p{
+            font-size:.68rem !important;
+            font-weight:800 !important;
+        }
+        html body .ln-app-topbar-account{
+            font-size:.82rem !important;
+            font-weight:700 !important;
+        }
+
+        /* RC31.21 V2 · contraste forte dos cards e escala tipográfica confortável */
+        html body [data-testid="stMain"]{
+            font-size:16.5px !important;
+        }
+        html body [data-testid="stMain"] p,
+        html body [data-testid="stMain"] label p,
+        html body [data-testid="stMain"] .stCaption p,
+        html body [data-testid="stMain"] [data-testid="stMarkdownContainer"] p{
+            font-size:1rem !important;
+            line-height:1.5 !important;
+        }
+        html body [data-testid="stMain"] .ln-discovery-title{
+            font-size:1.88rem !important;
+        }
+        html body [data-testid="stMain"] .ln-discovery-sub{
+            font-size:1.02rem !important;
+        }
+        html body [data-testid="stMain"] .ln-home-count{
+            font-size:2.12rem !important;
+        }
+        html body [data-testid="stMain"] input,
+        html body [data-testid="stMain"] textarea,
+        html body [data-testid="stMain"] [data-baseweb="select"] > div{
+            font-size:1rem !important;
+        }
+        html body [data-testid="stMain"] label p{
+            font-size:.96rem !important;
+        }
+        html body [data-testid="stMain"] .stButton > button,
+        html body [data-testid="stMain"] .stDownloadButton > button,
+        html body [data-testid="stMain"] div[data-testid="stFormSubmitButton"] button{
+            font-size:.96rem !important;
+        }
+
+        /* Força branco real nos cards de Estado/Modalidade/Portal. */
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-state-name),
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-modality-name),
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-portal-name){
+            background-color:#FFFFFF !important;
+            background-image:none !important;
+            border:1px solid #D5E0E8 !important;
+            box-shadow:0 6px 18px rgba(14,35,56,.085) !important;
+        }
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-state-name) > div,
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-state-name) > div > div,
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-state-name) [data-testid="stVerticalBlock"],
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-modality-name) > div,
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-modality-name) > div > div,
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-modality-name) [data-testid="stVerticalBlock"],
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-portal-name) > div,
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-portal-name) > div > div,
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-portal-name) [data-testid="stVerticalBlock"]{
+            background-color:#FFFFFF !important;
+            background-image:none !important;
+        }
+        html body [data-testid="stMain"] .ln-state-name,
+        html body [data-testid="stMain"] .ln-modality-name,
+        html body [data-testid="stMain"] .ln-portal-name{
+            font-size:1.08rem !important;
+        }
+        html body [data-testid="stMain"] .ln-state-count,
+        html body [data-testid="stMain"] .ln-card-count{
+            font-size:1.9rem !important;
+        }
+        html body [data-testid="stMain"] .ln-state-label,
+        html body [data-testid="stMain"] .ln-card-caption{
+            font-size:.9rem !important;
+        }
+
+        /* Sidebar: reduz a faixa morta logo abaixo do cabeçalho. */
+        html body [data-testid="stSidebar"] > div:first-child{
+            padding-top:54px !important;
+        }
+        html body [data-testid="stSidebar"] div[data-testid="stElementContainer"]:has(.ln-sidebar-brand){
+            height:0 !important;
+            min-height:0 !important;
+            margin:0 !important;
+            padding:0 !important;
+            overflow:visible !important;
+        }
+        html body [data-testid="stSidebar"] .stButton button,
+        html body [data-testid="stSidebar"] .stButton button p{
+            font-size:1.05rem !important;
+            font-weight:760 !important;
+        }
+
+        /* =========================================================
+           RC31.21 V3 · correção estrutural do shell do usuário
+           ========================================================= */
+
+        /* Sidebar mais próxima da referência: compacta, contínua e sem faixas mortas. */
+        :root{--rc31-sidebar:258px;}
+        @media(min-width:901px){
+            html body [data-testid="stSidebar"],
+            html body [data-testid="stSidebar"] > div:first-child{
+                width:var(--rc31-sidebar) !important;
+                min-width:var(--rc31-sidebar) !important;
+                max-width:var(--rc31-sidebar) !important;
+            }
+        }
+        html body .ln-app-topbar{left:var(--rc31-sidebar) !important;}
+        html body .ln-sidebar-brand{width:var(--rc31-sidebar) !important;}
+        html body [data-testid="stSidebar"] > div:first-child{
+            padding:52px 10px 10px !important;
+            overflow-y:auto !important;
+        }
+        /* =========================================================
+           RC31.22 · alinhamento estrutural real da navegação
+           Neutraliza os wrappers invisíveis do Streamlit que geravam
+           centralização e o efeito visual de "escadinha".
+           ========================================================= */
+        html body [data-testid="stSidebar"] [data-testid="stVerticalBlock"]{
+            width:100% !important;
+            max-width:100% !important;
+            align-items:flex-start !important;
+            justify-content:flex-start !important;
+            gap:.08rem !important;
+            margin-left:0 !important;
+            margin-right:0 !important;
+            padding-left:0 !important;
+            padding-right:0 !important;
+        }
+        html body [data-testid="stSidebar"] .stElementContainer{
+            width:100% !important;
+            max-width:100% !important;
+            align-self:flex-start !important;
+            margin-left:0 !important;
+            margin-right:0 !important;
+            padding-left:0 !important;
+            padding-right:0 !important;
+            box-sizing:border-box !important;
+        }
+        html body [data-testid="stSidebar"] div[class*="st-key-nav_"]{
+            width:100% !important;
+            max-width:100% !important;
+            align-self:flex-start !important;
+            margin:0 !important;
+            padding:0 !important;
+            box-sizing:border-box !important;
+        }
+        html body [data-testid="stSidebar"] div[class*="st-key-nav_"] .stButton{
+            width:100% !important;
+            max-width:100% !important;
+            display:flex !important;
+            justify-content:flex-start !important;
+            align-items:stretch !important;
+            margin:0 !important;
+            padding:0 !important;
+        }
+        html body [data-testid="stSidebar"] div[class*="st-key-nav_"] button{
+            width:100% !important;
+            max-width:100% !important;
+            min-height:2.55rem !important;
+            height:2.55rem !important;
+            display:flex !important;
+            flex-direction:row !important;
+            justify-content:flex-start !important;
+            align-items:center !important;
+            text-align:left !important;
+            padding:.16rem .34rem !important;
+            margin:0 !important;
+            gap:.58rem !important;
+            border-radius:9px !important;
+            font-size:.96rem !important;
+            font-weight:750 !important;
+            line-height:1.12 !important;
+            box-sizing:border-box !important;
+        }
+        html body [data-testid="stSidebar"] div[class*="st-key-nav_"] button > div{
+            width:100% !important;
+            min-width:0 !important;
+            display:flex !important;
+            flex-direction:row !important;
+            justify-content:flex-start !important;
+            align-items:center !important;
+            text-align:left !important;
+            gap:.58rem !important;
+            margin:0 !important;
+            padding:0 !important;
+        }
+        html body [data-testid="stSidebar"] div[class*="st-key-nav_"] button p{
+            flex:1 1 auto !important;
+            width:auto !important;
+            min-width:0 !important;
+            margin:0 !important;
+            padding:0 !important;
+            text-align:left !important;
+            font-size:.96rem !important;
+            font-weight:750 !important;
+            line-height:1.12 !important;
+            white-space:nowrap !important;
+        }
+        html body [data-testid="stSidebar"] div[class*="st-key-nav_"] [data-testid="stIconMaterial"]{
+            display:inline-flex !important;
+            align-items:center !important;
+            justify-content:center !important;
+            flex:0 0 2rem !important;
+            width:2rem !important;
+            min-width:2rem !important;
+            max-width:2rem !important;
+            height:2rem !important;
+            min-height:2rem !important;
+            margin:0 !important;
+            padding:0 !important;
+            border-radius:9px !important;
+            font-size:1.06rem !important;
+            text-align:center !important;
+        }
+        html body [data-testid="stSidebar"] div[class*="st-key-nav_"] button span:not([data-testid="stIconMaterial"]){
+            margin-left:0 !important;
+            margin-right:0 !important;
+            text-align:left !important;
+        }
+        html body [data-testid="stSidebar"] .st-key-sidebar_logout{
+            position:static !important;
+            left:auto !important;
+            bottom:auto !important;
+            width:100% !important;
+            margin:.38rem 0 0 !important;
+            padding:0 !important;
+        }
+        html body [data-testid="stSidebar"] .st-key-sidebar_logout button{
+            min-height:2.45rem !important;
+            height:2.45rem !important;
+            font-size:.9rem !important;
+            border-radius:9px !important;
+        }
+
+        /* Cards de descoberta: a coluna é o verdadeiro bloco visual em várias telas. */
+        html body [data-testid="stMain"] [data-testid="stColumn"]:has(.ln-shortcut-figure),
+        html body [data-testid="stMain"] [data-testid="stColumn"]:has(.ln-state-name),
+        html body [data-testid="stMain"] [data-testid="stColumn"]:has(.ln-modality-name),
+        html body [data-testid="stMain"] [data-testid="stColumn"]:has(.ln-portal-name){
+            background:#FFFFFF !important;
+            background-color:#FFFFFF !important;
+            background-image:none !important;
+            border:1px solid #D7E0E8 !important;
+            border-radius:12px !important;
+            box-shadow:0 5px 15px rgba(20,38,60,.055) !important;
+        }
+        html body [data-testid="stMain"] [data-testid="stColumn"]:has(.ln-shortcut-figure) > div,
+        html body [data-testid="stMain"] [data-testid="stColumn"]:has(.ln-state-name) > div,
+        html body [data-testid="stMain"] [data-testid="stColumn"]:has(.ln-modality-name) > div,
+        html body [data-testid="stMain"] [data-testid="stColumn"]:has(.ln-portal-name) > div{
+            background:transparent !important;
+        }
+        html body [data-testid="stMain"] [data-testid="stColumn"]:has(.ln-shortcut-figure){
+            padding:.62rem .62rem .66rem !important;
+        }
+        html body [data-testid="stMain"] [data-testid="stColumn"]:has(.ln-state-name),
+        html body [data-testid="stMain"] [data-testid="stColumn"]:has(.ln-modality-name),
+        html body [data-testid="stMain"] [data-testid="stColumn"]:has(.ln-portal-name){
+            padding:.78rem .82rem .82rem !important;
+        }
+
+        /* Botão Voltar contextual: fora do fluxo para não criar espaço morto no topo. */
+        html body [data-testid="stMain"] div[class*="st-key-discovery_back_"]{
+            position:fixed !important;
+            right:22px !important;
+            bottom:22px !important;
+            width:auto !important;
+            z-index:1000000 !important;
+            margin:0 !important;
+            padding:0 !important;
+        }
+        html body [data-testid="stMain"] div[class*="st-key-discovery_back_"] button{
+            width:auto !important;
+            min-width:0 !important;
+            min-height:2.55rem !important;
+            padding:.48rem .78rem !important;
+            border-radius:999px !important;
+            background:#FFFFFF !important;
+            color:#17314A !important;
+            border:1px solid #C9D5DF !important;
+            box-shadow:0 8px 24px rgba(14,35,56,.16) !important;
+            font-size:.88rem !important;
+            font-weight:700 !important;
+        }
+        html body [data-testid="stMain"] div[class*="st-key-discovery_back_"] button *{
+            color:#17314A !important;
+        }
+
+        @media(max-width:900px){
+            html body [data-testid="stMain"] .ln-discovery-title{font-size:1.45rem !important;}
+            html body [data-testid="stMain"] p,
+            html body [data-testid="stMain"] label p,
+            html body [data-testid="stMain"] .stCaption p{font-size:.9rem !important;}
+            html body [data-testid="stSidebar"] .stButton button,
+            html body [data-testid="stSidebar"] .stButton button p{font-size:.94rem !important;}
+        }
+
+
+        /* =========================================================
+           RC31.24 · revisão geral: Home, atalhos e consistência
+           ========================================================= */
+
+        /* Home mais imponente sem voltar a colocar o logo no conteúdo. */
+        html body [data-testid="stMain"]:has(.ln-home-count) .block-container{
+            max-width:1200px !important;
+            padding-top:2.15rem !important;
+        }
+        html body [data-testid="stMain"]:has(.ln-home-count) .ln-page-kicker{
+            font-size:.72rem !important;
+            padding:.25rem .58rem !important;
+            margin-bottom:.58rem !important;
+        }
+        html body [data-testid="stMain"]:has(.ln-home-count) .ln-discovery-title{
+            max-width:860px !important;
+            font-size:2.45rem !important;
+            line-height:1.06 !important;
+            letter-spacing:-.035em !important;
+            margin-bottom:.45rem !important;
+        }
+        html body [data-testid="stMain"]:has(.ln-home-count) .ln-discovery-sub{
+            max-width:850px !important;
+            font-size:1.08rem !important;
+            line-height:1.55 !important;
+            margin-bottom:1.15rem !important;
+        }
+        html body [data-testid="stMain"]:has(.ln-home-count) .ln-home-count{
+            font-size:2.55rem !important;
+            line-height:1.04 !important;
+            letter-spacing:-.025em !important;
+            margin:.25rem 0 .9rem !important;
+            color:#083F70 !important;
+        }
+        html body [data-testid="stMain"]:has(.ln-home-count) .ln-home-value{
+            border-radius:12px !important;
+            padding:.82rem .95rem !important;
+            margin-bottom:1rem !important;
+        }
+        html body [data-testid="stMain"]:has(.ln-home-count) [data-testid="stForm"]{
+            border-radius:16px !important;
+            padding:1.15rem 1.2rem 1.05rem !important;
+            box-shadow:0 12px 30px rgba(22,46,69,.08) !important;
+        }
+
+        /* RC31.26 · ilustrações vetoriais específicas para cada forma de explorar. */
+        html body [data-testid="stMain"] .ln-shortcut-figure{
+            height:112px !important;
+            border-radius:14px !important;
+            display:flex !important;
+            align-items:center !important;
+            justify-content:center !important;
+            padding:.35rem .55rem !important;
+            margin:0 0 .72rem !important;
+            overflow:hidden !important;
+            border:1px solid rgba(40,70,100,.07) !important;
+        }
+        html body [data-testid="stMain"] .ln-shortcut-figure svg{
+            display:block !important;
+            width:100% !important;
+            height:100% !important;
+            max-width:100% !important;
+        }
+        html body [data-testid="stMain"] .ln-shortcut-figure::before{display:none !important;content:none !important;}
+        html body [data-testid="stMain"] .ln-shortcut-state{background:linear-gradient(145deg,#EAF3FF,#F8FBFF) !important;}
+        html body [data-testid="stMain"] .ln-shortcut-city{background:linear-gradient(145deg,#E9F8F3,#F8FCFA) !important;}
+        html body [data-testid="stMain"] .ln-shortcut-modality{background:linear-gradient(145deg,#F1EBFF,#FBF9FF) !important;}
+        html body [data-testid="stMain"] .ln-shortcut-site{background:linear-gradient(145deg,#EAF2FF,#F8FAFF) !important;}
+        html body [data-testid="stMain"] .ln-shortcut-copy{
+            min-height:2.8rem !important;
+            font-size:.9rem !important;
+            line-height:1.42 !important;
+        }
+
+        /* Remove o efeito card-dentro-de-card nas grades de descoberta. */
+        html body [data-testid="stMain"] [data-testid="stColumn"]:has(.ln-shortcut-figure) div[data-testid="stVerticalBlockBorderWrapper"],
+        html body [data-testid="stMain"] [data-testid="stColumn"]:has(.ln-state-name) div[data-testid="stVerticalBlockBorderWrapper"],
+        html body [data-testid="stMain"] [data-testid="stColumn"]:has(.ln-modality-name) div[data-testid="stVerticalBlockBorderWrapper"],
+        html body [data-testid="stMain"] [data-testid="stColumn"]:has(.ln-portal-name) div[data-testid="stVerticalBlockBorderWrapper"]{
+            border:0 !important;
+            box-shadow:none !important;
+            border-radius:0 !important;
+            background:transparent !important;
+        }
+        html body [data-testid="stMain"] [data-testid="stColumn"]:has(.ln-shortcut-figure) div[data-testid="stVerticalBlockBorderWrapper"] > div,
+        html body [data-testid="stMain"] [data-testid="stColumn"]:has(.ln-state-name) div[data-testid="stVerticalBlockBorderWrapper"] > div,
+        html body [data-testid="stMain"] [data-testid="stColumn"]:has(.ln-modality-name) div[data-testid="stVerticalBlockBorderWrapper"] > div,
+        html body [data-testid="stMain"] [data-testid="stColumn"]:has(.ln-portal-name) div[data-testid="stVerticalBlockBorderWrapper"] > div{
+            padding:0 !important;
+            background:transparent !important;
+        }
+
+        /* Minha conta: visual de plano mais claro. */
+        html body [data-testid="stMain"]:has(.st-key-billing_create) div[data-testid="stMetric"],
+        html body [data-testid="stMain"]:has(h1) div[data-testid="stMetric"]{
+            background:#FFFFFF !important;
+        }
+
+        /* RC31.25: itens sob demanda deixam a lista de editais mais escaneável. */
+        html body [data-testid="stMain"] div[class*="st-key-essential_items_toggle_"] button{
+            min-height:2.6rem !important;
+            background:#F7FAFC !important;
+            color:#17314A !important;
+            border:1px solid #CAD6E0 !important;
+            border-radius:9px !important;
+            box-shadow:none !important;
+            font-size:.9rem !important;
+            font-weight:700 !important;
+        }
+        html body [data-testid="stMain"] div[class*="st-key-essential_items_toggle_"] button *{
+            color:#17314A !important;
+        }
+        html body [data-testid="stMain"] div[class*="st-key-essential_items_toggle_"] button:hover{
+            background:#EEF4F8 !important;
+            border-color:#AFC0CE !important;
+        }
+
+        @media(max-width:900px){
+            html body [data-testid="stMain"]:has(.ln-home-count) .ln-discovery-title{font-size:1.85rem !important;}
+            html body [data-testid="stMain"]:has(.ln-home-count) .ln-home-count{font-size:2rem !important;}
+            html body [data-testid="stMain"] .ln-shortcut-figure{height:92px !important;}
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _rc31_navigate_to(target: str) -> None:
+    """Navega registrando a tela anterior para o Voltar contextual."""
+    target = str(target or "").strip()
+    if not target:
+        return
+    current = str(st.session_state.get("main_navigation") or "").strip()
+    if current == "Início":
+        current = "Buscar licitações"
+    if target == "Início":
+        target = "Buscar licitações"
+    if current and current != target:
+        history = list(st.session_state.get("_main_navigation_history") or [])
+        if not history or history[-1] != current:
+            history.append(current)
+        st.session_state["_main_navigation_history"] = history[-20:]
+    st.session_state["main_navigation"] = target
+
+
+def _rc31_go_back() -> str:
+    """Retorna à última tela realmente usada, não a uma Home fixa."""
+    current = str(st.session_state.get("main_navigation") or "").strip()
+    history = list(st.session_state.get("_main_navigation_history") or [])
+    while history:
+        target = str(history.pop() or "").strip()
+        if target and target != current:
+            st.session_state["_main_navigation_history"] = history
+            st.session_state["main_navigation"] = target
+            return target
+    fallback = "Buscar licitações"
+    st.session_state["_main_navigation_history"] = []
+    st.session_state["main_navigation"] = fallback
+    return fallback
+
+
+def _rc31_contextual_back_button(key: str) -> None:
+    """Substitui o Voltar antigo do Essential sem editar essential_discovery.py."""
+    current = str(st.session_state.get("main_navigation") or "").strip()
+    history = list(st.session_state.get("_main_navigation_history") or [])
+    target = next((str(item) for item in reversed(history) if str(item).strip() and str(item) != current and str(item) != "Início"), "Buscar licitações")
+    if st.button(
+        f"Voltar para {target}",
+        icon=":material/arrow_back:",
+        key=f"discovery_back_{key}",
+        help=f"Voltar para a tela anterior: {target}",
+    ):
+        _rc31_go_back()
+        st.rerun()
+
+
+# As páginas importadas continuam usando o namespace do módulo, então esta troca
+# altera somente o comportamento visual/navegacional do Voltar em runtime.
+essential_discovery_module._render_back_button = _rc31_contextual_back_button
+
+
+# =========================================================
+# RC31.23 — TOUR GUIADO
+# =========================================================
+_GUIDED_TOUR_VERSION = "v1"
+_GUIDED_TOUR_STEPS = (
+    {
+        "page": "Buscar licitações",
+        "nav_key": "nav_explore_0",
+        "title": "Comece pela busca",
+        "body": "Digite o que sua empresa vende e refine por região, modalidade, registro de preços ou site de disputa. Você não precisa preencher todos os campos.",
+    },
+    {
+        "page": "Por Estado",
+        "nav_key": "nav_explore_1",
+        "title": "Explore oportunidades",
+        "body": "Quando quiser navegar sem montar uma busca completa, use Estado, Cidade, Modalidade ou site de disputa.",
+    },
+    {
+        "page": "Minha lista",
+        "nav_key": "nav_work_0",
+        "title": "Salve para decidir depois",
+        "body": "Quando encontrar um edital interessante, salve na Minha lista. Aqui você organiza as oportunidades e decide se vai participar.",
+    },
+    {
+        "page": "Calendário",
+        "nav_key": "nav_work_1",
+        "title": "Acompanhe seus prazos",
+        "body": "Ao decidir participar de um certame, use o Calendário para acompanhar datas importantes e registrar lembretes rápidos.",
+    },
+    {
+        "page": "Radar de licitações",
+        "nav_key": "nav_account_1",
+        "title": "Deixe o Radar procurar por você",
+        "body": "O Radar usa suas Preferências para mostrar editais novos relacionados ao que sua empresa procura.",
+    },
+    {
+        "page": "Buscar licitações",
+        "nav_key": "nav_explore_0",
+        "title": "Pronto para começar",
+        "body": "Pesquise o que sua empresa vende, compare várias oportunidades e abra os itens da compra somente nas licitações que merecerem atenção.",
+    },
+)
+
+
+def _guided_tour_pref_key(user: dict) -> str:
+    user_id = str((user or {}).get("id") or (user or {}).get("email") or "anon").strip()
+    return f"ui_guided_tour_{_GUIDED_TOUR_VERSION}:{user_id}"
+
+
+def _guided_tour_was_seen(user: dict) -> bool:
+    """Persiste a decisão sem criar tabela nova; usa system_meta quando disponível."""
+    session_key = f"_guided_tour_seen_{_guided_tour_pref_key(user)}"
+    if st.session_state.get(session_key):
+        return True
+    try:
+        with db.connect() as conn:
+            row = conn.execute(
+                "SELECT value FROM system_meta WHERE key = ?",
+                (_guided_tour_pref_key(user),),
+            ).fetchone()
+        if row:
+            try:
+                value = row["value"]
+            except (TypeError, KeyError, IndexError):
+                value = row[0]
+            if str(value or "").strip().lower() in {"completed", "skipped"}:
+                st.session_state[session_key] = True
+                return True
+    except Exception:
+        pass
+    return False
+
+
+def _guided_tour_mark_seen(user: dict, status: str = "completed") -> None:
+    status = "skipped" if str(status).lower() == "skipped" else "completed"
+    session_key = f"_guided_tour_seen_{_guided_tour_pref_key(user)}"
+    st.session_state[session_key] = True
+    try:
+        key = _guided_tour_pref_key(user)
+        with db.connect() as conn:
+            exists = conn.execute("SELECT 1 FROM system_meta WHERE key = ?", (key,)).fetchone()
+            if exists:
+                conn.execute(
+                    "UPDATE system_meta SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = ?",
+                    (status, key),
+                )
+            else:
+                conn.execute(
+                    "INSERT INTO system_meta(key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)",
+                    (key, status),
+                )
+    except Exception:
+        # O tour continua funcional na sessão mesmo que o backend não permita persistência.
+        pass
+
+
+def _guided_tour_start(user: dict, *, manual: bool = False) -> None:
+    current = str(st.session_state.get("main_navigation") or "Buscar licitações").strip() or "Buscar licitações"
+    st.session_state["_guided_tour_active"] = True
+    st.session_state["_guided_tour_step"] = 0
+    st.session_state["_guided_tour_manual"] = bool(manual)
+    st.session_state["_guided_tour_return_page"] = current
+    st.session_state["main_navigation"] = _GUIDED_TOUR_STEPS[0]["page"]
+    # Não misture a navegação didática ao histórico normal do usuário.
+    st.session_state["_main_navigation_history"] = []
+
+
+def _guided_tour_stop(user: dict, *, skipped: bool = False) -> None:
+    _guided_tour_mark_seen(user, "skipped" if skipped else "completed")
+    return_page = str(st.session_state.get("_guided_tour_return_page") or "Buscar licitações").strip() or "Buscar licitações"
+    st.session_state["_guided_tour_active"] = False
+    st.session_state.pop("_guided_tour_step", None)
+    st.session_state.pop("_guided_tour_manual", None)
+    st.session_state.pop("_guided_tour_return_page", None)
+    st.session_state["main_navigation"] = return_page
+    st.session_state["_main_navigation_history"] = []
+
+
+def _guided_tour_autostart(user: dict) -> bool:
+    if st.session_state.get("_guided_tour_active"):
+        return False
+    if _guided_tour_was_seen(user):
+        return False
+    _guided_tour_start(user, manual=False)
+    return True
+
+
+def _guided_tour_move(user: dict, delta: int) -> None:
+    current = int(st.session_state.get("_guided_tour_step", 0) or 0)
+    target = max(0, min(len(_GUIDED_TOUR_STEPS) - 1, current + int(delta)))
+    st.session_state["_guided_tour_step"] = target
+    st.session_state["main_navigation"] = _GUIDED_TOUR_STEPS[target]["page"]
+    st.session_state["_main_navigation_history"] = []
+
+
+def _guided_tour_render(user: dict) -> None:
+    if not st.session_state.get("_guided_tour_active"):
+        return
+
+    index = max(0, min(len(_GUIDED_TOUR_STEPS) - 1, int(st.session_state.get("_guided_tour_step", 0) or 0)))
+    step = _GUIDED_TOUR_STEPS[index]
+    nav_key = str(step.get("nav_key") or "").strip()
+    nav_selector = f'[data-testid="stSidebar"] [class*="st-key-{nav_key}"] button' if nav_key else ""
+
+    css = f"""
+    <style>
+    /* Durante o tour, o Voltar contextual não compete com o painel. */
+    html body [data-testid="stMain"] div[class*="st-key-discovery_back_"]{{display:none !important;}}
+
+    html body [data-testid="stMain"] .st-key-guided_tour_panel{{
+        position:fixed !important;
+        right:24px !important;
+        bottom:24px !important;
+        width:min(410px,calc(100vw - 32px)) !important;
+        z-index:1000005 !important;
+        margin:0 !important;
+        padding:1rem 1rem .9rem !important;
+        background:#FFFFFF !important;
+        border:1px solid #CFDBE5 !important;
+        border-radius:16px !important;
+        box-shadow:0 18px 48px rgba(9,31,52,.22) !important;
+    }}
+    html body [data-testid="stMain"] .st-key-guided_tour_panel > div{{padding:0 !important;}}
+    html body [data-testid="stMain"] .st-key-guided_tour_panel .ln-tour-step{{
+        font-size:.72rem !important;font-weight:800 !important;letter-spacing:.08em !important;
+        text-transform:uppercase !important;color:#18835F !important;margin:0 0 .35rem !important;
+    }}
+    html body [data-testid="stMain"] .st-key-guided_tour_panel .ln-tour-title{{
+        font-size:1.18rem !important;line-height:1.2 !important;font-weight:800 !important;
+        color:#11283F !important;margin:0 0 .38rem !important;
+    }}
+    html body [data-testid="stMain"] .st-key-guided_tour_panel .ln-tour-copy{{
+        font-size:.92rem !important;line-height:1.48 !important;color:#536A7A !important;
+        margin:0 0 .72rem !important;
+    }}
+    html body [data-testid="stMain"] .st-key-guided_tour_panel .stButton button{{
+        min-height:2.45rem !important;font-size:.86rem !important;font-weight:700 !important;
+    }}
+    {nav_selector}{{
+        background:#EAF9F3 !important;
+        box-shadow:inset 3px 0 0 #18A77B,0 0 0 3px rgba(24,167,123,.18) !important;
+        position:relative !important;
+        z-index:1000001 !important;
+    }}
+    @media(max-width:900px){{
+        html body [data-testid="stMain"] .st-key-guided_tour_panel{{right:12px !important;bottom:12px !important;}}
+    }}
+    </style>
+    """
+    st.markdown(css, unsafe_allow_html=True)
+
+    with st.container(key="guided_tour_panel"):
+        st.markdown(
+            f'<div class="ln-tour-step">PASSO {index + 1} DE {len(_GUIDED_TOUR_STEPS)}</div>'
+            f'<div class="ln-tour-title">{escape(str(step["title"]))}</div>'
+            f'<div class="ln-tour-copy">{escape(str(step["body"]))}</div>',
+            unsafe_allow_html=True,
+        )
+
+        left, middle, right = st.columns([1, 1, 1.35], gap="small")
+        if index > 0:
+            if left.button("Anterior", key="guided_tour_prev", width="stretch"):
+                _guided_tour_move(user, -1)
+                st.rerun()
+        else:
+            left.button("Anterior", key="guided_tour_prev_disabled", width="stretch", disabled=True)
+
+        if middle.button("Pular", key="guided_tour_skip", width="stretch"):
+            _guided_tour_stop(user, skipped=True)
+            st.rerun()
+
+        if index < len(_GUIDED_TOUR_STEPS) - 1:
+            if right.button("Próximo", key="guided_tour_next", type="primary", width="stretch"):
+                _guided_tour_move(user, 1)
+                st.rerun()
+        else:
+            if right.button("Começar agora", key="guided_tour_finish", type="primary", width="stretch"):
+                _guided_tour_stop(user, skipped=False)
+                st.session_state["main_navigation"] = "Buscar licitações"
+                st.rerun()
+
+
+
+
+def apply_rc31_28_reference_shell() -> None:
+    """Shell visual navy/dourado inspirado no layout de referência aprovado."""
+    st.markdown(
+        """
+        <style>
+        :root{
+            --ln-navy:#071D35;
+            --ln-navy-2:#0A2747;
+            --ln-gold:#E0A20B;
+            --ln-gold-2:#F1B817;
+            --ln-ink:#102A43;
+            --ln-muted:#657A90;
+            --ln-line:#DCE4EB;
+            --ln-bg:#F7F9FB;
+        }
+
+        /* ===== SHELL GERAL ===== */
+        html body [data-testid="stAppViewContainer"]{
+            background:var(--ln-bg) !important;
+        }
+        html body [data-testid="stMain"]{
+            background:var(--ln-bg) !important;
+        }
+        html body [data-testid="stMain"] .block-container{
+            max-width:1320px !important;
+            padding:5.5rem 2.2rem 3rem !important;
+        }
+
+        /* Barra superior branca, como no layout de referência. */
+        html body .ln-app-topbar{
+            position:fixed !important;
+            top:0 !important;
+            left:290px !important;
+            right:0 !important;
+            height:68px !important;
+            z-index:99990 !important;
+            background:#FFFFFF !important;
+            border-bottom:1px solid #E4E9EE !important;
+            box-shadow:0 1px 0 rgba(15,42,67,.03) !important;
+            display:flex !important;
+            align-items:center !important;
+            justify-content:flex-end !important;
+            padding:0 1.6rem !important;
+        }
+        html body .ln-app-topbar-menu{display:none !important;}
+        html body .ln-app-topbar-account{
+            display:inline-flex !important;
+            align-items:center !important;
+            justify-content:center !important;
+            min-height:38px !important;
+            padding:0 .9rem !important;
+            border-radius:999px !important;
+            background:#071D35 !important;
+            color:#FFFFFF !important;
+            border:1px solid #163958 !important;
+            font-weight:750 !important;
+            font-size:.88rem !important;
+            box-shadow:0 3px 10px rgba(7,29,53,.12) !important;
+        }
+
+        /* ===== SIDEBAR NAVY ===== */
+        html body [data-testid="stSidebar"]{
+            width:290px !important;
+            min-width:290px !important;
+            background:linear-gradient(180deg,#071D35 0%,#082747 100%) !important;
+            border-right:1px solid #123A60 !important;
+        }
+        html body [data-testid="stSidebar"] > div:first-child{
+            background:transparent !important;
+            padding:.95rem .9rem 1rem !important;
+        }
+        html body [data-testid="stSidebar"] [data-testid="stVerticalBlock"],
+        html body [data-testid="stSidebar"] .stElementContainer{
+            width:100% !important;
+            margin-left:0 !important;
+            margin-right:0 !important;
+        }
+
+        html body [data-testid="stSidebar"] .ln-sidebar-brand{
+            width:100% !important;
+            min-height:66px !important;
+            display:flex !important;
+            align-items:center !important;
+            justify-content:flex-start !important;
+            margin:0 0 .7rem !important;
+            padding:.35rem .45rem .65rem !important;
+            border-bottom:1px solid rgba(255,255,255,.10) !important;
+        }
+        html body [data-testid="stSidebar"] .ln-sidebar-brand img{
+            max-width:190px !important;
+            max-height:52px !important;
+            object-fit:contain !important;
+            filter:brightness(0) invert(1) !important;
+        }
+        html body [data-testid="stSidebar"] .ln-sidebar-brand-text{
+            color:#FFFFFF !important;
+            font-size:1.45rem !important;
+            font-weight:850 !important;
+        }
+
+        /* Saudação em cartão branco. */
+        html body [data-testid="stSidebar"] .ln-sidebar-greeting{
+            width:100% !important;
+            margin:.15rem 0 .85rem !important;
+            padding:.9rem .95rem !important;
+            border:1px solid rgba(255,255,255,.24) !important;
+            border-radius:13px !important;
+            background:#FFFFFF !important;
+            box-shadow:0 8px 22px rgba(0,0,0,.16) !important;
+        }
+        html body [data-testid="stSidebar"] .ln-sidebar-greeting-kicker{
+            color:#8A6B13 !important;
+            font-size:.59rem !important;
+            font-weight:850 !important;
+            letter-spacing:.10em !important;
+            margin-bottom:.28rem !important;
+        }
+        html body [data-testid="stSidebar"] .ln-sidebar-greeting-title{
+            color:#102A43 !important;
+            font-size:1.04rem !important;
+            line-height:1.16 !important;
+            font-weight:850 !important;
+            margin-bottom:.22rem !important;
+        }
+        html body [data-testid="stSidebar"] .ln-sidebar-greeting-copy{
+            color:#64788C !important;
+            font-size:.70rem !important;
+            line-height:1.35 !important;
+        }
+
+        /* Navegação lateral */
+        html body [data-testid="stSidebar"] .stButton{
+            width:100% !important;
+            margin:0 0 .14rem !important;
+            padding:0 !important;
+        }
+        html body [data-testid="stSidebar"] .stButton > button{
+            width:100% !important;
+            min-height:39px !important;
+            display:flex !important;
+            justify-content:flex-start !important;
+            align-items:center !important;
+            gap:.62rem !important;
+            margin:0 !important;
+            padding:.28rem .68rem !important;
+            border-radius:8px !important;
+            border:1px solid transparent !important;
+            background:transparent !important;
+            color:#E8EFF6 !important;
+            box-shadow:none !important;
+            text-align:left !important;
+            font-size:.86rem !important;
+            font-weight:650 !important;
+        }
+        html body [data-testid="stSidebar"] .stButton > button > div{
+            width:100% !important;
+            display:flex !important;
+            justify-content:flex-start !important;
+            align-items:center !important;
+            gap:.62rem !important;
+            margin:0 !important;
+        }
+        html body [data-testid="stSidebar"] .stButton button p{
+            color:#E8EFF6 !important;
+            font-size:.86rem !important;
+            font-weight:650 !important;
+            text-align:left !important;
+            margin:0 !important;
+        }
+        html body [data-testid="stSidebar"] .stButton [data-testid="stIconMaterial"]{
+            flex:0 0 24px !important;
+            width:24px !important;
+            min-width:24px !important;
+            height:24px !important;
+            display:inline-flex !important;
+            align-items:center !important;
+            justify-content:center !important;
+            color:#D8E4EF !important;
+            font-size:1.13rem !important;
+            margin:0 !important;
+        }
+        html body [data-testid="stSidebar"] .stButton > button:hover{
+            background:rgba(255,255,255,.07) !important;
+            border-color:rgba(255,255,255,.06) !important;
+        }
+        html body [data-testid="stSidebar"] .stButton > button[kind="primary"]{
+            position:relative !important;
+            background:rgba(255,255,255,.10) !important;
+            border-color:rgba(255,255,255,.05) !important;
+            box-shadow:inset 4px 0 0 var(--ln-gold) !important;
+        }
+        html body [data-testid="stSidebar"] .stButton > button[kind="primary"] p,
+        html body [data-testid="stSidebar"] .stButton > button[kind="primary"] [data-testid="stIconMaterial"]{
+            color:#F5B91A !important;
+            font-weight:800 !important;
+        }
+
+        /* Logout dourado */
+        html body [data-testid="stSidebar"] .st-key-sidebar_logout{
+            margin-top:.55rem !important;
+        }
+        html body [data-testid="stSidebar"] .st-key-sidebar_logout button{
+            background:linear-gradient(90deg,#D99900,#E7AE11) !important;
+            border:1px solid #D99900 !important;
+            color:#071D35 !important;
+            justify-content:center !important;
+            min-height:42px !important;
+            font-weight:850 !important;
+            box-shadow:0 8px 20px rgba(0,0,0,.18) !important;
+        }
+        html body [data-testid="stSidebar"] .st-key-sidebar_logout button p,
+        html body [data-testid="stSidebar"] .st-key-sidebar_logout [data-testid="stIconMaterial"]{
+            color:#071D35 !important;
+            font-weight:850 !important;
+        }
+
+        /* ===== CONTEÚDO PRINCIPAL ===== */
+        html body [data-testid="stMain"] .ln-page-kicker{
+            background:transparent !important;
+            border:0 !important;
+            color:#9A6A00 !important;
+            border-radius:0 !important;
+            padding:0 0 .25rem !important;
+            margin:0 !important;
+            font-size:.67rem !important;
+            font-weight:850 !important;
+            letter-spacing:.07em !important;
+        }
+        html body [data-testid="stMain"] .ln-discovery-title{
+            color:#102A43 !important;
+            font-size:2rem !important;
+            line-height:1.08 !important;
+            font-weight:850 !important;
+            letter-spacing:-.035em !important;
+            margin:.08rem 0 .18rem !important;
+        }
+        html body [data-testid="stMain"] .ln-discovery-title::after{
+            content:"";
+            display:block;
+            width:36px;
+            height:3px;
+            margin:.52rem 0 .16rem;
+            border-radius:3px;
+            background:var(--ln-gold);
+        }
+        html body [data-testid="stMain"] .ln-discovery-sub{
+            color:#697D90 !important;
+            font-size:.87rem !important;
+            line-height:1.42 !important;
+            margin:0 0 1rem !important;
+        }
+
+        /* Formulários compactos */
+        html body [data-testid="stMain"] [data-testid="stForm"]{
+            background:#FFFFFF !important;
+            border:1px solid #DDE5EC !important;
+            border-radius:10px !important;
+            padding:1rem 1rem .85rem !important;
+            box-shadow:0 6px 18px rgba(16,42,67,.06) !important;
+        }
+        html body [data-testid="stMain"] label p{
+            color:#243B53 !important;
+            font-size:.78rem !important;
+            font-weight:750 !important;
+        }
+        html body [data-testid="stMain"] input,
+        html body [data-testid="stMain"] [data-baseweb="select"] > div{
+            min-height:39px !important;
+            font-size:.84rem !important;
+            background:#FFFFFF !important;
+        }
+
+        /* Azul deixa de ser a cor primária da área do usuário. */
+        html body [data-testid="stMain"] .stButton button[kind="primary"],
+        html body [data-testid="stMain"] .stFormSubmitButton button{
+            background:linear-gradient(90deg,#D99A00,#E6AE11) !important;
+            color:#071D35 !important;
+            border:1px solid #D99A00 !important;
+            box-shadow:0 5px 14px rgba(217,154,0,.20) !important;
+            font-weight:800 !important;
+        }
+        html body [data-testid="stMain"] .stButton button[kind="primary"] *,
+        html body [data-testid="stMain"] .stFormSubmitButton button *{
+            color:#071D35 !important;
+            font-weight:800 !important;
+        }
+        html body [data-testid="stMain"] .stButton button[kind="primary"]:hover,
+        html body [data-testid="stMain"] .stFormSubmitButton button:hover{
+            background:#C98E00 !important;
+            border-color:#C98E00 !important;
+        }
+
+        /* Cards horizontais de resultados criados pela RC31.28. */
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-result-row-marker){
+            background:#FFFFFF !important;
+            border:1px solid #DDE5EC !important;
+            border-radius:10px !important;
+            box-shadow:0 4px 14px rgba(16,42,67,.045) !important;
+            margin-bottom:.65rem !important;
+        }
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-result-row-marker) > div{
+            padding:.82rem 1rem !important;
+            background:#FFFFFF !important;
+        }
+        .ln-result-row-marker{display:none}
+        .ln-result-date{
+            text-align:center;
+            border-right:1px solid #E4E9EE;
+            padding:.2rem .55rem .2rem .05rem;
+        }
+        .ln-result-date-day{
+            color:#102A43;
+            font-size:1.55rem;
+            font-weight:850 !important;
+            line-height:1;
+        }
+        .ln-result-date-month{
+            color:#52677B;
+            font-size:.69rem;
+            font-weight:750 !important;
+            text-transform:uppercase;
+            margin-top:.16rem;
+        }
+        .ln-result-status{
+            display:inline-flex;
+            margin-top:.42rem;
+            padding:.18rem .45rem;
+            border-radius:6px;
+            background:#E4F1FF;
+            color:#1262B3;
+            font-size:.62rem;
+            font-weight:800 !important;
+        }
+        .ln-result-title{
+            color:#102A43;
+            font-size:.92rem;
+            line-height:1.25;
+            font-weight:850 !important;
+            text-transform:uppercase;
+            margin-bottom:.16rem;
+        }
+        .ln-result-agency{
+            color:#536D86;
+            font-size:.72rem;
+            font-weight:700 !important;
+            text-transform:uppercase;
+            margin-bottom:.28rem;
+        }
+        .ln-result-object{
+            color:#5E7184;
+            font-size:.75rem;
+            line-height:1.35;
+            margin-bottom:.38rem;
+            display:-webkit-box;
+            -webkit-line-clamp:2;
+            -webkit-box-orient:vertical;
+            overflow:hidden;
+        }
+        .ln-result-meta{
+            display:flex;
+            flex-wrap:wrap;
+            gap:.34rem .75rem;
+            align-items:center;
+            color:#445D74;
+            font-size:.68rem;
+        }
+        .ln-result-meta span{
+            display:inline-flex;
+            align-items:center;
+            gap:.24rem;
+        }
+        .ln-result-meta b{
+            color:#9A6A00;
+            font-weight:800 !important;
+        }
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-result-row-marker) .stButton button{
+            min-height:36px !important;
+            font-size:.72rem !important;
+            border-radius:8px !important;
+        }
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-result-row-marker) button[kind="secondary"]{
+            background:#FFFFFF !important;
+            color:#243B53 !important;
+            border:1px solid #D7E0E8 !important;
+        }
+
+        /* botão de itens em contorno dourado */
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-result-row-marker)
+        div[class*="st-key-essential_items_toggle_"] button{
+            background:#FFFFFF !important;
+            color:#A36F00 !important;
+            border:1px solid #DDA20C !important;
+            box-shadow:none !important;
+            font-weight:800 !important;
+        }
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-result-row-marker)
+        div[class*="st-key-essential_items_toggle_"] button *{
+            color:#A36F00 !important;
+        }
+
+        /* Voltar discreto */
+        .ln-floating-back{
+            opacity:.88 !important;
+        }
+        .ln-floating-back button{
+            min-height:34px !important;
+            background:#FFFFFF !important;
+            color:#53677A !important;
+            border:1px solid #D8E0E7 !important;
+            box-shadow:0 4px 12px rgba(16,42,67,.08) !important;
+            font-size:.72rem !important;
+        }
+
+        @media(max-width:900px){
+            html body [data-testid="stSidebar"]{
+                width:260px !important;
+                min-width:260px !important;
+            }
+            html body .ln-app-topbar{left:0 !important;}
+            html body [data-testid="stMain"] .block-container{
+                padding:5.1rem .8rem 2rem !important;
+            }
+            .ln-result-date{border-right:0;border-bottom:1px solid #E4E9EE;padding-bottom:.55rem;margin-bottom:.4rem;}
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def apply_rc31_29_final_shell() -> None:
+    """Ajustes finais aprovados: sidebar mais leve, ícones visíveis e saudação no topo."""
+    st.markdown(
+        """
+        <style>
+        :root{
+            --ln29-sidebar:264px;
+            --ln29-blue:#0B3B69;
+            --ln29-blue-deep:#082D52;
+            --ln29-gold:#E7A400;
+            --ln29-text:#0D2948;
+            --ln29-muted:#60758A;
+            --ln29-line:#DCE5EC;
+            --ln29-bg:#F7F9FB;
+        }
+
+        /* Cabeçalho branco e compacto */
+        html body header[data-testid="stHeader"]{
+            height:66px !important;
+            min-height:66px !important;
+            background:#FFFFFF !important;
+            border-bottom:1px solid #E3E9EE !important;
+            box-shadow:none !important;
+        }
+        html body .ln-app-topbar{
+            left:var(--ln29-sidebar) !important;
+            height:66px !important;
+            padding:0 1.35rem !important;
+            background:#FFFFFF !important;
+            border-bottom:1px solid #E3E9EE !important;
+            box-shadow:none !important;
+            color:var(--ln29-text) !important;
+            justify-content:flex-end !important;
+        }
+        html body .ln-topbar-right{
+            display:inline-flex !important;
+            align-items:center !important;
+            gap:.78rem !important;
+        }
+        html body .ln-topbar-greeting{
+            display:inline-flex !important;
+            align-items:center !important;
+            gap:.35rem !important;
+            color:#233F5B !important;
+            font-size:.88rem !important;
+            font-weight:500 !important;
+        }
+        html body .ln-topbar-greeting strong{
+            color:#0D2948 !important;
+            font-weight:800 !important;
+        }
+        html body .ln-topbar-sun{
+            display:inline-flex !important;
+            align-items:center !important;
+            justify-content:center !important;
+            width:29px !important;
+            height:29px !important;
+            margin-right:.12rem !important;
+            border-radius:50% !important;
+            color:#D59200 !important;
+            background:#FFF8E6 !important;
+            border:1px solid #F5DE9B !important;
+            font-size:1rem !important;
+        }
+        html body .ln-app-topbar-account{
+            width:36px !important;
+            height:36px !important;
+            min-width:36px !important;
+            min-height:36px !important;
+            padding:0 !important;
+            justify-content:center !important;
+            border-radius:50% !important;
+            color:#FFFFFF !important;
+            background:#0D2948 !important;
+            border:1px solid #173E63 !important;
+            font-size:.86rem !important;
+            font-weight:800 !important;
+            box-shadow:none !important;
+        }
+
+        /* Sidebar menos pesada */
+        html body [data-testid="stSidebar"]{
+            width:var(--ln29-sidebar) !important;
+            min-width:var(--ln29-sidebar) !important;
+            max-width:var(--ln29-sidebar) !important;
+            background:
+                radial-gradient(circle at 25% 0%,rgba(40,105,163,.35),transparent 31%),
+                linear-gradient(180deg,var(--ln29-blue) 0%,var(--ln29-blue-deep) 100%) !important;
+            border-right:1px solid rgba(4,31,57,.16) !important;
+            box-shadow:2px 0 14px rgba(13,41,72,.06) !important;
+        }
+        html body [data-testid="stSidebar"] > div:first-child{
+            width:100% !important;
+            padding:.72rem .72rem .8rem !important;
+            background:transparent !important;
+        }
+        html body [data-testid="stSidebar"] .ln-sidebar-brand{
+            width:100% !important;
+            height:66px !important;
+            min-height:66px !important;
+            margin:0 0 .32rem !important;
+            padding:.22rem .4rem .45rem !important;
+            border-bottom:1px solid rgba(255,255,255,.12) !important;
+            background:transparent !important;
+        }
+        html body [data-testid="stSidebar"] .ln-sidebar-brand img{
+            max-width:188px !important;
+            max-height:47px !important;
+        }
+
+        /* Não existe mais card de saudação na sidebar */
+        html body [data-testid="stSidebar"] .ln-sidebar-greeting{
+            display:none !important;
+        }
+
+        /* Navegação: ícones sem quadradinhos apagados */
+        html body [data-testid="stSidebar"] .stButton{
+            width:100% !important;
+            margin:0 0 .08rem !important;
+        }
+        html body [data-testid="stSidebar"] .stButton > button{
+            width:100% !important;
+            min-height:42px !important;
+            padding:.28rem .56rem !important;
+            gap:.58rem !important;
+            border-radius:8px !important;
+            background:transparent !important;
+            border:1px solid transparent !important;
+            color:#F2F7FB !important;
+            box-shadow:none !important;
+            justify-content:flex-start !important;
+        }
+        html body [data-testid="stSidebar"] .stButton > button > div{
+            width:100% !important;
+            justify-content:flex-start !important;
+            gap:.58rem !important;
+        }
+        html body [data-testid="stSidebar"] .stButton button p{
+            color:#F2F7FB !important;
+            font-size:.88rem !important;
+            font-weight:600 !important;
+            text-align:left !important;
+        }
+        html body [data-testid="stSidebar"] .stButton [data-testid="stIconMaterial"]{
+            display:inline-flex !important;
+            flex:0 0 28px !important;
+            width:28px !important;
+            min-width:28px !important;
+            height:28px !important;
+            min-height:28px !important;
+            align-items:center !important;
+            justify-content:center !important;
+            margin:0 !important;
+            padding:0 !important;
+            border:0 !important;
+            border-radius:0 !important;
+            background:transparent !important;
+            box-shadow:none !important;
+            color:#EEF6FC !important;
+            opacity:1 !important;
+            -webkit-text-fill-color:#EEF6FC !important;
+            font-size:1.26rem !important;
+        }
+        html body [data-testid="stSidebar"] .stButton button span:not([data-testid="stIconMaterial"]){
+            background:transparent !important;
+            box-shadow:none !important;
+        }
+        html body [data-testid="stSidebar"] .stButton > button:hover{
+            background:rgba(255,255,255,.07) !important;
+        }
+        html body [data-testid="stSidebar"] .stButton > button[kind="primary"]{
+            background:rgba(255,255,255,.105) !important;
+            box-shadow:inset 4px 0 0 var(--ln29-gold) !important;
+        }
+        html body [data-testid="stSidebar"] .stButton > button[kind="primary"] p,
+        html body [data-testid="stSidebar"] .stButton > button[kind="primary"] [data-testid="stIconMaterial"]{
+            color:#F5B51B !important;
+            -webkit-text-fill-color:#F5B51B !important;
+            font-weight:800 !important;
+        }
+
+        /* Sair discreto, sem um bloco verde ou dourado pesado */
+        html body [data-testid="stSidebar"] .st-key-sidebar_logout{
+            margin-top:.58rem !important;
+            padding-top:.52rem !important;
+            border-top:1px solid rgba(255,255,255,.14) !important;
+        }
+        html body [data-testid="stSidebar"] .st-key-sidebar_logout button{
+            min-height:40px !important;
+            background:transparent !important;
+            color:#F2F7FB !important;
+            border:1px solid rgba(231,164,0,.72) !important;
+            box-shadow:none !important;
+            justify-content:flex-start !important;
+        }
+        html body [data-testid="stSidebar"] .st-key-sidebar_logout button p,
+        html body [data-testid="stSidebar"] .st-key-sidebar_logout [data-testid="stIconMaterial"]{
+            color:#F5B51B !important;
+            -webkit-text-fill-color:#F5B51B !important;
+        }
+
+        /* Mata o espaço vertical excessivo antes de Buscar licitações */
+        html body [data-testid="stMain"] .block-container{
+            max-width:1360px !important;
+            padding:4.62rem 2rem 2.4rem !important;
+        }
+        html body [data-testid="stMain"] .ln-page-kicker{
+            display:none !important;
+            height:0 !important;
+            margin:0 !important;
+            padding:0 !important;
+        }
+        html body [data-testid="stMain"] .ln-discovery-title{
+            margin:0 0 .14rem !important;
+            color:#0D2948 !important;
+            font-size:2.2rem !important;
+            line-height:1.06 !important;
+            font-weight:850 !important;
+            letter-spacing:-.035em !important;
+        }
+        html body [data-testid="stMain"] .ln-discovery-title::after{
+            width:34px !important;
+            height:3px !important;
+            margin:.52rem 0 .12rem !important;
+            background:var(--ln29-gold) !important;
+        }
+        html body [data-testid="stMain"] .ln-discovery-sub{
+            margin:0 0 .78rem !important;
+            color:#60758A !important;
+            font-size:.86rem !important;
+        }
+
+        /* Busca compacta */
+        .ln-search-form-title{
+            color:#17344F !important;
+            font-size:.82rem !important;
+            font-weight:800 !important;
+            margin:0 0 .45rem !important;
+        }
+        html body [data-testid="stMain"] [data-testid="stForm"]{
+            padding:.85rem .95rem .78rem !important;
+            border-radius:10px !important;
+            border:1px solid #DDE5EC !important;
+            box-shadow:0 5px 16px rgba(13,41,72,.055) !important;
+        }
+        html body [data-testid="stMain"] [data-testid="stForm"] [data-testid="stHorizontalBlock"]{
+            gap:.72rem !important;
+        }
+        html body [data-testid="stMain"] [data-testid="stForm"] label p{
+            margin-bottom:.15rem !important;
+            font-size:.73rem !important;
+        }
+        html body [data-testid="stMain"] [data-testid="stForm"] input,
+        html body [data-testid="stMain"] [data-testid="stForm"] [data-baseweb="select"] > div{
+            min-height:38px !important;
+            font-size:.80rem !important;
+        }
+        html body [data-testid="stMain"] [data-testid="stForm"] .stFormSubmitButton button{
+            min-height:39px !important;
+            margin-top:1.02rem !important;
+        }
+
+        /* Resumo e cards */
+        .ln-results-summary{
+            display:flex;
+            align-items:flex-end;
+            justify-content:space-between;
+            gap:1rem;
+            margin:.86rem 0 .48rem;
+        }
+        .ln-results-summary strong{
+            display:block;
+            color:#17344F;
+            font-size:.91rem;
+            font-weight:850 !important;
+        }
+        .ln-results-summary span{
+            display:block;
+            margin-top:.10rem;
+            color:#718397;
+            font-size:.70rem;
+        }
+        html body [data-testid="stMain"] div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-result-row-marker){
+            border-left:3px solid rgba(231,164,0,.92) !important;
+            border-radius:9px !important;
+            box-shadow:0 3px 11px rgba(13,41,72,.04) !important;
+        }
+
+        /* Voltar menor para não competir com a tela */
+        html body .ln-floating-back button{
+            min-height:32px !important;
+            padding:.18rem .55rem !important;
+            font-size:.68rem !important;
+            opacity:.88 !important;
+        }
+
+        @media(max-width:900px){
+            html body [data-testid="stSidebar"]{
+                width:246px !important;
+                min-width:246px !important;
+                max-width:246px !important;
+            }
+            html body .ln-app-topbar{
+                left:0 !important;
+                padding:0 .7rem !important;
+            }
+            html body .ln-topbar-greeting{
+                font-size:.78rem !important;
+            }
+            html body [data-testid="stMain"] .block-container{
+                padding:4.55rem .72rem 1.8rem !important;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def apply_rc31_30_polish() -> None:
+    """Polimento final aprovado para o shell do usuário."""
+    st.markdown(
+        """
+        <style>
+        :root{
+            --ln30-sidebar:264px;
+            --ln30-blue:#0B3D6E;
+            --ln30-blue-deep:#082E54;
+            --ln30-gold:#E6A400;
+            --ln30-text:#102D4C;
+            --ln30-muted:#60778D;
+            --ln30-bg:#F7F9FB;
+        }
+
+        /* =====================================================
+           TOPO
+           ===================================================== */
+        html body header[data-testid="stHeader"]{
+            height:64px !important;
+            min-height:64px !important;
+            background:#FFFFFF !important;
+            border-bottom:1px solid #E2E8EE !important;
+            box-shadow:none !important;
+            z-index:99980 !important;
+        }
+
+        html body .ln-app-topbar{
+            position:fixed !important;
+            top:0 !important;
+            left:var(--ln30-sidebar) !important;
+            right:0 !important;
+            width:auto !important;
+            height:64px !important;
+            min-height:64px !important;
+            z-index:1000000 !important;
+            display:flex !important;
+            align-items:center !important;
+            justify-content:flex-end !important;
+            padding:0 1.35rem !important;
+            margin:0 !important;
+            background:#FFFFFF !important;
+            border-bottom:1px solid #E2E8EE !important;
+            box-shadow:none !important;
+            overflow:visible !important;
+            visibility:visible !important;
+            opacity:1 !important;
+        }
+
+        html body .ln-topbar-right{
+            display:flex !important;
+            align-items:center !important;
+            justify-content:flex-end !important;
+            gap:.72rem !important;
+            min-width:max-content !important;
+            visibility:visible !important;
+            opacity:1 !important;
+        }
+
+        html body .ln-topbar-greeting{
+            display:inline-flex !important;
+            align-items:center !important;
+            gap:.34rem !important;
+            color:#2B4762 !important;
+            font-size:1rem !important;
+            line-height:1 !important;
+            font-weight:550 !important;
+            white-space:nowrap !important;
+            visibility:visible !important;
+            opacity:1 !important;
+        }
+
+        html body .ln-topbar-greeting strong{
+            color:#102D4C !important;
+            font-weight:850 !important;
+        }
+
+        html body .ln-topbar-sun{
+            display:inline-flex !important;
+            align-items:center !important;
+            justify-content:center !important;
+            width:31px !important;
+            height:31px !important;
+            min-width:31px !important;
+            border-radius:50% !important;
+            margin-right:.10rem !important;
+            background:#FFF8E5 !important;
+            border:1px solid #F2D584 !important;
+            color:#D59000 !important;
+            font-size:1.05rem !important;
+        }
+
+        html body .ln-app-topbar-account{
+            display:inline-flex !important;
+            align-items:center !important;
+            justify-content:center !important;
+            width:38px !important;
+            height:38px !important;
+            min-width:38px !important;
+            min-height:38px !important;
+            padding:0 !important;
+            border-radius:50% !important;
+            border:1px solid #214868 !important;
+            background:#102D4C !important;
+            color:#FFFFFF !important;
+            font-size:.90rem !important;
+            font-weight:850 !important;
+            box-shadow:none !important;
+        }
+
+        /* =====================================================
+           SIDEBAR
+           ===================================================== */
+        html body [data-testid="stSidebar"]{
+            width:var(--ln30-sidebar) !important;
+            min-width:var(--ln30-sidebar) !important;
+            max-width:var(--ln30-sidebar) !important;
+            background:
+                radial-gradient(circle at 12% 0%, rgba(76,144,205,.22), transparent 26%),
+                linear-gradient(180deg,var(--ln30-blue) 0%,var(--ln30-blue-deep) 100%) !important;
+            border-right:1px solid rgba(6,39,70,.16) !important;
+            box-shadow:2px 0 12px rgba(14,48,78,.05) !important;
+        }
+
+        html body [data-testid="stSidebar"] > div:first-child{
+            width:100% !important;
+            padding:.35rem .72rem .72rem !important;
+            background:transparent !important;
+        }
+
+        html body [data-testid="stSidebar"] [data-testid="stVerticalBlock"],
+        html body [data-testid="stSidebar"] .stElementContainer{
+            width:100% !important;
+            margin-left:0 !important;
+            margin-right:0 !important;
+        }
+
+        /* Marca: COLORIDA e mais compacta */
+        html body [data-testid="stSidebar"] .ln-sidebar-brand{
+            width:100% !important;
+            height:58px !important;
+            min-height:58px !important;
+            max-height:58px !important;
+            display:flex !important;
+            align-items:center !important;
+            justify-content:flex-start !important;
+            margin:0 0 .20rem !important;
+            padding:.06rem .22rem .20rem !important;
+            border-bottom:1px solid rgba(255,255,255,.13) !important;
+            background:transparent !important;
+            overflow:hidden !important;
+        }
+
+        html body [data-testid="stSidebar"] .ln-sidebar-brand img{
+            display:block !important;
+            width:auto !important;
+            height:auto !important;
+            max-width:190px !important;
+            max-height:47px !important;
+            object-fit:contain !important;
+            filter:none !important;
+            -webkit-filter:none !important;
+            opacity:1 !important;
+            mix-blend-mode:normal !important;
+        }
+
+        html body [data-testid="stSidebar"] .ln-sidebar-brand-text{
+            color:#FFFFFF !important;
+            font-size:1.48rem !important;
+            font-weight:850 !important;
+        }
+
+        /* Remove qualquer resíduo de saudação antiga na sidebar. */
+        html body [data-testid="stSidebar"] .ln-sidebar-greeting{
+            display:none !important;
+            position:absolute !important;
+            width:0 !important;
+            height:0 !important;
+            min-height:0 !important;
+            max-height:0 !important;
+            margin:0 !important;
+            padding:0 !important;
+            border:0 !important;
+            overflow:hidden !important;
+            visibility:hidden !important;
+            opacity:0 !important;
+        }
+
+        /* Menu começa imediatamente após a marca */
+        html body [data-testid="stSidebar"] .stButton{
+            width:100% !important;
+            margin:0 0 .06rem !important;
+            padding:0 !important;
+        }
+
+        html body [data-testid="stSidebar"] .stButton > button{
+            width:100% !important;
+            min-height:42px !important;
+            display:flex !important;
+            flex-direction:row !important;
+            align-items:center !important;
+            justify-content:flex-start !important;
+            gap:.62rem !important;
+            margin:0 !important;
+            padding:.22rem .55rem !important;
+            border:1px solid transparent !important;
+            border-radius:9px !important;
+            background:transparent !important;
+            color:#F4F8FC !important;
+            box-shadow:none !important;
+            text-align:left !important;
+        }
+
+        html body [data-testid="stSidebar"] .stButton > button > div{
+            width:100% !important;
+            min-width:0 !important;
+            display:flex !important;
+            flex-direction:row !important;
+            align-items:center !important;
+            justify-content:flex-start !important;
+            gap:.62rem !important;
+            margin:0 !important;
+            padding:0 !important;
+        }
+
+        html body [data-testid="stSidebar"] .stButton button p{
+            flex:1 1 auto !important;
+            margin:0 !important;
+            padding:0 !important;
+            text-align:left !important;
+            color:#F4F8FC !important;
+            font-size:1.00rem !important;
+            line-height:1.16 !important;
+            font-weight:650 !important;
+            white-space:normal !important;
+        }
+
+        /* Ícones visíveis, simples e sem quadrado claro */
+        html body [data-testid="stSidebar"] .stButton [data-testid="stIconMaterial"]{
+            display:inline-flex !important;
+            align-items:center !important;
+            justify-content:center !important;
+            flex:0 0 24px !important;
+            width:24px !important;
+            min-width:24px !important;
+            max-width:24px !important;
+            height:24px !important;
+            min-height:24px !important;
+            max-height:24px !important;
+            margin:0 !important;
+            padding:0 !important;
+            border:0 !important;
+            border-radius:0 !important;
+            background:transparent !important;
+            box-shadow:none !important;
+            color:#F2F7FC !important;
+            -webkit-text-fill-color:#F2F7FC !important;
+            opacity:1 !important;
+            font-size:1.12rem !important;
+            line-height:1 !important;
+        }
+
+        html body [data-testid="stSidebar"] .stButton button span:not([data-testid="stIconMaterial"]){
+            background:transparent !important;
+            box-shadow:none !important;
+        }
+
+        html body [data-testid="stSidebar"] .stButton > button:hover{
+            background:rgba(255,255,255,.075) !important;
+        }
+
+        html body [data-testid="stSidebar"] .stButton > button[kind="primary"]{
+            background:rgba(255,255,255,.105) !important;
+            box-shadow:inset 4px 0 0 var(--ln30-gold) !important;
+        }
+
+        html body [data-testid="stSidebar"] .stButton > button[kind="primary"] p,
+        html body [data-testid="stSidebar"] .stButton > button[kind="primary"] [data-testid="stIconMaterial"]{
+            color:#F6B91B !important;
+            -webkit-text-fill-color:#F6B91B !important;
+            font-weight:850 !important;
+        }
+
+        html body [data-testid="stSidebar"] .st-key-sidebar_logout{
+            margin-top:.38rem !important;
+            padding-top:.42rem !important;
+            border-top:1px solid rgba(255,255,255,.14) !important;
+        }
+
+        html body [data-testid="stSidebar"] .st-key-sidebar_logout button{
+            min-height:40px !important;
+            justify-content:flex-start !important;
+            background:transparent !important;
+            color:#F4F8FC !important;
+            border:1px solid rgba(230,164,0,.78) !important;
+            box-shadow:none !important;
+        }
+
+        html body [data-testid="stSidebar"] .st-key-sidebar_logout button p,
+        html body [data-testid="stSidebar"] .st-key-sidebar_logout [data-testid="stIconMaterial"]{
+            color:#F6B91B !important;
+            -webkit-text-fill-color:#F6B91B !important;
+            font-weight:850 !important;
+        }
+
+        /* =====================================================
+           CONTEÚDO - menos vazio e letras maiores
+           ===================================================== */
+        html body [data-testid="stAppViewContainer"],
+        html body [data-testid="stMain"]{
+            background:var(--ln30-bg) !important;
+        }
+
+        html body [data-testid="stMain"] .block-container{
+            max-width:1380px !important;
+            padding:4.15rem 2rem 2.3rem !important;
+        }
+
+        html body [data-testid="stMain"] .ln-page-kicker{
+            display:none !important;
+            height:0 !important;
+            margin:0 !important;
+            padding:0 !important;
+        }
+
+        html body [data-testid="stMain"] .ln-discovery-title{
+            margin:0 0 .08rem !important;
+            color:#102D4C !important;
+            font-size:2.55rem !important;
+            line-height:1.04 !important;
+            font-weight:850 !important;
+            letter-spacing:-.04em !important;
+        }
+
+        html body [data-testid="stMain"] .ln-discovery-title::after{
+            width:38px !important;
+            height:3px !important;
+            margin:.48rem 0 .14rem !important;
+            border-radius:3px !important;
+            background:var(--ln30-gold) !important;
+        }
+
+        html body [data-testid="stMain"] .ln-discovery-sub{
+            margin:0 0 .82rem !important;
+            color:#60778D !important;
+            font-size:1.02rem !important;
+            line-height:1.40 !important;
+        }
+
+        /* Formulários */
+        .ln-search-form-title{
+            margin:0 0 .46rem !important;
+            color:#173650 !important;
+            font-size:1.02rem !important;
+            font-weight:850 !important;
+        }
+
+        html body [data-testid="stMain"] [data-testid="stForm"]{
+            padding:1rem 1rem .90rem !important;
+            border:1px solid #DCE5EC !important;
+            border-radius:11px !important;
+            background:#FFFFFF !important;
+            box-shadow:0 5px 15px rgba(16,45,76,.05) !important;
+        }
+
+        html body [data-testid="stMain"] [data-testid="stForm"] [data-testid="stHorizontalBlock"]{
+            gap:.80rem !important;
+        }
+
+        html body [data-testid="stMain"] [data-testid="stForm"] label p{
+            margin-bottom:.16rem !important;
+            color:#294966 !important;
+            font-size:.90rem !important;
+            line-height:1.20 !important;
+            font-weight:750 !important;
+        }
+
+        html body [data-testid="stMain"] [data-testid="stForm"] input,
+        html body [data-testid="stMain"] [data-testid="stForm"] textarea,
+        html body [data-testid="stMain"] [data-testid="stForm"] [data-baseweb="select"] > div{
+            min-height:43px !important;
+            font-size:.98rem !important;
+        }
+
+        html body [data-testid="stMain"] [data-testid="stForm"] .stFormSubmitButton button{
+            min-height:42px !important;
+            margin-top:.98rem !important;
+            font-size:.94rem !important;
+            font-weight:850 !important;
+        }
+
+        /* Resultado */
+        .ln-results-summary{
+            margin:.90rem 0 .50rem !important;
+        }
+
+        .ln-results-summary strong{
+            color:#173650 !important;
+            font-size:1.08rem !important;
+            font-weight:850 !important;
+        }
+
+        .ln-results-summary span{
+            color:#72869A !important;
+            font-size:.84rem !important;
+        }
+
+        .ln-result-date-day{
+            color:#153550 !important;
+            font-size:2rem !important;
+            font-weight:850 !important;
+        }
+
+        .ln-result-date-month{
+            color:#677E92 !important;
+            font-size:.84rem !important;
+            font-weight:750 !important;
+        }
+
+        .ln-result-status{
+            font-size:.78rem !important;
+            font-weight:850 !important;
+        }
+
+        .ln-result-title{
+            color:#102D4C !important;
+            font-size:1.12rem !important;
+            line-height:1.20 !important;
+            font-weight:850 !important;
+        }
+
+        .ln-result-agency{
+            color:#45627D !important;
+            font-size:.91rem !important;
+            font-weight:750 !important;
+        }
+
+        .ln-result-object{
+            color:#5E7488 !important;
+            font-size:.92rem !important;
+            line-height:1.43 !important;
+        }
+
+        .ln-result-meta{
+            color:#536D83 !important;
+            font-size:.86rem !important;
+            line-height:1.36 !important;
+        }
+
+        .ln-result-meta b{
+            color:#A07000 !important;
+            font-weight:850 !important;
+        }
+
+        html body [data-testid="stMain"]
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-result-row-marker){
+            background:#FFFFFF !important;
+            border:1px solid #DCE5EC !important;
+            border-left:3px solid rgba(230,164,0,.94) !important;
+            border-radius:10px !important;
+            box-shadow:0 3px 10px rgba(16,45,76,.04) !important;
+        }
+
+        html body [data-testid="stMain"]
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-result-row-marker) .stButton button{
+            min-height:39px !important;
+            border-radius:9px !important;
+            font-size:.90rem !important;
+        }
+
+        html body [data-testid="stMain"]
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-result-row-marker)
+        div[class*="st-key-essential_items_toggle_"] button{
+            background:#FFFFFF !important;
+            color:#A36F00 !important;
+            border:1px solid #DDA20C !important;
+            box-shadow:none !important;
+            font-weight:850 !important;
+        }
+
+        html body [data-testid="stMain"]
+        div[data-testid="stVerticalBlockBorderWrapper"]:has(.ln-result-row-marker)
+        div[class*="st-key-essential_items_toggle_"] button *{
+            color:#A36F00 !important;
+        }
+
+        /* Textos genéricos do conteúdo */
+        html body [data-testid="stMain"] p,
+        html body [data-testid="stMain"] li{
+            font-size:.96rem;
+        }
+
+        html body [data-testid="stMain"] [data-testid="stCaptionContainer"],
+        html body [data-testid="stMain"] [data-testid="stCaptionContainer"] p{
+            font-size:.84rem !important;
+        }
+
+        /* Voltar discreto */
+        .ln-floating-back button{
+            min-height:33px !important;
+            padding:.16rem .54rem !important;
+            font-size:.76rem !important;
+        }
+
+        @media(max-width:900px){
+            html body [data-testid="stSidebar"]{
+                width:246px !important;
+                min-width:246px !important;
+                max-width:246px !important;
+            }
+
+            html body .ln-app-topbar{
+                left:0 !important;
+                padding:0 .70rem !important;
+            }
+
+            html body .ln-topbar-greeting{
+                font-size:.82rem !important;
+            }
+
+            html body [data-testid="stMain"] .block-container{
+                padding:4.25rem .75rem 1.8rem !important;
+            }
+
+            html body [data-testid="stMain"] .ln-discovery-title{
+                font-size:2rem !important;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def apply_rc31_31_global_main_spacing() -> None:
+    """Sobe globalmente o conteúdo principal sem alterar a sidebar."""
+    st.markdown(
+        """
+        <style>
+        /* Somente o conteúdo principal autenticado. A sidebar fica intacta. */
+        html body [data-testid="stMain"] .block-container {
+            padding-top: 1rem !important;
+        }
+
+        html body [data-testid="stMain"] .block-container > div:first-child {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+
+        /* Evita margens adicionais no primeiro título/bloco das páginas. */
+        html body [data-testid="stMain"] .ln-page-kicker:first-child,
+        html body [data-testid="stMain"] .ln-discovery-title:first-child,
+        html body [data-testid="stMain"] h1:first-child,
+        html body [data-testid="stMain"] h2:first-child,
+        html body [data-testid="stMain"] h3:first-child {
+            margin-top: 0 !important;
+        }
+
+        @media(max-width:900px) {
+            html body [data-testid="stMain"] .block-container {
+                padding-top: .75rem !important;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def apply_rc31_32_global_spacing() -> None:
+    """Reduz o espaço superior apenas no conteúdo principal autenticado."""
+    st.markdown(
+        """
+        <style>
+        html body [data-testid="stMain"] .block-container {
+            padding-top: .85rem !important;
+        }
+
+        html body [data-testid="stMain"] .block-container > div:first-child {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+
+        /* A sidebar não é alvo desta regra. */
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+def _render_sidebar_greeting(user: dict) -> None:
+    """Saudação curta no espaço entre a marca e a navegação do usuário."""
+    try:
+        hour = datetime.now(ZoneInfo("America/Sao_Paulo")).hour
+    except Exception:
+        hour = datetime.now().hour
+    greeting = "Bom dia" if hour < 12 else ("Boa tarde" if hour < 18 else "Boa noite")
+    raw_name = str(user.get("name") or user.get("email") or "").strip()
+    first_name = raw_name.split()[0] if raw_name else ""
+    title = f"{greeting}, {first_name}" if first_name else greeting
+    st.markdown(
+        '<style>'
+        'html body [data-testid="stSidebar"] .ln-sidebar-greeting{width:100%;margin:.18rem 0 .5rem;padding:.48rem .42rem .58rem;border-bottom:1px solid #E8EEF2;box-sizing:border-box;}'
+        'html body [data-testid="stSidebar"] .ln-sidebar-greeting-kicker{font-size:.62rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#8A9BAA;margin:0 0 .18rem;}'
+        'html body [data-testid="stSidebar"] .ln-sidebar-greeting-title{font-size:1.02rem;font-weight:800;color:#0F2941;line-height:1.15;margin:0 0 .16rem;}'
+        'html body [data-testid="stSidebar"] .ln-sidebar-greeting-copy{font-size:.72rem;color:#6D8090;line-height:1.3;margin:0;}'
+        '</style>'
+        f'<div class="ln-sidebar-greeting"><div class="ln-sidebar-greeting-kicker">SEU DIA NO LICITANEXO</div><div class="ln-sidebar-greeting-title">{escape(title)}</div><div class="ln-sidebar-greeting-copy">Vamos encontrar boas oportunidades.</div></div>',
+        unsafe_allow_html=True,
+    )
+
 def main():
-    apply_brand()
+    # PUBLIC_SHELL_GATE_V4
+    # Este gate precisa ser a primeira lógica de main(): impede que a home/login públicos
+    # herdem apply_brand() e impede ?auth=... de cair no login_page() legado.
     if "user" not in st.session_state:
-        login_page()
+        if st.query_params.get("auth"):
+            render_public_auth(
+                db=db,
+                security=security,
+                conversion=conversion,
+                commercial=commercial,
+                client_ip_getter=_client_ip,
+                motivational_phrases=MOTIVATIONAL_PHRASES,
+            )
+        else:
+            render_public_landing(LOGO_PATH)
+        return
+
+
+    if "user" not in st.session_state:
+        if st.query_params.get("auth"):
+            render_public_auth(
+                db=db,
+                security=security,
+                conversion=conversion,
+                commercial=commercial,
+                client_ip_getter=_client_ip,
+                motivational_phrases=MOTIVATIONAL_PHRASES,
+            )
+        else:
+            render_public_landing(LOGO_PATH)
+        return
+
+
+    apply_brand()
+    apply_rc31_21_global_overrides()
+    if "user" not in st.session_state:
+        if st.query_params.get("auth"):
+            login_page()
+        else:
+            render_public_landing(LOGO_PATH)
         return
     user = st.session_state.user
     try:
@@ -2934,10 +6575,23 @@ def main():
         return
     allowed, access_message, account = db.subscription_access(user["company_id"])
     admin_section = None
-    account_label = escape(str(user.get("name") or user.get("email") or "Minha conta").split()[0])
+    raw_account_name = str(user.get("name") or user.get("email") or "Minha conta").strip()
+    first_name = raw_account_name.split()[0] if raw_account_name else "Usuário"
+    account_label = escape(first_name)
+    try:
+        current_hour = datetime.now(ZoneInfo("America/Sao_Paulo")).hour
+    except Exception:
+        current_hour = datetime.now().hour
+    greeting = "Bom dia" if current_hour < 12 else ("Boa tarde" if current_hour < 18 else "Boa noite")
+    account_initial = escape(first_name[:1].upper() if first_name else "U")
     st.markdown(
-        f'<div class="ln-app-topbar"><span class="ln-app-topbar-menu">☰</span>'
-        f'<span class="ln-app-topbar-account">{account_label}</span></div>',
+        f'<div class="ln-app-topbar">'
+        f'<span class="ln-app-topbar-menu"></span>'
+        f'<span class="ln-topbar-right">'
+        f'<span class="ln-topbar-greeting"><span class="ln-topbar-sun">☀</span>{escape(greeting)}, <strong>{account_label}</strong></span>'
+        f'<span class="ln-app-topbar-account">{account_initial}</span>'
+        f'</span>'
+        f'</div>',
         unsafe_allow_html=True,
     )
     with st.sidebar:
@@ -2964,7 +6618,7 @@ def main():
             )
         else:
             explore_pages = [
-                "Início", "Buscar licitações", "Por Estado", "Por Cidade",
+                "Buscar licitações", "Por Estado", "Por Cidade",
                 "Por Modalidade", "Por site de disputa", "Filtro avançado", "Em destaque",
             ]
             work_pages = ["Minha lista", "Calendário"]
@@ -2976,14 +6630,23 @@ def main():
                 pages = account_pages
 
             requested_page = st.session_state.pop("_navigation_request", None)
+            if requested_page == "Início":
+                requested_page = "Buscar licitações"
             if requested_page in pages:
-                st.session_state["main_navigation"] = requested_page
+                _rc31_navigate_to(requested_page)
             if st.session_state.get("main_navigation") not in pages:
                 st.session_state["main_navigation"] = pages[0]
+                st.session_state["_main_navigation_history"] = []
+            page = st.session_state["main_navigation"]
+
+            # Primeiro acesso: inicia um tour curto e opcional. A conclusão/pulo é
+            # persistida por usuário sem exigir migração de schema.
+            if _guided_tour_autostart(user):
+                st.rerun()
             page = st.session_state["main_navigation"]
 
             nav_icons = {
-                "Início": ":material/home:", "Buscar licitações": ":material/search:",
+                "Buscar licitações": ":material/search:",
                 "Por Estado": ":material/map:", "Por Cidade": ":material/location_on:",
                 "Por Modalidade": ":material/category:", "Por site de disputa": ":material/language:",
                 "Filtro avançado": ":material/filter_alt:", "Em destaque": ":material/trending_up:",
@@ -2992,32 +6655,27 @@ def main():
                 "Suporte": ":material/help_center:", "Minha conta": ":material/account_circle:",
             }
 
-            def _nav_group(title, options, group_key):
-                nonlocal page
-                if not options:
-                    return
-                st.caption(title)
-                for index, option in enumerate(options):
-                    selected = page == option
-                    if st.button(
-                        option, icon=nav_icons.get(option), key=f"nav_{group_key}_{index}",
-                        type="primary" if selected else "secondary", width="stretch",
-                    ):
-                        st.session_state["main_navigation"] = option
-                        st.rerun()
+            # Mantém as chaves históricas para preservar as cores dos ícones, mas
+            # renderiza tudo em sequência, sem EXPLORAR / MINHA ÁREA / MINHA CONTA.
+            nav_keys = {}
+            for index, option in enumerate(explore_pages):
+                nav_keys[option] = f"nav_explore_{index}"
+            for index, option in enumerate(work_pages):
+                nav_keys[option] = f"nav_work_{index}"
+            for index, option in enumerate(account_pages):
+                nav_keys[option] = f"nav_account_{index}"
 
-            _nav_group("EXPLORAR", explore_pages, "explore")
-            _nav_group("MINHA ÁREA", work_pages, "work")
-            _nav_group("MINHA CONTA", account_pages, "account")
-
-            guide_page = {
-                "Buscar licitações": "🔎 Buscar Editais",
-                "Calendário": "📅 Calendário",
-                "Suporte": "💬 Suporte",
-                "Minha conta": "👤 Minha Conta",
-            }.get(page, page)
-            if guide_page in {"📅 Calendário", "🔎 Buscar Editais", "💬 Suporte", "👤 Minha Conta"}:
-                render_sidebar_guides(guide_page)
+            for option in pages:
+                selected = page == option
+                if st.button(
+                    option,
+                    icon=nav_icons.get(option),
+                    key=nav_keys.get(option, f"nav_user_{pages.index(option)}"),
+                    type="primary" if selected else "secondary",
+                    width="stretch",
+                ):
+                    _rc31_navigate_to(option)
+                    st.rerun()
 
 
         if st.button("Sair", icon=":material/logout:", key="sidebar_logout", width="stretch"):
@@ -3027,11 +6685,9 @@ def main():
             st.rerun()
 
     if page == "Início":
-        if LOGO_PATH.exists():
-            st.markdown('<div class="ln-home-color-logo">', unsafe_allow_html=True)
-            st.image(str(LOGO_PATH), width=190)
-            st.markdown('</div>', unsafe_allow_html=True)
-        essential_home_page(db, user)
+        st.session_state["main_navigation"] = "Buscar licitações"
+        st.session_state["_main_navigation_history"] = []
+        st.rerun()
     elif page == "Buscar licitações":
         essential_search_page(db, user, usage)
     elif page == "Por Estado":
@@ -3060,6 +6716,83 @@ def main():
         essential_account_page(user)
     else:
         admin_page(user, admin_section or "Visão geral")
+
+    # Reaplica no fim para vencer estilos específicos carregados pelas páginas.
+    apply_rc31_21_global_overrides()
+
+    # Shell final navy/dourado da RC31.28.
+    apply_rc31_28_reference_shell()
+    apply_rc31_29_final_shell()
+    apply_rc31_30_polish()
+    apply_rc31_31_global_main_spacing()
+    apply_rc31_32_global_spacing()
+
+    # ADMIN_CONTRAST_FINAL_V2
+    # Aplicado por ultimo para nao ser sobrescrito pelo shell global.
+    if _is_admin_user(user):
+        st.markdown(
+            """
+            <style>
+            /* Titulo Sala de Controle */
+            section[data-testid="stSidebar"] h5,
+            section[data-testid="stSidebar"] h4 {
+                color: #FFFFFF !important;
+                font-weight: 800 !important;
+            }
+
+            /* Opcoes administrativas */
+            section[data-testid="stSidebar"]
+            [data-testid="stRadio"] label p,
+            section[data-testid="stSidebar"]
+            div[role="radiogroup"] label p {
+                color: #F2F7FF !important;
+                font-weight: 650 !important;
+                opacity: 1 !important;
+            }
+
+            /* Radio */
+            section[data-testid="stSidebar"]
+            [data-testid="stRadio"] label,
+            section[data-testid="stSidebar"]
+            div[role="radiogroup"] label {
+                color: #F2F7FF !important;
+                opacity: 1 !important;
+            }
+
+            /* Opcao selecionada */
+            section[data-testid="stSidebar"]
+            [data-testid="stRadio"] label:has(input:checked) p,
+            section[data-testid="stSidebar"]
+            div[role="radiogroup"] label:has(input:checked) p {
+                color: #FFD34E !important;
+                font-weight: 800 !important;
+            }
+
+            /* Circulos do radio */
+            section[data-testid="stSidebar"] input[type="radio"] {
+                accent-color: #F7B714 !important;
+            }
+
+            /* Ambiente */
+            section[data-testid="stSidebar"]
+            [data-testid="stCaptionContainer"] p {
+                color: #A9C1DE !important;
+                opacity: 1 !important;
+            }
+
+            /* Divisores */
+            section[data-testid="stSidebar"] hr {
+                border-color: rgba(255,255,255,.20) !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # O painel do tour é renderizado por último para ficar acima do conteúdo e
+    # não ser anulado pelos estilos específicos das páginas.
+    if not _is_admin_user(user):
+        _guided_tour_render(user)
 
 
 main()
