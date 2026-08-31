@@ -6,15 +6,14 @@ from pathlib import Path
 
 import streamlit as st
 
+from src.brand_assets import APPROVED_LOGO_LIGHT_DATA_URI
+
 
 OFFICIAL_LOGO_PATH = Path(__file__).resolve().parents[1] / "assets" / "licitanexo-logo.png"
 
 
 def _logo_data_uri() -> str:
-    if not OFFICIAL_LOGO_PATH.exists():
-        return ""
-    encoded = base64.b64encode(OFFICIAL_LOGO_PATH.read_bytes()).decode("ascii")
-    return f"data:image/png;base64,{encoded}"
+    return APPROVED_LOGO_LIGHT_DATA_URI
 
 
 def _screen_html() -> str:
