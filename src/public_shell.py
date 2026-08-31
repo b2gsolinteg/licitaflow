@@ -9,14 +9,14 @@ from PIL import Image
 import streamlit as st
 
 from src.public_auth_final import render_public_auth as _render_public_auth
-from src.public_landing_exact import render_public_landing as _render_public_landing
+from src.public_landing import render_public_landing as _render_public_landing
 
 
 OFFICIAL_LOGO_PATH = Path(__file__).resolve().parents[1] / "assets" / "licitanexo-logo.png"
 
 
 def _official_logo_data_uri() -> str:
-    """Remove somente o fundo branco conectado às bordas do PNG oficial para a landing."""
+    """Remove somente o fundo branco conectado Ã s bordas do PNG oficial para a landing."""
     if not OFFICIAL_LOGO_PATH.exists():
         return ""
 
@@ -110,7 +110,7 @@ def render_public_landing(logo_path=None) -> None:
 
 
 def render_public_auth(**kwargs) -> None:
-    # O login é autocontido em src/public_auth.py; sem os overrides visuais antigos.
+    # O login Ã© autocontido em src/public_auth.py; sem os overrides visuais antigos.
     _render_public_auth(**kwargs)
 
     # LNX_LAPTOP_VISUAL_FIX_V1
