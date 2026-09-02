@@ -2643,6 +2643,33 @@ class Database:
             """, (source, modality_code, state or "", period_start, period_end, publication_day,
                     next_page, int(bool(completed)), items_saved, last_error or ""))
 
+    def clear_completed_global_sync_period(
+        self, source="PNCP_INCREMENTAL", period_start="", period_end=""
+    ):
+        """Remove checkpoints conclu?dos para permitir uma nova consulta do mesmo per?odo.
+
+        Checkpoints incompletos nunca s?o removidos aqui, preservando a retomada
+        exata de uma sincroniza??o interrompida.
+        """
+        with self.connect() as conn:
+            cursor = conn.execute(
+                """DELETE FROM global_sync_checkpoints
+                   WHERE source=? AND period_start=? AND period_end=?
+                     AND completed=1""",
+                (str(source), str(period_start), str(period_end)),
+            )
+            return max(0, int(cursor.rowcount or 0))
+
+    def count_incomplete_global_sync_checkpoints(self, source="PNCP_INCREMENTAL"):
+        with self.connect() as conn:
+            row = conn.execute(
+                """SELECT COUNT(*) AS total
+                   FROM global_sync_checkpoints
+                   WHERE source=? AND completed=0""",
+                (str(source),),
+            ).fetchone()
+        return int(row["total"] or 0)
+
     def latest_incomplete_global_sync_period(self, source="PNCP_INCREMENTAL"):
         source = str(source or "").strip()
         if not source:

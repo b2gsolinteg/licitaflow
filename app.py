@@ -61,7 +61,7 @@ import src.essential_discovery as essential_discovery_module
 from src.company_intelligence import profile_search_ready, rank_opportunities
 from src.sources import source_label, opportunity_source_and_portal, pncp_official_url
 from src.logging_setup import configure_logging
-from src.public_shell import render_public_landing, render_public_auth
+from src.public_shell import render_public_auth
 def render_sidebar_guides(page: str) -> None:
     """Carrega a ajuda sob demanda; falha do PDF nunca derruba o app."""
     try:
@@ -130,6 +130,12 @@ def _cached_admin_pncp_snapshot():
         "modality_counts": modality_counts,
         "state_counts": db.global_catalog_group_counts("state"),
         "quality": db.global_catalog_quality_stats(),
+        "pending_incremental": db.count_incomplete_global_sync_checkpoints("PNCP_INCREMENTAL"),
+        "pending_full": db.count_incomplete_global_sync_checkpoints("PNCP_FULL_OPEN"),
+        "last_success": db.last_successful_sync_run([
+            "PNCP_INCREMENTAL", "PNCP_INCREMENTAL_RESUME",
+            "PNCP_FULL", "PNCP",
+        ]),
     }
 
 
@@ -205,8 +211,9 @@ def _format_datetime(value):
         return "Não informada"
     try:
         parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-        if parsed.tzinfo is not None:
-            parsed = parsed.astimezone(ZoneInfo("America/Sao_Paulo"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=ZoneInfo("UTC"))
+        parsed = parsed.astimezone(ZoneInfo("America/Sao_Paulo"))
         return parsed.strftime("%d/%m/%Y %H:%M")
     except (TypeError, ValueError):
         return str(value).replace("T", " ")[:16]
@@ -3208,12 +3215,21 @@ def admin_page(user, admin_section="Visão geral"):
         recent_runs = pncp_snapshot["recent_runs"]
         last_run = recent_runs[0] if recent_runs else None
 
+        last_error_text = str(last_run.get("errors") or "") if last_run else ""
+
         if not last_run:
             health_label, health_icon = "Sem sincronização", "⚪"
         elif last_run.get("status") == "success":
             health_label, health_icon = "Normal", "🟢"
-        elif "429" in str(last_run.get("errors") or ""):
+        elif "429" in last_error_text:
             health_label, health_icon = "PNCP limitado", "🟡"
+        elif any(token in last_error_text for token in (
+            "ReadTimeout",
+            "ConnectionError",
+            "demorou para responder",
+            "temporariamente indisponível",
+        )):
+            health_label, health_icon = "PNCP lento / indisponível", "🟡"
         elif last_run.get("status") == "partial":
             health_label, health_icon = "Parcial", "🟡"
         else:
@@ -3231,6 +3247,32 @@ def admin_page(user, admin_section="Visão geral"):
             "O total bruto não é o mesmo número exibido ao cliente. A área de busca mostra o recorte de oportunidades abertas/viáveis; "
             "use estes indicadores para distinguir catálogo total, registros sem prazo e oportunidades com prazo futuro."
         )
+        pending_incremental = int(pncp_snapshot.get("pending_incremental") or 0)
+        pending_full = int(pncp_snapshot.get("pending_full") or 0)
+        last_success_run = pncp_snapshot.get("last_success")
+
+        attempt_at = (
+            (last_run.get("finished_at") or last_run.get("started_at"))
+            if last_run else None
+        )
+        success_at = (
+            (last_success_run.get("finished_at") or last_success_run.get("started_at"))
+            if last_success_run else None
+        )
+
+        o1, o2, o3 = st.columns(3)
+        o1.metric("Checkpoints incrementais pendentes", pending_incremental)
+        o2.metric("Reconcilia\u00e7\u00e3o completa pendente", pending_full)
+        o3.metric(
+            "\u00daltima tentativa",
+            _format_datetime(attempt_at) if attempt_at else "Nunca",
+        )
+
+        st.caption(
+            "\u00daltima sincroniza\u00e7\u00e3o bem-sucedida: "
+            + (_format_datetime(success_at) if success_at else "Ainda n\u00e3o registrada")
+        )
+
         st.caption(
             f"Catálogo atualizado em: {str(last_update or 'Nunca')[:19].replace('T', ' ')} · "
             f"Versão: {APP_VERSION}"
@@ -6518,47 +6560,22 @@ def _render_sidebar_greeting(user: dict) -> None:
     )
 
 def main():
-    # PUBLIC_SHELL_GATE_V4
-    # Este gate precisa ser a primeira lógica de main(): impede que a home/login públicos
-    # herdem apply_brand() e impede ?auth=... de cair no login_page() legado.
+    # PUBLIC_AUTH_GATE_V5
+    # Sem usuario autenticado, toda entrada publica abre diretamente
+    # o login oficial. A landing publica antiga nao participa mais do fluxo.
     if "user" not in st.session_state:
-        if st.query_params.get("auth"):
-            render_public_auth(
-                db=db,
-                security=security,
-                conversion=conversion,
-                commercial=commercial,
-                client_ip_getter=_client_ip,
-                motivational_phrases=MOTIVATIONAL_PHRASES,
-            )
-        else:
-            render_public_landing(LOGO_PATH)
+        render_public_auth(
+            db=db,
+            security=security,
+            conversion=conversion,
+            commercial=commercial,
+            client_ip_getter=_client_ip,
+            motivational_phrases=MOTIVATIONAL_PHRASES,
+        )
         return
-
-
-    if "user" not in st.session_state:
-        if st.query_params.get("auth"):
-            render_public_auth(
-                db=db,
-                security=security,
-                conversion=conversion,
-                commercial=commercial,
-                client_ip_getter=_client_ip,
-                motivational_phrases=MOTIVATIONAL_PHRASES,
-            )
-        else:
-            render_public_landing(LOGO_PATH)
-        return
-
 
     apply_brand()
     apply_rc31_21_global_overrides()
-    if "user" not in st.session_state:
-        if st.query_params.get("auth"):
-            login_page()
-        else:
-            render_public_landing(LOGO_PATH)
-        return
     user = st.session_state.user
     try:
         security.validate_session(st.session_state.get("security_session_token"))

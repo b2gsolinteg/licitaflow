@@ -109,13 +109,20 @@ def resolve_sync_window(db: Database, today: date | None = None) -> SyncWindow:
     if not anchor:
         if db.global_catalog_count() == 0:
             raise RuntimeError(
-                "Catálogo vazio: execute a carga completa inicial antes do worker incremental."
+                "Cat?logo vazio: execute a carga completa inicial antes do worker incremental."
             )
 
-        raise RuntimeError(
-            "Catálogo possui dados, mas não há sincronização concluída "
-            "para servir de marco incremental."
-        )
+        catalog_anchor = db.last_catalog_update()
+        if not catalog_anchor:
+            raise RuntimeError(
+                "Cat?logo possui dados, mas n?o h? marco confi?vel "
+                "para iniciar a sincroniza??o incremental."
+            )
+
+        anchor = {
+            "finished_at": catalog_anchor,
+            "started_at": catalog_anchor,
+        }
 
     raw_anchor = anchor.get("finished_at") or anchor.get("started_at")
     anchor_dt = _parse_datetime(raw_anchor)
@@ -253,6 +260,7 @@ def run_sync_cycle(
     page_delay: float = 0.25,
     max_attempts: int = 4,
     max_pages_per_modality: int = 120,
+    max_consecutive_empty_failures: int | None = None,
 ):
     """Executa uma rodada limitada; checkpoint permite continuar na próxima hora."""
     client = PncpClient(
@@ -272,6 +280,7 @@ def run_sync_cycle(
     }
 
     partial = False
+    consecutive_empty_failures = 0
 
     with db.sync_run_scope(window.run_source) as run_id:
         for name, code in modalities:
@@ -328,6 +337,16 @@ def run_sync_cycle(
 
             totals["errors"].extend(errors)
 
+            no_progress_failure = bool(errors) and (
+                int(stats.get("pages") or 0) == 0
+                and int(stats.get("received") or 0) == 0
+            )
+
+            if no_progress_failure:
+                consecutive_empty_failures += 1
+            else:
+                consecutive_empty_failures = 0
+
             for error in errors:
                 detail = " ".join(error.split())
 
@@ -345,6 +364,18 @@ def run_sync_cycle(
                 # checkpoint, mas não bloqueia as modalidades seguintes.
                 if any("429" in error for error in errors):
                     break
+
+                if (
+                    max_consecutive_empty_failures
+                    and consecutive_empty_failures >= max_consecutive_empty_failures
+                ):
+                    print(
+                        "PNCP_WORKER_FAIL_FAST "
+                        f"consecutive_empty_failures={consecutive_empty_failures}",
+                        flush=True,
+                    )
+                    break
+
                 continue
 
         status = (
@@ -412,6 +443,16 @@ def main() -> int:
         ),
     )
 
+    max_consecutive_empty_failures = max(
+        1,
+        int(
+            os.getenv(
+                "PNCP_WORKER_MAX_CONSECUTIVE_EMPTY_FAILURES",
+                "3",
+            )
+        ),
+    )
+
     try:
         with worker_lock(db):
             if os.getenv("PNCP_AUTO_FULL_RECONCILE", "0") == "1":
@@ -426,6 +467,17 @@ def main() -> int:
 
             window = resolve_sync_window(db)
 
+            if not window.resumed:
+                cleared = db.clear_completed_global_sync_period(
+                    window.checkpoint_source,
+                    window.period_start,
+                    window.period_end,
+                )
+                print(
+                    f"PNCP_CHECKPOINT_RESET cleared={cleared}",
+                    flush=True,
+                )
+
             print(
                 "PNCP_WORKER_START "
                 f"mode={window.mode} "
@@ -435,7 +487,8 @@ def main() -> int:
                 f"timeout={timeout}s "
                 f"max_attempts={max_attempts} "
                 f"page_delay={page_delay}s "
-                f"max_pages_per_modality={max_pages}",
+                f"max_pages_per_modality={max_pages} "
+                f"fail_fast_after={max_consecutive_empty_failures}",
                 flush=True,
             )
 
@@ -451,6 +504,7 @@ def main() -> int:
                 page_delay=page_delay,
                 max_attempts=max_attempts,
                 max_pages_per_modality=max_pages,
+                max_consecutive_empty_failures=max_consecutive_empty_failures,
             )
 
             print(

@@ -2,29 +2,117 @@ from __future__ import annotations
 
 import base64
 import random
+from collections import deque
+from io import BytesIO
 from pathlib import Path
 
 import streamlit as st
+from PIL import Image
 
-from src.brand_assets import APPROVED_LOGO_LIGHT_DATA_URI
 
 
 OFFICIAL_LOGO_PATH = Path(__file__).resolve().parents[1] / "assets" / "licitanexo-logo.png"
 
 
 def _logo_data_uri() -> str:
-    return APPROVED_LOGO_LIGHT_DATA_URI
+    """Prepara o logo oficial para uso sobre fundo escuro."""
+    if not OFFICIAL_LOGO_PATH.exists():
+        return ""
+
+    with Image.open(OFFICIAL_LOGO_PATH) as source:
+        image = source.convert("RGBA")
+
+    width, height = image.size
+    pixels = image.load()
+
+    # Remove somente o branco conectado ?s bordas.
+    queue = deque()
+    visited = set()
+
+    def is_background(x, y):
+        r, g, b, a = pixels[x, y]
+        return a > 0 and r >= 235 and g >= 235 and b >= 235
+
+    for x in range(width):
+        queue.append((x, 0))
+        queue.append((x, height - 1))
+
+    for y in range(height):
+        queue.append((0, y))
+        queue.append((width - 1, y))
+
+    while queue:
+        x, y = queue.popleft()
+
+        if (x, y) in visited:
+            continue
+
+        visited.add((x, y))
+
+        if not is_background(x, y):
+            continue
+
+        pixels[x, y] = (255, 255, 255, 0)
+
+        if x > 0:
+            queue.append((x - 1, y))
+        if x + 1 < width:
+            queue.append((x + 1, y))
+        if y > 0:
+            queue.append((x, y - 1))
+        if y + 1 < height:
+            queue.append((x, y + 1))
+
+    # Em fundo escuro, transforma apenas pixels realmente escuros
+    # da palavra LICITA em branco. Azul vivo e amarelo permanecem.
+    pixels = image.load()
+
+    for y in range(height):
+        for x in range(width):
+            r, g, b, a = pixels[x, y]
+
+            if a == 0:
+                continue
+
+            brightness = max(r, g, b)
+
+            # Tons navy/cinza escuro.
+            if brightness < 105 and abs(r - g) < 55:
+                pixels[x, y] = (255, 255, 255, a)
+
+    bbox = image.getchannel("A").getbbox()
+    if bbox:
+        image = image.crop(bbox)
+
+    output = BytesIO()
+    image.save(output, format="PNG", optimize=True)
+
+    encoded = base64.b64encode(output.getvalue()).decode("ascii")
+    return f"data:image/png;base64,{encoded}"
+
+
+def _logo_original_data_uri() -> str:
+    """Logo oficial original para uso sobre fundo claro."""
+    if not OFFICIAL_LOGO_PATH.exists():
+        return ""
+
+    encoded = base64.b64encode(
+        OFFICIAL_LOGO_PATH.read_bytes()
+    ).decode("ascii")
+
+    return f"data:image/png;base64,{encoded}"
 
 
 def _screen_html() -> str:
     logo = _logo_data_uri()
+    mini_logo_source = _logo_original_data_uri()
     logo_html = (
         f'<img class="lf-logo" src="{logo}" alt="LicitaNexo">'
         if logo
         else '<div class="lf-logo-fallback">Licita<span>Nexo</span></div>'
     )
     mini_logo = (
-        f'<img class="lf-mini-logo" src="{logo}" alt="LicitaNexo">'
+        f'<img class="lf-mini-logo" src="{mini_logo_source}" alt="LicitaNexo">'
         if logo
         else '<strong>LicitaNexo</strong>'
     )
@@ -946,11 +1034,13 @@ def _final_public_polish_css(mode: str) -> str:
       max-height:62px!important;
       object-fit:contain!important;
       object-position:left center!important;
-      box-sizing:content-box!important;
-      padding:8px 12px!important;
-      border-radius:12px!important;
-      background:rgba(255,255,255,.97)!important;
-      box-shadow:0 8px 22px rgba(0,0,0,.14)!important;
+      box-sizing:border-box!important;
+      padding:0!important;
+      border-radius:0!important;
+      background:transparent!important;
+      box-shadow:none!important;
+      filter:none!important;
+      display:block!important;
     }
 
     .lf-left{
