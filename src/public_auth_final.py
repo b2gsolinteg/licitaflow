@@ -166,7 +166,7 @@ def _screen_html() -> str:
                 <div>◎ &nbsp; Por site de disputa</div>
                 <div>▽ &nbsp; Filtro avançado</div>
                 <div>↗ &nbsp; Em destaque</div>
-                <div>▱ &nbsp; Minhas participa??es</div>
+                <div>▱ &nbsp; Minhas participações</div>
                 <div>▦ &nbsp; Calendário</div>
                 <div>☷ &nbsp; Preferências</div>
                 <div>◉ &nbsp; Radar de licitações</div>
