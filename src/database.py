@@ -2646,10 +2646,10 @@ class Database:
     def clear_completed_global_sync_period(
         self, source="PNCP_INCREMENTAL", period_start="", period_end=""
     ):
-        """Remove checkpoints conclu?dos para permitir uma nova consulta do mesmo per?odo.
+        """Remove checkpoints concluídos para permitir uma nova consulta do mesmo período.
 
-        Checkpoints incompletos nunca s?o removidos aqui, preservando a retomada
-        exata de uma sincroniza??o interrompida.
+        Checkpoints incompletos nunca são removidos aqui, preservando a retomada
+        exata de uma sincronização interrompida.
         """
         with self.connect() as conn:
             cursor = conn.execute(

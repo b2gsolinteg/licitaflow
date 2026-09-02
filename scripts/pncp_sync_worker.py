@@ -109,14 +109,14 @@ def resolve_sync_window(db: Database, today: date | None = None) -> SyncWindow:
     if not anchor:
         if db.global_catalog_count() == 0:
             raise RuntimeError(
-                "Cat?logo vazio: execute a carga completa inicial antes do worker incremental."
+                "Catálogo vazio: execute a carga completa inicial antes do worker incremental."
             )
 
         catalog_anchor = db.last_catalog_update()
         if not catalog_anchor:
             raise RuntimeError(
-                "Cat?logo possui dados, mas n?o h? marco confi?vel "
-                "para iniciar a sincroniza??o incremental."
+                "Catálogo possui dados, mas não há marco confiável "
+                "para iniciar a sincronização incremental."
             )
 
         anchor = {
