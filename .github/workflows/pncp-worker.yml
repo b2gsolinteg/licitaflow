@@ -50,6 +50,7 @@ jobs:
     env:
       LICITANEXO_DB_BACKEND: postgres
       LICITANEXO_DB_SCHEMA: licitanexo
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
       LICITANEXO_PGHOST: ${{ secrets.LICITANEXO_PGHOST }}
       LICITANEXO_PGPORT: "5432"
       LICITANEXO_PGDATABASE: neondb
